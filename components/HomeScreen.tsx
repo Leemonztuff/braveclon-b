@@ -12,19 +12,19 @@ interface HomeScreenProps {
 }
 
 const REEL_MENU = [
-  { id: 'quest', label: 'QUEST', icon: '⚔️', desc: 'Story Mode' },
-  { id: 'gate', label: 'GATE', icon: '🌐', desc: 'Special' },
-  { id: 'arena', label: 'ARENA', icon: '🏆', desc: 'PvP' },
-  { id: 'summon_lab', label: 'SUMMON LAB', icon: '🔬', desc: 'Special' },
+  { id: 'quest', label: 'QUEST', icon: '/icons/combat/melee.svg', desc: 'Story Mode' },
+  { id: 'gate', label: 'GATE', icon: '/icons/entity/loot.svg', desc: 'Special' },
+  { id: 'arena', label: 'ARENA', icon: '/icons/game/combat.svg', desc: 'PvP' },
+  { id: 'summon_lab', label: 'SUMMON LAB', icon: '/icons/entity/potion.svg', desc: 'Special' },
 ];
 
 const BOTTOM_MENU = [
-  { id: 'home', label: 'HOME', icon: '🏠' },
-  { id: 'units', label: 'UNITS', icon: '👥' },
-  { id: 'randall', label: 'RANDALL', icon: '🏰' },
-  { id: 'shop', label: 'GEMS', icon: '💎' },
-  { id: 'summon', label: 'SUMMON', icon: '✨' },
-  { id: 'friends', label: 'FRIENDS', icon: '🤝' },
+  { id: 'home', label: 'HOME', icon: '/icons/entity/person.svg' },
+  { id: 'units', label: 'UNITS', icon: '/icons/entity/party.svg' },
+  { id: 'randall', label: 'RANDALL', icon: '/icons/game/castle.svg' },
+  { id: 'shop', label: 'GEMS', icon: '/icons/entity/loot.svg' },
+  { id: 'summon', label: 'SUMMON', icon: '/icons/entity/potion.svg' },
+  { id: 'friends', label: 'FRIENDS', icon: '/icons/game/party.svg' },
 ];
 
 export default function HomeScreen({ state, onNavigate, onStartBattle, timeToNextEnergy }: HomeScreenProps) {
@@ -131,11 +131,11 @@ export default function HomeScreen({ state, onNavigate, onStartBattle, timeToNex
                     : 'bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50'}
                 `}
               >
-                <div className="text-2xl mb-1">{item.icon}</div>
-                <div className={`text-[10px] font-bold ${selectedReel === item.id ? 'text-amber-400' : 'text-zinc-400'}`}>
+                <img src={item.icon} alt={item.label} className="w-8 h-8 mx-auto mb-1 invert brightness-200" />
+                <div className={`text-[10px] font-bold text-center ${selectedReel === item.id ? 'text-amber-400' : 'text-zinc-400'}`}>
                   {item.label}
                 </div>
-                <div className="text-[8px] text-zinc-500">{item.desc}</div>
+                <div className="text-[8px] text-zinc-500 text-center">{item.desc}</div>
                 
                 {/* Active indicator */}
                 {selectedReel === item.id && (
@@ -229,9 +229,7 @@ export default function HomeScreen({ state, onNavigate, onStartBattle, timeToNex
                 : 'hover:bg-zinc-800'}
             `}
           >
-            <div className={`text-lg ${item.id === 'home' ? 'text-amber-400' : 'text-zinc-400'}`}>
-              {item.icon}
-            </div>
+            <img src={item.icon} alt={item.label} className={`w-5 h-5 ${item.id === 'home' ? 'invert brightness-200' : 'invert brightness-150'}`} />
             <div className={`text-[8px] font-medium ${item.id === 'home' ? 'text-amber-400' : 'text-zinc-500'}`}>
               {item.label}
             </div>
