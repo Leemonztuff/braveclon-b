@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { useState } from 'react';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { ArrowLeft, QrCode, Sparkles, AlertCircle } from 'lucide-react';
@@ -8,11 +9,11 @@ import { motion, AnimatePresence } from 'motion/react';
 interface QRHuntScreenProps {
   state: PlayerState;
   onBack: () => void;
-  onScan: (data: string) => { success: boolean; message: string; rewardType?: string; rewardValue?: any };
+  onScan: (data: string) => { success: boolean; message: string; rewardType?: string; rewardValue?: number | string };
 }
 
 export default function QRHuntScreen({ state, onBack, onScan }: QRHuntScreenProps) {
-  const [scanResult, setScanResult] = useState<{ success: boolean; message: string; rewardType?: string; rewardValue?: any } | null>(null);
+  const [scanResult, setScanResult] = useState<{ success: boolean; message: string; rewardType?: string; rewardValue?: number | string } | null>(null);
   const [isScanning, setIsScanning] = useState(true);
 
   const handleScan = (text: string) => {

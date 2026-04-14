@@ -1,16 +1,10 @@
+/* eslint-disable @next/next/no-img-element */
 import { motion } from 'motion/react';
 import { BattleUnit } from '@/lib/battleTypes';
+import { ELEMENT_BG_GRADIENTS, Element } from '@/lib/gameData';
 
 export function BBCutIn({ unit }: { unit: BattleUnit }) {
-  const colors = {
-    Fire: 'from-red-600 to-orange-600',
-    Water: 'from-blue-600 to-cyan-600',
-    Earth: 'from-green-600 to-emerald-600',
-    Thunder: 'from-yellow-500 to-amber-600',
-    Light: 'from-yellow-200 to-white',
-    Dark: 'from-purple-700 to-zinc-900',
-  };
-  const color = colors[unit.template.element as keyof typeof colors] || 'from-zinc-600 to-zinc-800';
+  const color = ELEMENT_BG_GRADIENTS[unit.template.element as Element] || 'from-zinc-600 to-zinc-800';
 
   return (
     <motion.div 

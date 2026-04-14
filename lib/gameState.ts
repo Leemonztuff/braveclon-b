@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { UnitTemplate, UNIT_DATABASE, Stats, QR_REWARD_TABLE, GACHA_POOL, EQUIPMENT_DATABASE, EquipSlot, STAGES, getExpForLevel } from './gameData';
+import { UnitTemplate, UNIT_DATABASE, Stats, QR_REWARD_TABLE, GACHA_POOL, EQUIPMENT_DATABASE, EquipSlot, STAGES, getExpForLevel, getFusionCost, getFusionExpGain, getEvolutionCost } from './gameData';
 import { UnitInstance, EquipInstance, QRState, PlayerState, INITIAL_STATE } from './gameTypes';
 
 export * from './gameTypes';
@@ -54,7 +54,7 @@ export function useGameState() {
         if (!parsed.equipmentInventory) {
           parsed.equipmentInventory = INITIAL_STATE.equipmentInventory;
         }
-        parsed.inventory.forEach((unit: any) => {
+        parsed.inventory.forEach((unit: UnitInstance) => {
           if (!unit.equipment) {
             unit.equipment = { weapon: null, armor: null, accessory: null };
           }
@@ -211,7 +211,7 @@ export function useGameState() {
     }
 
     let rewardType = selectedReward.type;
-    let rewardValue: any = 0;
+    let rewardValue: number | string = 0;
     let rewardMessage = '';
 
     if (rewardType === 'zel') {
@@ -242,6 +242,11 @@ export function useGameState() {
       
       rewardValue = selectedUnitId;
       rewardMessage = `Summoned a new unit: ${UNIT_DATABASE[selectedUnitId].name}!`;
+    } else if (rewardType === 'equipment') {
+      const equipKeys = Object.keys(EQUIPMENT_DATABASE);
+      const selectedEquipId = equipKeys[hashString(hash + "equip") % equipKeys.length];
+      rewardValue = selectedEquipId;
+      rewardMessage = `Found equipment: ${EQUIPMENT_DATABASE[selectedEquipId].name}!`;
     }
 
     // Apply updates
@@ -258,10 +263,16 @@ export function useGameState() {
       if (rewardType === 'unit') {
         newState.inventory = [...newState.inventory, {
           instanceId: `inst_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-          templateId: rewardValue as any,
+          templateId: rewardValue as string,
           level: 1,
           exp: 0,
           equipment: { weapon: null, armor: null, accessory: null }
+        }];
+      }
+      if (rewardType === 'equipment') {
+        newState.equipmentInventory = [...newState.equipmentInventory, {
+          instanceId: `eq_inst_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+          templateId: rewardValue as string
         }];
       }
 
@@ -320,11 +331,26 @@ export function useGameState() {
 
     let leveledUpUnits: { name: string, oldLevel: number, newLevel: number }[] = [];
     let playerLeveledUp = false;
+    let equipmentDropped: string[] = [];
 
     setState(prev => {
       const newState = { ...prev };
       newState.zel += stage.zelReward;
       newState.exp += stage.expReward;
+
+      // Equipment drops
+      if (stage.equipmentDrops && stage.equipmentDrops.length > 0) {
+        const dropChance = stage.equipmentDropChance ?? 0.3;
+        stage.equipmentDrops.forEach(dropId => {
+          if (Math.random() < dropChance) {
+            equipmentDropped.push(dropId);
+            newState.equipmentInventory = [
+              ...newState.equipmentInventory,
+              { instanceId: `eq_inst_${Date.now()}_${Math.floor(Math.random() * 1000)}`, templateId: dropId }
+            ];
+          }
+        });
+      }
 
       // Level up player if needed
       while (newState.exp >= getExpForLevel(newState.level)) {
@@ -371,7 +397,8 @@ export function useGameState() {
       zel: stage.zelReward,
       exp: stage.expReward,
       playerLeveledUp,
-      leveledUpUnits
+      leveledUpUnits,
+      equipmentDropped
     };
   };
 
@@ -394,16 +421,13 @@ export function useGameState() {
       const materials = prev.inventory.filter(u => materialInstanceIds.includes(u.instanceId));
       if (materials.length === 0) return prev;
 
-      const cost = targetUnit.level * 100 * materials.length;
+      const cost = getFusionCost(targetUnit.level, materials.length);
       if (prev.zel < cost) return prev;
 
       // Calculate EXP
       materials.forEach(mat => {
         const matTemplate = UNIT_DATABASE[mat.templateId];
-        let exp = matTemplate.rarity * 500 + mat.level * 50;
-        if (matTemplate.element === targetTemplate.element) {
-          exp = Math.floor(exp * 1.5);
-        }
+        let exp = getFusionExpGain(matTemplate.rarity, mat.level, matTemplate.element === targetTemplate.element);
         expGained += exp;
       });
 
@@ -443,6 +467,70 @@ export function useGameState() {
     return { success, expGained, leveledUp, oldLevel, newLevel };
   };
 
+  const evolveUnit = (targetInstanceId: string, materialInstanceIds: string[]) => {
+    let success = false;
+    let newTemplateId = '';
+
+    setState(prev => {
+      const targetIndex = prev.inventory.findIndex(u => u.instanceId === targetInstanceId);
+      if (targetIndex === -1) return prev;
+      
+      const targetUnit = prev.inventory[targetIndex];
+      const targetTemplate = UNIT_DATABASE[targetUnit.templateId];
+      
+      if (targetUnit.level < targetTemplate.maxLevel) return prev;
+      if (!targetTemplate.evolutionTarget || !targetTemplate.evolutionMaterials) return prev;
+
+      const materials = prev.inventory.filter(u => materialInstanceIds.includes(u.instanceId));
+      if (materials.length !== targetTemplate.evolutionMaterials.length) return prev;
+
+      // Verify materials match required templates
+      const requiredMats = [...targetTemplate.evolutionMaterials];
+      const providedMats = materials.map(m => m.templateId);
+      
+      let matsMatch = true;
+      for (const req of requiredMats) {
+        const idx = providedMats.indexOf(req);
+        if (idx !== -1) {
+          providedMats.splice(idx, 1);
+        } else {
+          matsMatch = false;
+          break;
+        }
+      }
+
+      if (!matsMatch) return prev;
+
+      // Evolution cost
+      const cost = getEvolutionCost(targetTemplate.rarity);
+      if (prev.zel < cost) return prev;
+
+      const newState = { ...prev };
+      newState.zel -= cost;
+
+      // Remove materials
+      newState.inventory = newState.inventory.filter(u => !materialInstanceIds.includes(u.instanceId));
+      newState.team = newState.team.map(id => materialInstanceIds.includes(id!) ? null : id);
+
+      // Evolve target
+      const updatedTarget = { ...targetUnit };
+      updatedTarget.templateId = targetTemplate.evolutionTarget;
+      updatedTarget.level = 1;
+      updatedTarget.exp = 0;
+      newTemplateId = targetTemplate.evolutionTarget;
+
+      const newTargetIndex = newState.inventory.findIndex(u => u.instanceId === targetInstanceId);
+      if (newTargetIndex !== -1) {
+        newState.inventory[newTargetIndex] = updatedTarget;
+      }
+
+      success = true;
+      return newState;
+    });
+
+    return { success, newTemplateId };
+  };
+
   return {
     state,
     isLoaded,
@@ -457,6 +545,7 @@ export function useGameState() {
     equipItem,
     unequipItem,
     winBattle,
-    fuseUnits
+    fuseUnits,
+    evolveUnit
   };
 }

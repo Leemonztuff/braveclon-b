@@ -1,24 +1,29 @@
+/* eslint-disable @next/next/no-img-element */
 import { useState } from 'react';
 import { PlayerState, calculateStats } from '@/lib/gameState';
-import { UNIT_DATABASE, EQUIPMENT_DATABASE, EquipSlot, getExpForLevel } from '@/lib/gameData';
-import { Shield, Sword, Gem, X, Zap } from 'lucide-react';
+import { UNIT_DATABASE, EQUIPMENT_DATABASE, EquipSlot, getExpForLevel, ELEMENT_ICONS } from '@/lib/gameData';
+import { Shield, Sword, Gem, X, Zap, Scale } from 'lucide-react';
 
 export default function UnitsScreen({ 
   state, 
   setTeamMember,
   equipItem,
   unequipItem,
-  onNavigateToFusion
+  onNavigateToFusion,
+  onNavigateToEvolution
 }: { 
   state: PlayerState, 
   setTeamMember: (index: number, id: string | null) => void,
   equipItem: (unitId: string, equipId: string, slot: EquipSlot) => void,
   unequipItem: (unitId: string, slot: EquipSlot) => void,
-  onNavigateToFusion?: (unitId: string) => void
+  onNavigateToFusion?: (unitId: string) => void,
+  onNavigateToEvolution?: (unitId: string) => void
 }) {
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [inspectUnitId, setInspectUnitId] = useState<string | null>(null);
   const [equipModalSlot, setEquipModalSlot] = useState<EquipSlot | null>(null);
+  const [compareUnitId, setCompareUnitId] = useState<string | null>(null);
+  const [isSelectingCompare, setIsSelectingCompare] = useState(false);
 
   const handleSelectUnit = (instanceId: string) => {
     if (selectedSlot !== null) {
@@ -53,7 +58,12 @@ export default function UnitsScreen({
                 }`}
               >
                 {template ? (
-                  <img src={template.spriteUrl} alt={template.name} className="w-full h-full object-cover" />
+                  <img 
+                    src={template.spriteUrl} 
+                    alt={template.name} 
+                    className="w-full h-full object-cover scale-[2.5] origin-[50%_20%]" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
                 ) : (
                   <span className="text-zinc-600 text-xs font-bold">EMPTY</span>
                 )}
@@ -100,12 +110,20 @@ export default function UnitsScreen({
                 }}
               >
                 <div className="w-12 h-12 rounded bg-zinc-800 overflow-hidden relative border border-zinc-700">
-                  <img src={template.spriteUrl} alt={template.name} className="w-full h-full object-cover" />
+                  <img 
+                    src={template.spriteUrl} 
+                    alt={template.name} 
+                    className="w-full h-full object-cover scale-[2.5] origin-[50%_20%]" 
+                    style={{ imageRendering: 'pixelated' }}
+                  />
                   {inTeam && <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-[10px] font-bold text-yellow-400">IN TEAM</div>}
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between items-baseline">
-                    <span className="font-bold text-sm text-zinc-200">{template.name}</span>
+                    <span className="font-bold text-sm text-zinc-200 flex items-center gap-1">
+                      <span>{ELEMENT_ICONS[template.element]}</span>
+                      {template.name}
+                    </span>
                     <span className="text-[10px] font-mono text-zinc-500">Lv.{inst.level}/{template.maxLevel}</span>
                   </div>
                   <div className="w-full bg-zinc-950 h-1.5 rounded-full mt-1 overflow-hidden">
@@ -140,7 +158,7 @@ export default function UnitsScreen({
           {/* Header */}
           <div className="flex justify-between items-center p-4 border-b border-zinc-800 bg-zinc-900 shadow-md">
             <h3 className="font-black italic text-lg text-zinc-100 uppercase tracking-wider">Unit Details</h3>
-            <button onClick={() => setInspectUnitId(null)} className="text-zinc-400 hover:text-white p-1 bg-zinc-800 rounded-full">
+            <button onClick={() => { setInspectUnitId(null); setCompareUnitId(null); setIsSelectingCompare(false); }} className="text-zinc-400 hover:text-white p-1 bg-zinc-800 rounded-full">
               <X size={20} />
             </button>
           </div>
@@ -151,6 +169,14 @@ export default function UnitsScreen({
               const unit = state.inventory.find(u => u.instanceId === inspectUnitId)!;
               const template = UNIT_DATABASE[unit.templateId];
               const stats = calculateStats(template, unit.level, unit.equipment, state.equipmentInventory);
+              const baseStats = calculateStats(template, unit.level, { weapon: null, armor: null, accessory: null }, []);
+              const bonusStats = {
+                hp: stats.hp - baseStats.hp,
+                atk: stats.atk - baseStats.atk,
+                def: stats.def - baseStats.def,
+                rec: stats.rec - baseStats.rec,
+              };
+              const hasBonus = bonusStats.hp !== 0 || bonusStats.atk !== 0 || bonusStats.def !== 0 || bonusStats.rec !== 0;
               
               return (
                 <>
@@ -165,7 +191,10 @@ export default function UnitsScreen({
                         <span key={i} className="text-yellow-400 text-lg">★</span>
                       ))}
                     </div>
-                    <h2 className="text-2xl font-black text-white tracking-wide">{template.name}</h2>
+                    <h2 className="text-2xl font-black text-white tracking-wide flex items-center gap-2">
+                      <span>{ELEMENT_ICONS[template.element]}</span>
+                      {template.name}
+                    </h2>
                     <div className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-4">{template.element} Element</div>
                     
                     <div className="w-full max-w-xs">
@@ -181,24 +210,74 @@ export default function UnitsScreen({
                           style={{ width: `${unit.level >= template.maxLevel ? 100 : (unit.exp / getExpForLevel(unit.level)) * 100}%` }}
                         />
                       </div>
-                      <button
-                        onClick={() => onNavigateToFusion && onNavigateToFusion(unit.instanceId)}
-                        className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
-                      >
-                        <Zap size={16} /> Fuse Units
-                      </button>
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => onNavigateToFusion && onNavigateToFusion(unit.instanceId)}
+                          className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
+                        >
+                          <Zap size={16} /> Fuse Units
+                        </button>
+                        {unit.level >= template.maxLevel && template.evolutionTarget && (
+                          <button
+                            onClick={() => onNavigateToEvolution && onNavigateToEvolution(unit.instanceId)}
+                            className="w-full py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-lg font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-colors shadow-[0_0_10px_rgba(168,85,247,0.3)]"
+                          >
+                            <span className="text-lg">✨</span> Evolve Unit
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setIsSelectingCompare(true)}
+                          className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
+                        >
+                          <Scale size={16} /> Compare Stats
+                        </button>
+                      </div>
                     </div>
                   </div>
 
                   {/* Stats Section */}
                   <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
-                    <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-3">Combat Stats</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      <StatBox label="HP" value={stats.hp} color="text-red-400" bg="bg-red-500/10" />
-                      <StatBox label="ATK" value={stats.atk} color="text-orange-400" bg="bg-orange-500/10" />
-                      <StatBox label="DEF" value={stats.def} color="text-blue-400" bg="bg-blue-500/10" />
-                      <StatBox label="REC" value={stats.rec} color="text-emerald-400" bg="bg-emerald-500/10" />
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider">Combat Stats</h3>
+                      {compareUnitId && (
+                        <button onClick={() => setCompareUnitId(null)} className="text-xs font-bold text-red-400 hover:text-red-300">
+                          CLEAR COMPARE
+                        </button>
+                      )}
                     </div>
+                    {compareUnitId ? (
+                      <div className="flex flex-col gap-3">
+                        {(() => {
+                          const compareUnit = state.inventory.find(u => u.instanceId === compareUnitId)!;
+                          const compareTemplate = UNIT_DATABASE[compareUnit.templateId];
+                          const compareStats = calculateStats(compareTemplate, compareUnit.level, compareUnit.equipment, state.equipmentInventory);
+                          return (
+                            <>
+                              <div className="flex items-center justify-between px-2 mb-1">
+                                <div className="text-xs font-bold text-zinc-400 w-16 text-right">THIS UNIT</div>
+                                <div className="flex items-center gap-2 bg-zinc-800 px-2 py-1 rounded-lg border border-zinc-700">
+                                  <img src={compareTemplate.spriteUrl} alt={compareTemplate.name} className="w-6 h-6 object-contain" />
+                                  <div className="text-[10px] font-bold text-white">{compareTemplate.name} Lv.{compareUnit.level}</div>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 gap-2">
+                                <CompareStatRow label="HP" val1={stats.hp} val2={compareStats.hp} color="text-red-400" />
+                                <CompareStatRow label="ATK" val1={stats.atk} val2={compareStats.atk} color="text-orange-400" />
+                                <CompareStatRow label="DEF" val1={stats.def} val2={compareStats.def} color="text-blue-400" />
+                                <CompareStatRow label="REC" val1={stats.rec} val2={compareStats.rec} color="text-emerald-400" />
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        <StatBox label="HP" value={stats.hp} color="text-red-400" bg="bg-red-500/10" />
+                        <StatBox label="ATK" value={stats.atk} color="text-orange-400" bg="bg-orange-500/10" />
+                        <StatBox label="DEF" value={stats.def} color="text-blue-400" bg="bg-blue-500/10" />
+                        <StatBox label="REC" value={stats.rec} color="text-emerald-400" bg="bg-emerald-500/10" />
+                      </div>
+                    )}
                   </div>
 
                   {/* Skill Section */}
@@ -252,6 +331,17 @@ export default function UnitsScreen({
                         onUnequip={() => unequipItem(unit.instanceId, 'accessory')}
                       />
                     </div>
+                    {hasBonus && (
+                      <div className="mt-4 p-3 bg-zinc-950 rounded-xl border border-zinc-800">
+                        <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Total Equipment Bonus</div>
+                        <div className="flex flex-wrap gap-2">
+                          {bonusStats.hp !== 0 && <span className="text-xs font-bold px-2 py-1 rounded text-red-400 bg-red-500/10">{bonusStats.hp > 0 ? '+' : ''}{bonusStats.hp} HP</span>}
+                          {bonusStats.atk !== 0 && <span className="text-xs font-bold px-2 py-1 rounded text-orange-400 bg-orange-500/10">{bonusStats.atk > 0 ? '+' : ''}{bonusStats.atk} ATK</span>}
+                          {bonusStats.def !== 0 && <span className="text-xs font-bold px-2 py-1 rounded text-blue-400 bg-blue-500/10">{bonusStats.def > 0 ? '+' : ''}{bonusStats.def} DEF</span>}
+                          {bonusStats.rec !== 0 && <span className="text-xs font-bold px-2 py-1 rounded text-emerald-400 bg-emerald-500/10">{bonusStats.rec > 0 ? '+' : ''}{bonusStats.rec} REC</span>}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </>
               );
@@ -314,11 +404,54 @@ export default function UnitsScreen({
           </div>
         </div>
       )}
+
+      {/* Select Unit to Compare Modal */}
+      {isSelectingCompare && (
+        <div className="absolute inset-0 z-[70] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-sm flex flex-col shadow-2xl h-[80%]">
+            <div className="flex justify-between items-center p-4 border-b border-zinc-800 bg-zinc-950">
+              <h3 className="font-bold text-lg text-zinc-100 uppercase">Select Unit to Compare</h3>
+              <button onClick={() => setIsSelectingCompare(false)} className="text-zinc-500 hover:text-white">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+              {state.inventory.filter(u => u.instanceId !== inspectUnitId).map(u => {
+                const template = UNIT_DATABASE[u.templateId];
+                return (
+                  <button
+                    key={u.instanceId}
+                    onClick={() => {
+                      setCompareUnitId(u.instanceId);
+                      setIsSelectingCompare(false);
+                    }}
+                    className="flex items-center gap-3 p-3 bg-zinc-800 border border-zinc-700 rounded-xl hover:border-yellow-400 text-left transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded bg-zinc-900 overflow-hidden relative border border-zinc-700">
+                      <img src={template.spriteUrl} alt={template.name} className="w-full h-full object-cover scale-[2.5] origin-[50%_20%]" style={{ imageRendering: 'pixelated' }} />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-bold text-sm text-white flex items-center gap-1">
+                        <span>{ELEMENT_ICONS[template.element]}</span>
+                        {template.name}
+                      </div>
+                      <div className="text-[10px] text-zinc-400">Lv. {u.level}</div>
+                    </div>
+                  </button>
+                );
+              })}
+              {state.inventory.filter(u => u.instanceId !== inspectUnitId).length === 0 && (
+                <div className="text-center text-zinc-500 text-sm mt-10">No other units in inventory.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function EquipSlotButton({ unit, slot, icon, inventory, onClick, onUnequip }: { unit: any, slot: EquipSlot, icon: React.ReactNode, inventory: any[], onClick: () => void, onUnequip: () => void }) {
+function EquipSlotButton({ unit, slot, icon, inventory, onClick, onUnequip }: { unit: import('@/lib/gameState').UnitInstance, slot: EquipSlot, icon: React.ReactNode, inventory: import('@/lib/gameState').EquipmentInstance[], onClick: () => void, onUnequip: () => void }) {
   const equipId = unit.equipment[slot];
   const equipInst = equipId ? inventory.find(e => e.instanceId === equipId) : null;
   const template = equipInst ? EQUIPMENT_DATABASE[equipInst.templateId] : null;
@@ -356,6 +489,22 @@ function StatBox({ label, value, color, bg }: { label: string, value: number, co
     <div className={`flex flex-col p-3 rounded-xl border border-zinc-800/50 ${bg}`}>
       <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">{label}</span>
       <span className={`text-lg font-black font-mono ${color}`}>{value}</span>
+    </div>
+  );
+}
+
+function CompareStatRow({ label, val1, val2, color }: { label: string, val1: number, val2: number, color: string }) {
+  const diff = val1 - val2;
+  return (
+    <div className="flex items-center justify-between p-2 bg-zinc-950 rounded-lg border border-zinc-800/50">
+      <span className={`text-sm font-black font-mono ${color} w-16 text-right`}>{val1}</span>
+      <div className="flex flex-col items-center w-16">
+        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">{label}</span>
+        {diff > 0 ? <span className="text-emerald-400 text-[10px] font-bold">+{diff}</span> : 
+         diff < 0 ? <span className="text-red-400 text-[10px] font-bold">{diff}</span> : 
+         <span className="text-zinc-600 text-[10px] font-bold">-</span>}
+      </div>
+      <span className={`text-sm font-black font-mono text-zinc-400 w-16 text-left`}>{val2}</span>
     </div>
   );
 }

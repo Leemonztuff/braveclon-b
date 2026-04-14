@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
+import { ELEMENT_PARTICLE_COLORS, Element } from '@/lib/gameData';
+
+interface Particle {
+  x: number;
+  y: number;
+  color: string;
+  duration: number;
+  id: number;
+}
 
 export function ElementalParticles({ element }: { element: string }) {
-  const [particles] = useState<any[]>(() => {
-    const colors = {
-      Fire: ['bg-red-500', 'bg-orange-500', 'bg-yellow-500'],
-      Water: ['bg-blue-500', 'bg-cyan-400', 'bg-white'],
-      Earth: ['bg-green-500', 'bg-emerald-400', 'bg-lime-400'],
-      Thunder: ['bg-yellow-400', 'bg-amber-300', 'bg-white'],
-      Light: ['bg-yellow-200', 'bg-white', 'bg-amber-100'],
-      Dark: ['bg-purple-600', 'bg-fuchsia-500', 'bg-black'],
-    };
-    const palette = colors[element as keyof typeof colors] || colors.Light;
+  const [particles] = useState<Particle[]>(() => {
+    const palette = ELEMENT_PARTICLE_COLORS[element as Element] || ELEMENT_PARTICLE_COLORS.Light;
 
     return Array.from({ length: 20 }).map((_, i) => {
       const angle = (Math.PI * 2 * i) / 20;

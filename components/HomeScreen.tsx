@@ -1,6 +1,6 @@
 import Image from 'next/image';
 
-export default function HomeScreen({ onNavigate }: { onNavigate: (screen: any) => void }) {
+export default function HomeScreen({ onNavigate }: { onNavigate: (screen: 'home' | 'quest' | 'units' | 'battle' | 'qrhunt') => void }) {
   return (
     <div className="flex flex-col items-center justify-center h-full p-4 gap-6">
       <div className="text-center space-y-2">

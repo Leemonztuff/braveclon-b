@@ -1,6 +1,6 @@
-export const playSound = (type: 'hit' | 'bb_cast' | 'bb_hit' | 'weakness') => {
+export const playSound = (type: 'hit' | 'bb_cast' | 'bb_hit' | 'weakness' | 'bb_ready' | 'heal') => {
   try {
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
     if (!AudioContext) return;
     const ctx = new AudioContext();
     const osc = ctx.createOscillator();
@@ -20,6 +20,25 @@ export const playSound = (type: 'hit' | 'bb_cast' | 'bb_hit' | 'weakness') => {
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
       osc.start(now);
       osc.stop(now + 0.5);
+    } else if (type === 'bb_ready') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.setValueAtTime(800, now + 0.1);
+      osc.frequency.setValueAtTime(1200, now + 0.2);
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.1, now + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+      osc.start(now);
+      osc.stop(now + 0.4);
+    } else if (type === 'heal') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, now);
+      osc.frequency.exponentialRampToValueAtTime(800, now + 0.3);
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.1, now + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+      osc.start(now);
+      osc.stop(now + 0.4);
     } else if (type === 'bb_hit') {
       osc.type = 'square';
       osc.frequency.setValueAtTime(100, now);

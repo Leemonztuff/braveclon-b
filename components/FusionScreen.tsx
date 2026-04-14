@@ -1,6 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 import { useState } from 'react';
 import { PlayerState } from '@/lib/gameState';
-import { UNIT_DATABASE, getExpForLevel } from '@/lib/gameData';
+import { UNIT_DATABASE, getExpForLevel, getFusionCost, getFusionExpGain } from '@/lib/gameData';
 import { X, Zap, ArrowRight, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -14,12 +15,12 @@ export default function FusionScreen({
   state: PlayerState, 
   targetInstanceId: string, 
   onBack: () => void, 
-  fuseUnits: (targetId: string, materialIds: string[]) => any,
+  fuseUnits: (targetId: string, materialIds: string[]) => { success: boolean; message: string; expGained?: number; levelUp?: boolean; oldLevel?: number; newLevel?: number },
   onAlert: (msg: string) => void
 }) {
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [isFusing, setIsFusing] = useState(false);
-  const [fusionResult, setFusionResult] = useState<any>(null);
+  const [fusionResult, setFusionResult] = useState<{ success: boolean; message: string; expGained?: number; levelUp?: boolean; oldLevel?: number; newLevel?: number } | null>(null);
 
   const targetUnit = state.inventory.find(u => u.instanceId === targetInstanceId);
   if (!targetUnit) {
@@ -33,17 +34,14 @@ export default function FusionScreen({
   // Calculate projected stats
   let projectedExp = targetUnit.exp;
   let projectedLevel = targetUnit.level;
-  let cost = targetUnit.level * 100 * selectedMaterials.length;
+  let cost = getFusionCost(targetUnit.level, selectedMaterials.length);
 
   selectedMaterials.forEach(matId => {
     const matUnit = state.inventory.find(u => u.instanceId === matId);
     if (!matUnit) return;
     const matTemplate = UNIT_DATABASE[matUnit.templateId];
     
-    let exp = matTemplate.rarity * 500 + matUnit.level * 50;
-    if (matTemplate.element === targetTemplate.element) {
-      exp = Math.floor(exp * 1.5);
-    }
+    let exp = getFusionExpGain(matTemplate.rarity, matUnit.level, matTemplate.element === targetTemplate.element);
     projectedExp += exp;
   });
 
@@ -108,8 +106,13 @@ export default function FusionScreen({
         <div className="p-4 bg-zinc-900 border-b border-zinc-800 flex items-center gap-4 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl" />
           
-          <div className="w-20 h-20 bg-zinc-800 rounded-xl border-2 border-blue-500/50 flex items-center justify-center relative z-10">
-            <img src={targetTemplate.spriteUrl} alt={targetTemplate.name} className="w-16 h-16 object-contain" style={{ imageRendering: 'pixelated' }} />
+          <div className="w-20 h-20 bg-zinc-800 rounded-xl border-2 border-blue-500/50 relative overflow-hidden z-10">
+            <img 
+              src={targetTemplate.spriteUrl} 
+              alt={targetTemplate.name} 
+              className="w-full h-full object-cover scale-[2.5] origin-[50%_20%]" 
+              style={{ imageRendering: 'pixelated' }} 
+            />
           </div>
           
           <div className="flex-1 z-10">
@@ -188,7 +191,12 @@ export default function FusionScreen({
                         : 'border-zinc-800 bg-zinc-900 hover:border-zinc-600'
                     }`}
                   >
-                    <img src={template.spriteUrl} alt={template.name} className="w-full h-full object-cover" style={{ imageRendering: 'pixelated' }} />
+                    <img 
+                      src={template.spriteUrl} 
+                      alt={template.name} 
+                      className="w-full h-full object-cover scale-[2.5] origin-[50%_20%]" 
+                      style={{ imageRendering: 'pixelated' }} 
+                    />
                     <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-[8px] font-bold text-center py-0.5">
                       Lv.{unit.level}
                     </div>
