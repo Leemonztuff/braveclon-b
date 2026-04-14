@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { BattleUnit } from '@/lib/battleTypes';
 import { ElementalParticles } from './ElementalParticles';
 
-export function UnitSprite({ unit, onClick, interactive, hitEffectElement, hideStats }: { unit: BattleUnit, onClick?: () => void, interactive?: boolean, hitEffectElement?: string | null, hideStats?: boolean }) {
+export function UnitSprite({ unit, onClick, interactive, hitEffectElement, hideStats, isItemSelected }: { unit: BattleUnit, onClick?: () => void, interactive?: boolean, hitEffectElement?: string | null, hideStats?: boolean, isItemSelected?: boolean }) {
   const hpPercent = (unit.hp / unit.maxHp) * 100;
   const bbPercent = (unit.bbGauge / unit.maxBb) * 100;
   const isBbReady = unit.bbGauge >= unit.maxBb;

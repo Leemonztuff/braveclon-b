@@ -12,7 +12,7 @@ import QRHuntScreen from '@/components/QRHuntScreen';
 import FusionScreen from '@/components/FusionScreen';
 import { STAGES } from '@/lib/gameData';
 
-type Screen = 'home' | 'units' | 'summon' | 'quest' | 'battle' | 'qrhunt' | 'fusion';
+type Screen = 'home' | 'units' | 'summon' | 'quest' | 'battle' | 'qrhunt' | 'fusion' | 'shop' | 'arena' | 'randall' | 'friends';
 
 const TAB_ITEMS = [
   { id: 'home', label: 'Home', icon: Home },
@@ -95,10 +95,6 @@ export default function GameApp() {
     setCurrentScreen(screen);
   };
 
-  const playerTeam = state.team
-    .map(id => state.inventory.find(u => u.instanceId === id!))
-    .filter((u): u is NonNullable<typeof u> => Boolean(u));
-
   return (
     <div className="flex h-[100dvh] w-full flex-col bg-zinc-950 text-zinc-100">
       <div className="relative flex h-full w-full flex-col overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950 safe-area">
@@ -136,7 +132,7 @@ export default function GameApp() {
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="w-full h-full animate-fadeIn">
-            {currentScreen === 'home' && <HomeScreen onNavigate={handleNavigation} />}
+            {currentScreen === 'home' && <HomeScreen state={state} onNavigate={handleNavigation} onStartBattle={startBattle} timeToNextEnergy={timeToNextEnergy} />}
             {currentScreen === 'units' && (
               <UnitsScreen
                 state={state}
@@ -188,10 +184,9 @@ export default function GameApp() {
             )}
             {currentScreen === 'battle' && battleStage !== null && (
               <BattleScreen
-                stage={STAGES.find(s => s.id === battleStage)!}
-                playerTeam={playerTeam}
-                equipmentInventory={state.equipmentInventory}
-                onBattleEnd={endBattle}
+                state={state}
+                stageId={battleStage}
+                onEnd={endBattle}
               />
             )}
           </div>

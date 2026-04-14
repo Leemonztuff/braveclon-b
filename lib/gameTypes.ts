@@ -24,6 +24,8 @@ export interface QRState {
 }
 
 export interface PlayerState {
+  playerName: string;
+  rank: number;
   level: number;
   exp: number;
   energy: number;
@@ -44,6 +46,8 @@ export interface PlayerState {
 }
 
 export const INITIAL_STATE: PlayerState = {
+  playerName: 'Summoner',
+  rank: 1,
   level: 1,
   exp: 0,
   energy: 10,

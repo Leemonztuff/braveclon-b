@@ -598,6 +598,7 @@ export function useGameState() {
     unequipItem,
     winBattle,
     fuseUnits,
-    evolveUnit
+    evolveUnit,
+    unitTemplates: UNIT_DATABASE
   };
 }

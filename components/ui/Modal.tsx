@@ -10,6 +10,33 @@ export interface ModalProps {
   showCloseButton?: boolean;
 }
 
+export interface ModalActionButtonProps {
+  onClick: () => void;
+  label: string;
+  variant?: 'primary' | 'secondary' | 'danger';
+}
+
+export const ModalActionButton: React.FC<ModalActionButtonProps> = ({ 
+  onClick, 
+  label, 
+  variant = 'primary' 
+}) => {
+  const variantStyles = {
+    primary: 'bg-amber-400 hover:bg-amber-300 text-black',
+    secondary: 'bg-zinc-700 hover:bg-zinc-600 text-white',
+    danger: 'bg-red-500 hover:bg-red-400 text-white',
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      className={`px-6 py-2 rounded-xl font-bold transition-colors ${variantStyles[variant]}`}
+    >
+      {label}
+    </button>
+  );
+};
+
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,

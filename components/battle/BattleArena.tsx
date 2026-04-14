@@ -63,7 +63,7 @@ export function BattleArena({ battleState }: { battleState: BattleStateData }) {
           <div key={unit.id} className="flex justify-center w-[64px]">
             <UnitSprite 
               unit={unit} 
-              hideStatusBars={true}
+              hideStats={true}
               onClick={() => handleUnitClick(unit.id)}
               interactive={turnState === 'player_input'}
               isItemSelected={!!selectedItem}
