@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useGameState } from '@/lib/gameState';
-import { Home, Users, Sparkles, Swords, QrCode, Wand2, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import HomeScreen from '@/components/HomeScreen';
+import RandallScreen from '@/components/RandallScreen';
 import SummonScreen from '@/components/SummonScreen';
 import UnitsScreen from '@/components/UnitsScreen';
 import QuestScreen from '@/components/QuestScreen';
@@ -14,16 +15,8 @@ import { STAGES } from '@/lib/gameData';
 
 type Screen = 'home' | 'units' | 'summon' | 'quest' | 'battle' | 'qrhunt' | 'fusion' | 'shop' | 'arena' | 'randall' | 'friends';
 
-const TAB_ITEMS = [
-  { id: 'home', label: 'Home', icon: Home },
-  { id: 'quest', label: 'Quest', icon: Swords },
-  { id: 'summon', label: 'Summon', icon: Sparkles },
-  { id: 'units', label: 'Units', icon: Users },
-  { id: 'qrhunt', label: 'QR', icon: QrCode },
-] as const;
-
 export default function GameApp() {
-  const { state, isLoaded, timeToNextEnergy, addUnit, setTeamMember, spendGems, spendEnergy, processQrScan, rollGacha, equipItem, unequipItem, winBattle, fuseUnits } = useGameState();
+  const { state, isLoaded, timeToNextEnergy, updateState, addUnit, setTeamMember, spendGems, spendEnergy, processQrScan, rollGacha, equipItem, unequipItem, winBattle, fuseUnits } = useGameState();
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
   const [battleStage, setBattleStage] = useState<number | null>(null);
   const [fusionTargetId, setFusionTargetId] = useState<string | null>(null);
@@ -159,6 +152,40 @@ export default function GameApp() {
               />
             )}
             {currentScreen === 'quest' && <QuestScreen onStartBattle={startBattle} />}
+            {currentScreen === 'shop' && (
+              <RandallScreen 
+                state={state} 
+                onBack={() => setCurrentScreen('home')}
+                onPurchase={(price, currency) => {
+                  if (currency === 'zel' && state.zel >= price) {
+                    updateState({ zel: state.zel - price });
+                    return true;
+                  }
+                  if (currency === 'gems' && state.gems >= price) {
+                    updateState({ gems: state.gems - price });
+                    return true;
+                  }
+                  return false;
+                }}
+              />
+            )}
+            {currentScreen === 'randall' && (
+              <RandallScreen 
+                state={state} 
+                onBack={() => setCurrentScreen('home')}
+                onPurchase={(price, currency) => {
+                  if (currency === 'zel' && state.zel >= price) {
+                    updateState({ zel: state.zel - price });
+                    return true;
+                  }
+                  if (currency === 'gems' && state.gems >= price) {
+                    updateState({ gems: state.gems - price });
+                    return true;
+                  }
+                  return false;
+                }}
+              />
+            )}
             {currentScreen === 'qrhunt' && (
               <QRHuntScreen
                 state={state}
@@ -192,28 +219,7 @@ export default function GameApp() {
           </div>
         </div>
 
-        {currentScreen !== 'battle' && (
-          <nav className="bg-zinc-950 border-t border-zinc-800/50 safe-area-bottom">
-            <div className="grid grid-cols-5 gap-0">
-              {TAB_ITEMS.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => handleNavigation(id as Screen)}
-                  className={`flex flex-col items-center justify-center py-3 px-2 transition-all ${
-                    currentScreen === id
-                      ? 'bg-gradient-to-t from-zinc-800/50 to-transparent text-amber-400'
-                      : 'text-zinc-500 hover:text-zinc-300'
-                  }`}
-                  aria-label={label}
-                  aria-current={currentScreen === id ? 'page' : undefined}
-                >
-                  <Icon size={24} className="mb-1" />
-                  <span className="text-xs font-semibold tracking-wide">{label}</span>
-                </button>
-              ))}
-            </div>
-          </nav>
-        )}
+        
 
         {showAlert && alertMessage && (
           <div className="fixed top-20 left-4 right-4 bg-red-950/90 backdrop-blur border border-red-800/50 rounded-lg p-3 shadow-lg animate-slideDown z-50">
