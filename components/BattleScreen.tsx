@@ -478,7 +478,7 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
                 animate={{ opacity: 1, scale: 1, y: 20 }}
                 exit={{ opacity: 0, scale: 0.6, y: 40 }}
                 transition={{ duration: 0.9, ease: 'easeOut' }}
-                className={`pointer-events-none absolute rounded-full border border-white/20 px-2 py-1 text-[10px] font-bold ${crystal.type === 'BC' ? 'bg-sky-500/90 text-white shadow-[0_0_20px_rgba(56,189,248,0.55)]' : 'bg-emerald-500/90 text-white shadow-[0_0_20px_rgba(16,185,129,0.55)]`}
+                className={`pointer-events-none absolute rounded-full border border-white/20 px-2 py-1 text-[10px] font-bold ${crystal.type === 'BC' ? 'bg-sky-500/90 text-white shadow-[0_0_20px_rgba(56,189,248,0.55)]' : 'bg-emerald-500/90 text-white shadow-[0_0_20px_rgba(16,185,129,0.55)]'}`}
                 style={{ left: crystal.left, top: crystal.top }}
               >
                 {crystal.type}
