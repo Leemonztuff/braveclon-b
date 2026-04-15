@@ -351,7 +351,10 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
 
   useEffect(() => {
     if (!autoBattle || turnState !== 'player_input') return;
-    executeTurn();
+    const timer = window.setTimeout(() => {
+      executeTurn();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [autoBattle, turnState, executeTurn]);
 
   const totalHp = playerUnits.reduce((sum, u) => sum + u.hp, 0);
