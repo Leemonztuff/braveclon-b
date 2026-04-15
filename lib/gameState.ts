@@ -336,16 +336,18 @@ export function useGameState(options: UseGameStateOptions = {}) {
   // ============================================================================
 
   const spendEnergy = useCallback((amount: number): boolean => {
-    let success = false;
+    let currentEnergy = 0;
     setState(prev => {
       if (prev.energy >= amount) {
-        success = true;
-        return { ...prev, energy: prev.energy - amount };
+        currentEnergy = prev.energy - amount;
+        return { ...prev, energy: currentEnergy };
       }
       return prev;
     });
-    return success;
-  }, []);
+    // Check if we had enough energy BEFORE the setState
+    const hadEnough = state.energy >= amount;
+    return hadEnough;
+  }, [state.energy]);
 
   const refillEnergy = useCallback((amount: number, useGems: boolean = false): boolean => {
     let success = false;
