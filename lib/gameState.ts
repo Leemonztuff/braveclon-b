@@ -1,37 +1,45 @@
 import { useState, useEffect, useCallback } from 'react';
 import { UnitTemplate, UNIT_DATABASE, Stats, QR_REWARD_TABLE, GACHA_POOL, EQUIPMENT_DATABASE, EquipSlot, STAGES, getExpForLevel, getFusionCost, getFusionExpGain, getEvolutionCost } from './gameData';
-import { UnitInstance, EquipInstance, QRState, PlayerState, INITIAL_STATE } from './gameTypes';
+import { 
+  PlayerState, 
+  INITIAL_STATE,
+  UnitInstance,
+  EquipInstance,
+  CurrencyType,
+  SummonResult,
+  DailyQuest,
+  WeeklyQuest,
+  MaterialType,
+  SubscriptionTier,
+  SummonPity,
+  GachaBanner,
+} from './economyTypes';
+import {
+  ENERGY_CONFIG,
+  ZEL_COSTS,
+  GEM_COSTS,
+  GACHA_CONFIG,
+  EQUIPMENT_COSTS,
+  ENHANCEMENT_RATES,
+  BALANCE_TARGETS,
+  IAP_TIERS,
+  SUBSCRIPTION_CONFIG,
+  BATTLE_PASS_CONFIG,
+} from './economyData';
 import { saveGameState, loadGameState } from './auth';
 
 export * from './gameTypes';
+export * from './economyTypes';
 
-const ENERGY_REGEN_MS = 3 * 60 * 1000; // 3 minutes in ms
+// ============================================================================
+// CONSTANTS
+// ============================================================================
 
-export function calculateStats(template: UnitTemplate, level: number, equipment?: UnitInstance['equipment'], equipInventory?: EquipInstance[]): Stats {
-  const base = {
-    hp: template.baseStats.hp + template.growthRate.hp * (level - 1),
-    atk: template.baseStats.atk + template.growthRate.atk * (level - 1),
-    def: template.baseStats.def + template.growthRate.def * (level - 1),
-    rec: template.baseStats.rec + template.growthRate.rec * (level - 1),
-  };
+const ENERGY_REGEN_MS = ENERGY_CONFIG.REGEN_MS;
 
-  if (equipment && equipInventory) {
-    const equipIds = [equipment.weapon, equipment.armor, equipment.accessory].filter(Boolean);
-    equipIds.forEach(eqInstId => {
-      const eqInst = equipInventory.find(e => e.instanceId === eqInstId);
-      if (eqInst) {
-        const eqTemplate = EQUIPMENT_DATABASE[eqInst.templateId];
-        if (eqTemplate && eqTemplate.statsBonus) {
-          base.hp += eqTemplate.statsBonus.hp || 0;
-          base.atk += eqTemplate.statsBonus.atk || 0;
-          base.def += eqTemplate.statsBonus.def || 0;
-          base.rec += eqTemplate.statsBonus.rec || 0;
-        }
-      }
-    });
-  }
-  return base;
-}
+// ============================================================================
+// MAIN HOOK
+// ============================================================================
 
 interface UseGameStateOptions {
   userId?: string | null;
@@ -47,46 +55,28 @@ export function useGameState(options: UseGameStateOptions = {}) {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // Load state - local first, then cloud if userId provided
+  // ============================================================================
+  // STATE LOADING
+  // ============================================================================
+
   useEffect(() => {
     const loadState = async () => {
-      // Always load local first for offline support
       const saved = localStorage.getItem('rpg_game_state');
       let loadedState: PlayerState | null = null;
       
       if (saved) {
         try {
           loadedState = JSON.parse(saved);
-          if (loadedState && !loadedState.lastEnergyUpdateTime) {
-            loadedState.lastEnergyUpdateTime = Date.now();
-          }
-          if (loadedState && !loadedState.qrState) {
-            loadedState.qrState = INITIAL_STATE.qrState;
-          } else if (loadedState && loadedState.qrState && !loadedState.qrState.scannedHashes) {
-            loadedState.qrState.scannedHashes = [];
-          }
-          if (loadedState && !loadedState.equipmentInventory) {
-            loadedState.equipmentInventory = INITIAL_STATE.equipmentInventory;
-          }
-          if (loadedState && loadedState.inventory) {
-            loadedState.inventory.forEach((unit: UnitInstance) => {
-              if (!unit.equipment) {
-                unit.equipment = { weapon: null, armor: null, accessory: null };
-              }
-            });
-          }
+          loadedState = migrateState(loadedState);
         } catch (e) {
           console.error('Failed to parse save data', e);
         }
       }
 
-      // If user is logged in, try to load from cloud
       if (userId && loadedState) {
         const cloudState = await loadGameState(userId);
         if (cloudState) {
-          // Prefer cloud state (more recent)
-          loadedState = cloudState;
-          // Also save locally to keep in sync
+          loadedState = migrateState(cloudState);
           localStorage.setItem('rpg_game_state', JSON.stringify(cloudState));
         }
       }
@@ -98,14 +88,83 @@ export function useGameState(options: UseGameStateOptions = {}) {
     loadState();
   }, [userId]);
 
-  // Auto-save to local storage
+  // ============================================================================
+  // STATE MIGRATION (Handle version updates)
+  // ============================================================================
+
+  function migrateState(oldState: any): PlayerState {
+    let migrated = { ...INITIAL_STATE, ...oldState };
+    
+    // Ensure required fields exist
+    if (!migrated.ownedUnitIds) {
+      migrated.ownedUnitIds = new Set(migrated.inventory?.map((u: any) => u.templateId) || []);
+    }
+    
+    if (!migrated.materials) {
+      migrated.materials = INITIAL_STATE.materials;
+    }
+    
+    if (!migrated.dailyState) {
+      migrated.dailyState = INITIAL_STATE.dailyState;
+    }
+    
+    if (!migrated.weeklyState) {
+      migrated.weeklyState = INITIAL_STATE.weeklyState;
+    }
+    
+    if (!migrated.battlePass) {
+      migrated.battlePass = INITIAL_STATE.battlePass;
+    }
+    
+    if (!migrated.subscription) {
+      migrated.subscription = INITIAL_STATE.subscription;
+    }
+    
+    if (!migrated.achievements) {
+      migrated.achievements = [];
+    }
+    
+    if (!migrated.stats) {
+      migrated.stats = INITIAL_STATE.stats;
+    }
+    
+    if (!migrated.arenaMedals) {
+      migrated.arenaMedals = 0;
+    }
+    
+    if (!migrated.guildCoins) {
+      migrated.guildCoins = 0;
+    }
+    
+    if (!migrated.honorPoints) {
+      migrated.honorPoints = 0;
+    }
+    
+    if (!migrated.summonPity) {
+      migrated.summonPity = INITIAL_STATE.summonPity;
+    }
+    
+    if (!migrated.qrState?.lifetimeScans) {
+      migrated.qrState = { ...INITIAL_STATE.qrState, ...migrated.qrState, lifetimeScans: migrated.qrState?.scansToday || 0 };
+    }
+    
+    // Check for daily/weekly reset
+    migrated = checkDailyReset(migrated);
+    migrated = checkWeeklyReset(migrated);
+    
+    return migrated;
+  }
+
+  // ============================================================================
+  // AUTO SAVE
+  // ============================================================================
+
   useEffect(() => {
     if (isLoaded && state) {
       localStorage.setItem('rpg_game_state', JSON.stringify(state));
     }
   }, [state, isLoaded]);
 
-  // Auto-save to cloud
   useEffect(() => {
     if (!isLoaded || !userId || !autoSave) return;
 
@@ -119,7 +178,6 @@ export function useGameState(options: UseGameStateOptions = {}) {
     return () => clearInterval(interval);
   }, [userId, isLoaded, autoSave, saveInterval, state]);
 
-  // Save on important events (unload, etc)
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (userId) {
@@ -131,7 +189,6 @@ export function useGameState(options: UseGameStateOptions = {}) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [userId, state]);
 
-  // Manual save function
   const saveToCloud = useCallback(async () => {
     if (!userId) return false;
     setIsSaving(true);
@@ -141,7 +198,10 @@ export function useGameState(options: UseGameStateOptions = {}) {
     return success;
   }, [userId, state]);
 
-  // Energy regeneration logic
+  // ============================================================================
+  // ENERGY REGENERATION
+  // ============================================================================
+
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -157,7 +217,9 @@ export function useGameState(options: UseGameStateOptions = {}) {
         
         if (timePassed >= ENERGY_REGEN_MS) {
           const energyToAdd = Math.floor(timePassed / ENERGY_REGEN_MS);
-          const newEnergy = Math.min(prev.maxEnergy, prev.energy + energyToAdd);
+          const subscriptionBonus = SUBSCRIPTION_CONFIG[prev.subscription.tier]?.dailyEnergyBonus || 0;
+          const effectiveMax = Math.min(prev.maxEnergy + subscriptionBonus, ENERGY_CONFIG.EMERGENCY_CAP);
+          const newEnergy = Math.min(effectiveMax, prev.energy + energyToAdd);
           const remainder = timePassed % ENERGY_REGEN_MS;
           
           setTimeToNextEnergy(ENERGY_REGEN_MS - remainder);
@@ -177,43 +239,883 @@ export function useGameState(options: UseGameStateOptions = {}) {
     return () => clearInterval(interval);
   }, [isLoaded]);
 
-  const updateState = (updates: Partial<PlayerState>) => {
-    setState(prev => ({ ...prev, ...updates }));
-  };
+  // ============================================================================
+  // DAILY/WEEKLY RESET CHECKS
+  // ============================================================================
 
-  const addUnit = (templateId: string): UnitInstance => {
-    const newUnit: UnitInstance = {
-      instanceId: `inst_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      templateId,
-      level: 1,
-      exp: 0,
-      equipment: { weapon: null, armor: null, accessory: null }
-    };
-    setState(prev => ({ ...prev, inventory: [...prev.inventory, newUnit] }));
-    return newUnit;
-  };
+  function checkDailyReset(currentState: PlayerState): PlayerState {
+    const today = new Date().toISOString().split('T')[0];
+    
+    if (currentState.dailyState.lastResetDate !== today) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      
+      const isConsecutive = currentState.dailyState.lastLoginDate === yesterdayStr;
+      const newStreak = isConsecutive ? currentState.dailyState.loginStreak + 1 : 1;
+      
+      // Check for weekly login bonus (day 7)
+      const weeklyBonus = newStreak % 7 === 0 ? 50 : 0;
+      
+      return {
+        ...currentState,
+        energy: Math.min(currentState.energy + ENERGY_CONFIG.DAILY_BONUS_ENERGY + weeklyBonus, currentState.maxEnergy),
+        gems: currentState.gems + 5 + weeklyBonus, // Daily login bonus
+        dailyState: {
+          ...currentState.dailyState,
+          lastResetDate: today,
+          lastLoginDate: today,
+          loginStreak: newStreak,
+          quests: currentState.dailyState.quests.map(q => ({ ...q, current: 0, claimed: false })),
+        },
+      };
+    }
+    
+    return currentState;
+  }
 
-  const setTeamMember = (slot: number, unitInstanceId: string | null) => {
+  function checkWeeklyReset(currentState: PlayerState): PlayerState {
+    const now = new Date();
+    const weekStart = getWeekStart();
+    const lastReset = new Date(currentState.weeklyState.lastResetDate);
+    
+    if (weekStart > lastReset) {
+      return {
+        ...currentState,
+        weeklyState: {
+          ...currentState.weeklyState,
+          lastResetDate: weekStart.toISOString(),
+          quests: currentState.weeklyState.quests.map(q => ({ ...q, current: 0, claimed: false })),
+        },
+      };
+    }
+    
+    return currentState;
+  }
+
+  // ============================================================================
+  // CURRENCY OPERATIONS
+  // ============================================================================
+
+  const addCurrency = useCallback((type: CurrencyType, amount: number) => {
     setState(prev => {
-      const newTeam = [...prev.team];
-      newTeam[slot] = unitInstanceId;
-      return { ...prev, team: newTeam };
+      const multiplier = type === 'zel' ? (1 + SUBSCRIPTION_CONFIG[prev.subscription.tier]?.zelBonus || 0) : 1;
+      const actualAmount = Math.floor(amount * multiplier);
+      
+      return {
+        ...prev,
+        [type]: prev[type as keyof PlayerState] as number + actualAmount,
+        stats: type === 'zel' ? { ...prev.stats, totalZelEarned: prev.stats.totalZelEarned + actualAmount } : prev.stats,
+      };
     });
-  };
+  }, []);
 
-  const spendGems = (amount: number): boolean => {
-    if (state.gems < amount) return false;
-    setState(prev => ({ ...prev, gems: prev.gems - amount }));
+  const spendCurrency = useCallback((type: CurrencyType, amount: number): boolean => {
+    let success = false;
+    setState(prev => {
+      const current = prev[type as keyof PlayerState] as number;
+      if (current >= amount) {
+        success = true;
+        return {
+          ...prev,
+          [type]: current - amount,
+          stats: type === 'gems' ? { ...prev.stats, totalGemsSpent: prev.stats.totalGemsSpent + amount } : prev.stats,
+        };
+      }
+      return prev;
+    });
+    return success;
+  }, []);
+
+  const hasCurrency = useCallback((type: CurrencyType, amount: number): boolean => {
+    return state[type as keyof PlayerState] as number >= amount;
+  }, [state]);
+
+  // ============================================================================
+  // ENERGY OPERATIONS
+  // ============================================================================
+
+  const spendEnergy = useCallback((amount: number): boolean => {
+    let success = false;
+    setState(prev => {
+      if (prev.energy >= amount) {
+        success = true;
+        return { ...prev, energy: prev.energy - amount };
+      }
+      return prev;
+    });
+    return success;
+  }, []);
+
+  const refillEnergy = useCallback((amount: number, useGems: boolean = false): boolean => {
+    let success = false;
+    setState(prev => {
+      const energyNeeded = prev.maxEnergy - prev.energy;
+      const toRefill = Math.min(amount, energyNeeded);
+      const cost = toRefill * ENERGY_CONFIG.REFILL_COST_PER_ENERGY;
+      
+      if (useGems) {
+        if (prev.gems >= cost) {
+          success = true;
+          return {
+            ...prev,
+            energy: Math.min(prev.energy + toRefill, ENERGY_CONFIG.EMERGENCY_CAP),
+            gems: prev.gems - cost,
+            stats: { ...prev.stats, totalGemsSpent: prev.stats.totalGemsSpent + cost },
+          };
+        }
+        return prev;
+      }
+      
+      // Free refill
+      success = true;
+      return {
+        ...prev,
+        energy: Math.min(prev.energy + toRefill, ENERGY_CONFIG.EMERGENCY_CAP),
+      };
+    });
+    return success;
+  }, []);
+
+  // ============================================================================
+  // DAILY QUESTS
+  // ============================================================================
+
+  const updateDailyQuest = useCallback((questId: string, progress: number) => {
+    setState(prev => ({
+      ...prev,
+      dailyState: {
+        ...prev.dailyState,
+        quests: prev.dailyState.quests.map(q => {
+          if (q.id === questId) {
+            return { ...q, current: Math.min(q.current + progress, q.requirement) };
+          }
+          return q;
+        }),
+      },
+    }));
+  }, []);
+
+  const claimDailyQuest = useCallback((questId: string): { success: boolean; reward?: { type: CurrencyType; amount: number } } => {
+    let result: { success: boolean; reward?: { type: CurrencyType; amount: number } } = { success: false };
+    
+    setState(prev => {
+      const quest = prev.dailyState.quests.find(q => q.id === questId);
+      if (!quest || quest.claimed || quest.current < quest.requirement) {
+        return prev;
+      }
+      
+      result = { success: true, reward: quest.reward };
+      
+      return {
+        ...prev,
+        [quest.reward.type]: (prev[quest.reward.type as keyof PlayerState] as number) + quest.reward.amount,
+        dailyState: {
+          ...prev.dailyState,
+          quests: prev.dailyState.quests.map(q => 
+            q.id === questId ? { ...q, claimed: true } : q
+          ),
+        },
+      };
+    });
+    
+    return result;
+  }, []);
+
+  const claimAllDailyQuests = useCallback(() => {
+    let rewards: { type: CurrencyType; amount: number }[] = [];
+    
+    setState(prev => {
+      let zel = prev.zel;
+      let gems = prev.gems;
+      let arenaMedals = prev.arenaMedals;
+      let guildCoins = prev.guildCoins;
+      
+      prev.dailyState.quests.forEach(q => {
+        if (!q.claimed && q.current >= q.requirement) {
+          rewards.push(q.reward);
+          switch (q.reward.type) {
+            case 'zel': zel += q.reward.amount; break;
+            case 'gems': gems += q.reward.amount; break;
+            case 'arenaMedals': arenaMedals += q.reward.amount; break;
+            case 'guildCoins': guildCoins += q.reward.amount; break;
+          }
+        }
+      });
+      
+      return {
+        ...prev,
+        zel,
+        gems,
+        arenaMedals,
+        guildCoins,
+        dailyState: {
+          ...prev.dailyState,
+          quests: prev.dailyState.quests.map(q => ({ ...q, claimed: true })),
+        },
+      };
+    });
+    
+    return rewards;
+  }, []);
+
+  // ============================================================================
+  // WEEKLY QUESTS
+  // ============================================================================
+
+  const updateWeeklyQuest = useCallback((questId: string, progress: number) => {
+    setState(prev => ({
+      ...prev,
+      weeklyState: {
+        ...prev.weeklyState,
+        quests: prev.weeklyState.quests.map(q => {
+          if (q.id === questId) {
+            return { ...q, current: Math.min(q.current + progress, q.requirement) };
+          }
+          return q;
+        }),
+      },
+    }));
+  }, []);
+
+  const claimWeeklyQuest = useCallback((questId: string): { success: boolean; reward?: { type: CurrencyType; amount: number } } => {
+    let result: { success: boolean; reward?: { type: CurrencyType; amount: number } } = { success: false };
+    
+    setState(prev => {
+      const quest = prev.weeklyState.quests.find(q => q.id === questId);
+      if (!quest || quest.claimed || quest.current < quest.requirement) {
+        return prev;
+      }
+      
+      result = { success: true, reward: quest.reward };
+      
+      return {
+        ...prev,
+        [quest.reward.type]: (prev[quest.reward.type as keyof PlayerState] as number) + quest.reward.amount,
+        weeklyState: {
+          ...prev.weeklyState,
+          quests: prev.weeklyState.quests.map(q => 
+            q.id === questId ? { ...q, claimed: true } : q
+          ),
+        },
+      };
+    });
+    
+    return result;
+  }, []);
+
+  // ============================================================================
+  // MATERIALS
+  // ============================================================================
+
+  const addMaterials = useCallback((materials: Record<MaterialType, number>) => {
+    setState(prev => ({
+      ...prev,
+      materials: {
+        ...prev.materials,
+        ...Object.fromEntries(
+          Object.entries(materials).map(([k, v]) => [k, prev.materials[k as MaterialType] + v])
+        ),
+      },
+    }));
+  }, []);
+
+  const spendMaterials = useCallback((materials: Record<MaterialType, number>): boolean => {
+    let success = false;
+    setState(prev => {
+      // Check if we have enough
+      for (const [type, amount] of Object.entries(materials)) {
+        if (prev.materials[type as MaterialType] < amount) {
+          return prev;
+        }
+      }
+      
+      success = true;
+      return {
+        ...prev,
+        materials: {
+          ...prev.materials,
+          ...Object.fromEntries(
+            Object.entries(materials).map(([k, v]) => [k, prev.materials[k as MaterialType] - v])
+          ),
+        },
+      };
+    });
+    return success;
+  }, []);
+
+  // ============================================================================
+  // BATTLE RESULTS
+  // ============================================================================
+
+  const winBattle = useCallback((stageId: number) => {
+    const stage = STAGES.find(s => s.id === stageId);
+    if (!stage) return null;
+
+    let zelReward = stage.zelReward;
+    const expReward = stage.expReward;
+    
+    // Apply subscription bonus
+    const subscriptionBonus = SUBSCRIPTION_CONFIG[state.subscription.tier]?.zelBonus || 0;
+    zelReward = Math.floor(zelReward * (1 + subscriptionBonus));
+    
+    const newInventory = [...state.inventory];
+    const leveledUp: { name: string; oldLevel: number; newLevel: number }[] = [];
+    
+    const teamUnits = state.team
+      .filter(id => id !== null)
+      .map(id => newInventory.find(u => u.instanceId === id))
+      .filter(Boolean);
+    
+    teamUnits.forEach(unit => {
+      if (!unit) return;
+      const template = UNIT_DATABASE[unit.templateId];
+      const newExp = unit.exp + expReward;
+      const expNeeded = getExpForLevel(unit.level);
+      
+      if (newExp >= expNeeded && unit.level < template.maxLevel) {
+        const oldLevel = unit.level;
+        const newLevel = Math.min(template.maxLevel, unit.level + 1);
+        unit.level = newLevel;
+        unit.exp = newExp - expNeeded;
+        leveledUp.push({ name: template.name, oldLevel, newLevel });
+      } else {
+        unit.exp = newExp;
+      }
+    });
+
+    const playerExpGain = expReward * teamUnits.length;
+    const playerNewExp = state.exp + playerExpGain;
+    const playerExpNeeded = state.playerLevel * 100;
+    const playerLeveledUp = playerNewExp >= playerExpNeeded;
+    const newPlayerLevel = playerLeveledUp ? state.playerLevel + 1 : state.playerLevel;
+    const newPlayerExp = playerLeveledUp ? playerNewExp - playerExpNeeded : playerNewExp;
+    
+    // Equipment drops
+    const equipmentDrops: EquipInstance[] = [];
+    if (stage.equipmentDrops && stage.equipmentDropChance) {
+      if (Math.random() < stage.equipmentDropChance) {
+        const dropIndex = Math.floor(Math.random() * stage.equipmentDrops.length);
+        const equipTemplateId = stage.equipmentDrops[dropIndex];
+        equipmentDrops.push({
+          instanceId: `eq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          templateId: equipTemplateId,
+          enhancementLevel: 0,
+          sockets: [],
+        });
+      }
+    }
+    
+    setState(prev => ({
+      ...prev,
+      zel: prev.zel + zelReward,
+      exp: newPlayerExp,
+      playerLevel: newPlayerLevel,
+      energy: playerLeveledUp ? prev.maxEnergy : prev.energy,
+      inventory: newInventory,
+      equipmentInventory: [...prev.equipmentInventory, ...equipmentDrops],
+      stats: {
+        ...prev.stats,
+        totalBattlesWon: prev.stats.totalBattlesWon + 1,
+        totalZelEarned: prev.stats.totalZelEarned + zelReward,
+        highestPlayerLevel: Math.max(prev.stats.highestPlayerLevel, newPlayerLevel),
+      },
+      dailyState: {
+        ...prev.dailyState,
+        quests: prev.dailyState.quests.map(q => {
+          if (q.id === 'daily_battle') {
+            return { ...q, current: q.current + 1 };
+          }
+          if (q.id === 'daily_zel') {
+            return { ...q, current: q.current + 1 };
+          }
+          return q;
+        }),
+      },
+      weeklyState: {
+        ...prev.weeklyState,
+        quests: prev.weeklyState.quests.map(q => {
+          if (q.id === 'weekly_battles') {
+            return { ...q, current: q.current + 1 };
+          }
+          if (q.id === 'weekly_zel') {
+            return { ...q, current: Math.min(q.current + zelReward, q.requirement) };
+          }
+          return q;
+        }),
+      },
+    }));
+
+    return {
+      zel: zelReward,
+      exp: playerExpGain,
+      playerLeveledUp,
+      leveledUpUnits: leveledUp,
+      equipmentDropped: equipmentDrops,
+    };
+  }, [state]);
+
+  // ============================================================================
+  // FUSION & EVOLUTION
+  // ============================================================================
+
+  const fuseUnits = useCallback((targetInstanceId: string, materialInstanceIds: string[]) => {
+    const targetUnit = state.inventory.find(u => u.instanceId === targetInstanceId);
+    if (!targetUnit) return { success: false, message: 'Target unit not found' };
+
+    const template = UNIT_DATABASE[targetUnit.templateId];
+    if (targetUnit.level >= template.maxLevel) return { success: false, message: 'Unit is already at max level' };
+
+    const materialUnits = materialInstanceIds
+      .map(id => state.inventory.find(u => u.instanceId === id))
+      .filter((u): u is UnitInstance => u !== undefined);
+
+    if (materialUnits.length === 0) return { success: false, message: 'No materials selected' };
+
+    // Calculate fusion cost
+    const maxRarity = Math.max(...materialUnits.map(u => UNIT_DATABASE[u.templateId]?.rarity || 1));
+    const fusionCost = getFusionCost(targetUnit.level, materialUnits.length) * 
+      (maxRarity >= 5 ? 5 : maxRarity >= 4 ? 2 : 1);
+    
+    if (state.zel < fusionCost) return { success: false, message: 'Not enough zel' };
+
+    const expGained = getFusionExpGain(3, targetUnit.level, false);
+    let newExp = targetUnit.exp + expGained;
+    let newLevel = targetUnit.level;
+    const expNeeded = getExpForLevel(newLevel);
+
+    while (newExp >= expNeeded && newLevel < template.maxLevel) {
+      newExp -= expNeeded;
+      newLevel++;
+    }
+
+    // Track fusion count for bonus
+    const timesFused = (targetUnit.timesFused || 0) + materialUnits.length;
+    
+    const newInventory = state.inventory
+      .filter(u => !materialInstanceIds.includes(u.instanceId))
+      .map(u => {
+        if (u.instanceId === targetInstanceId) {
+          return { ...u, level: newLevel, exp: newExp, timesFused };
+        }
+        return u;
+      });
+
+    setState(prev => ({
+      ...prev,
+      zel: prev.zel - fusionCost,
+      inventory: newInventory,
+      stats: {
+        ...prev.stats,
+        totalFusionPerformed: prev.stats.totalFusionPerformed + 1,
+      },
+      dailyState: {
+        ...prev.dailyState,
+        quests: prev.dailyState.quests.map(q => {
+          if (q.id === 'daily_fusion') {
+            return { ...q, current: q.current + materialUnits.length };
+          }
+          return q;
+        }),
+      },
+    }));
+
+    return { success: true, expGained, leveledUp: newLevel > targetUnit.level, oldLevel: targetUnit.level, newLevel, message: 'Fusion complete!' };
+  }, [state]);
+
+  const evolveUnit = useCallback((targetInstanceId: string) => {
+    const targetUnit = state.inventory.find(u => u.instanceId === targetInstanceId);
+    if (!targetUnit) return { success: false, message: 'Unit not found' };
+
+    const template = UNIT_DATABASE[targetUnit.templateId];
+    if (!template.evolutionTarget) return { success: false, message: 'This unit cannot evolve' };
+
+    const evolutionCost = getEvolutionCost(template.rarity);
+    if (state.zel < evolutionCost) return { success: false, message: 'Not enough zel' };
+
+    setState(prev => ({
+      ...prev,
+      inventory: prev.inventory.map(u => {
+        if (u.instanceId === targetInstanceId) {
+          return { ...u, templateId: template.evolutionTarget!, level: 1, exp: 0 };
+        }
+        return u;
+      }),
+      zel: prev.zel - evolutionCost,
+      stats: {
+        ...prev.stats,
+        totalEvolutionPerformed: prev.stats.totalEvolutionPerformed + 1,
+      },
+    }));
+    return { success: true, newTemplateId: template.evolutionTarget, message: 'Evolution complete!' };
+  }, [state]);
+
+  // ============================================================================
+  // GACHA / SUMMON SYSTEM
+  // ============================================================================
+
+  const rollGacha = useCallback((bannerId: string, count: number = 1): SummonResult[] => {
+    const banner = GACHA_CONFIG.BANNERS[bannerId as keyof typeof GACHA_CONFIG.BANNERS];
+    if (!banner) return [];
+    
+    const totalCost = banner.cost * count;
+    if (state.gems < totalCost) return [];
+    
+    const results: SummonResult[] = [];
+    const pool = GACHA_POOL;
+    const totalWeight = pool.reduce((sum, item) => sum + item.weight, 0);
+    
+    // Update state with gem deduction
+    setState(prev => {
+      let newPity = { ...prev.summonPity };
+      const bannerPity = newPity.bannerPulls[bannerId] || 0;
+      
+      for (let i = 0; i < count; i++) {
+        const currentPity = bannerPity + i;
+        let selected = pool[0];
+        
+        // Pity system check
+        if (currentPity >= banner.pityPulls) {
+          // Guaranteed rare on pity
+          const rarity = banner.pityRarity;
+          const rareUnits = pool.filter(u => {
+            const rarityCheck = u.weight >= 100 ? 3 : u.weight >= 20 ? 4 : 5;
+            return rarityCheck === rarity;
+          });
+          selected = rareUnits[Math.floor(Math.random() * rareUnits.length)];
+        } else {
+          // Normal roll
+          const rand = Math.random() * totalWeight;
+          let cumulative = 0;
+          
+          // Check for featured unit rate up
+          if (banner.featuredUnits?.length && Math.random() < banner.featuredRate) {
+            const featuredId = banner.featuredUnits[Math.floor(Math.random() * banner.featuredUnits.length)];
+            const featuredUnit = pool.find(u => u.unitId === featuredId);
+            if (featuredUnit) selected = featuredUnit;
+          } else {
+            for (const item of pool) {
+              cumulative += item.weight;
+              if (rand <= cumulative) {
+                selected = item;
+                break;
+              }
+            }
+          }
+        }
+        
+        let rarity = 1;
+        if (selected.weight >= 100) rarity = 3;
+        else if (selected.weight >= 20) rarity = 4;
+        else if (selected.weight >= 2) rarity = 5;
+        
+        // Check if unit is new
+        const isNew = !prev.ownedUnitIds.has(selected.unitId);
+        
+        // Calculate duplicate value
+        const duplicateValues = GACHA_CONFIG.DUPLICATE_VALUES[
+          `STAR${rarity}` as keyof typeof GACHA_CONFIG.DUPLICATE_VALUES
+        ];
+        
+        results.push({
+          templateId: selected.unitId,
+          rarity,
+          isNew,
+          duplicate: !isNew,
+          prismValue: isNew ? 0 : duplicateValues.prism,
+          zelValue: isNew ? 0 : duplicateValues.zel,
+        });
+        
+        // Update pity
+        newPity = {
+          ...newPity,
+          star5Pulls: rarity === 5 ? 0 : newPity.star5Pulls + 1,
+          star4Pulls: rarity === 4 ? 0 : newPity.star4Pulls + 1,
+          lastStar5Pull: rarity === 5 ? rarity : newPity.lastStar5Pull,
+          lastStar4Pull: rarity === 4 ? rarity : newPity.lastStar4Pull,
+          totalPulls: newPity.totalPulls + 1,
+          bannerPulls: {
+            ...newPity.bannerPulls,
+            [bannerId]: currentPity + 1,
+          },
+        };
+        
+        // Add to owned units if new
+        if (isNew) {
+          prev.ownedUnitIds.add(selected.unitId);
+        }
+      }
+      
+      // Add units to inventory
+      results.forEach(result => {
+        prev.inventory.push({
+          instanceId: `inst_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          templateId: result.templateId,
+          level: 1,
+          exp: 0,
+          equipment: { weapon: null, armor: null, accessory: null },
+          timesFused: 0,
+        });
+      });
+      
+      return {
+        ...prev,
+        gems: prev.gems - totalCost,
+        inventory: prev.inventory,
+        summonPity: newPity,
+        ownedUnitIds: new Set(prev.ownedUnitIds),
+        stats: {
+          ...prev.stats,
+          totalGemsSpent: prev.stats.totalGemsSpent + totalCost,
+          totalSummons: prev.stats.totalSummons + count,
+          totalUnitsCollected: prev.stats.totalUnitsCollected + results.filter(r => r.isNew).length,
+        },
+        weeklyState: {
+          ...prev.weeklyState,
+          quests: prev.weeklyState.quests.map(q => {
+            if (q.id === 'weekly_summon') {
+              return { ...q, current: q.current + count };
+            }
+            return q;
+          }),
+        },
+      };
+    });
+    
+    return results;
+  }, [state.gems]);
+
+  const convertDuplicate = useCallback((instanceId: string): { prism: number; zel: number } | null => {
+    const unit = state.inventory.find(u => u.instanceId === instanceId);
+    if (!unit) return null;
+    
+    const template = UNIT_DATABASE[unit.templateId];
+    const rarity = template?.rarity || 3;
+    const duplicateValues = GACHA_CONFIG.DUPLICATE_VALUES[`STAR${rarity}` as keyof typeof GACHA_CONFIG.DUPLICATE_VALUES];
+    
+    setState(prev => ({
+      ...prev,
+      inventory: prev.inventory.filter(u => u.instanceId !== instanceId),
+      materials: {
+        ...prev.materials,
+        [`prism${rarity}` as MaterialType]: prev.materials[`prism${rarity}` as MaterialType] + duplicateValues.prism,
+      },
+      zel: prev.zel + duplicateValues.zel,
+    }));
+    
+    return duplicateValues;
+  }, [state.inventory]);
+
+  // ============================================================================
+  // EQUIPMENT ENHANCEMENT
+  // ============================================================================
+
+  const enhanceEquipment = useCallback((instanceId: string, useProtection: boolean = false): {
+    success: boolean;
+    broke: boolean;
+    newLevel: number;
+    message: string;
+  } => {
+    const equipment = state.equipmentInventory.find(e => e.instanceId === instanceId);
+    if (!equipment) return { success: false, broke: false, newLevel: 0, message: 'Equipment not found' };
+    
+    const currentLevel = equipment.enhancementLevel;
+    if (currentLevel >= 20) return { success: false, broke: false, newLevel: 20, message: 'Already at max level' };
+    
+    // Calculate cost
+    const cost = EQUIPMENT_COSTS.ENHANCE.BASE + (currentLevel * EQUIPMENT_COSTS.ENHANCE.PER_LEVEL);
+    const materialCost = Math.ceil((currentLevel + 1) / 5); // Iron ore per level
+    
+    // Check resources
+    if (state.zel < cost) return { success: false, broke: false, newLevel: currentLevel, message: 'Not enough zel' };
+    if (state.materials.ironOre < materialCost) return { success: false, broke: false, newLevel: currentLevel, message: 'Not enough materials' };
+    
+    // Check protection for risky levels
+    let needsProtection = currentLevel >= 10;
+    if (needsProtection && !useProtection) {
+      // Check if player has gems for protection
+      const protectionCost = currentLevel >= 15 
+        ? EQUIPMENT_COSTS.ENHANCE.PROTECTION.HIGH 
+        : (currentLevel >= 10 
+          ? EQUIPMENT_COSTS.ENHANCE.PROTECTION.MEDIUM 
+          : EQUIPMENT_COSTS.ENHANCE.PROTECTION.LOW);
+      if (state.gems < protectionCost) {
+        return { success: false, broke: false, newLevel: currentLevel, message: `Protection costs ${protectionCost} gems` };
+      }
+    }
+    
+    // Calculate success rate
+    const successRate = ENHANCEMENT_RATES[currentLevel as keyof typeof ENHANCEMENT_RATES] / 100;
+    const roll = Math.random();
+    const succeeded = roll < successRate;
+    
+    if (succeeded) {
+      setState(prev => ({
+        ...prev,
+        zel: prev.zel - cost,
+        materials: {
+          ...prev.materials,
+          ironOre: prev.materials.ironOre - materialCost,
+        },
+        equipmentInventory: prev.equipmentInventory.map(e =>
+          e.instanceId === instanceId
+            ? { ...e, enhancementLevel: e.enhancementLevel + 1 }
+            : e
+        ),
+        dailyState: {
+          ...prev.dailyState,
+          quests: prev.dailyState.quests.map(q => {
+            if (q.id === 'daily_enhance') {
+              return { ...q, current: q.current + 1 };
+            }
+            return q;
+          }),
+        },
+      }));
+      
+      return { success: true, broke: false, newLevel: currentLevel + 1, message: `Enhanced to +${currentLevel + 1}!` };
+    } else {
+      // Enhancement failed, check protection
+      if (useProtection || !needsProtection) {
+        setState(prev => ({
+          ...prev,
+          zel: prev.zel - cost,
+          materials: {
+            ...prev.materials,
+            ironOre: prev.materials.ironOre - materialCost,
+          },
+        }));
+        return { success: false, broke: false, newLevel: currentLevel, message: 'Enhancement failed (protected)' };
+      } else {
+        // Broke the equipment
+        const protectionCost = currentLevel >= 15 
+          ? EQUIPMENT_COSTS.ENHANCE.PROTECTION.HIGH 
+          : (currentLevel >= 10 
+            ? EQUIPMENT_COSTS.ENHANCE.PROTECTION.MEDIUM 
+            : EQUIPMENT_COSTS.ENHANCE.PROTECTION.LOW);
+        
+        setState(prev => ({
+          ...prev,
+          zel: prev.zel - cost,
+          gems: prev.gems - protectionCost,
+          equipmentInventory: prev.equipmentInventory.map(e =>
+            e.instanceId === instanceId
+              ? { ...e, enhancementLevel: Math.max(0, e.enhancementLevel - 3) }
+              : e
+          ),
+        }));
+        return { success: false, broke: true, newLevel: Math.max(0, currentLevel - 3), message: 'Enhancement failed! Equipment downgraded!' };
+      }
+    }
+  }, [state]);
+
+  // ============================================================================
+  // BATTLE PASS
+  // ============================================================================
+
+  const addBattlePassXP = useCallback((amount: number) => {
+    setState(prev => {
+      const newXP = prev.battlePass.currentXP + amount;
+      const newTier = Math.floor(newXP / 400) + 1;
+      const maxTier = Math.min(newTier, 50);
+      
+      return {
+        ...prev,
+        battlePass: {
+          ...prev.battlePass,
+          currentXP: newXP,
+          tierUnlocked: Math.max(prev.battlePass.tierUnlocked, maxTier),
+        },
+      };
+    });
+  }, []);
+
+  const claimBattlePassReward = useCallback((tier: number, isPremium: boolean): { success: boolean; reward?: { type: CurrencyType; amount: number } } => {
+    let result: { success: boolean; reward?: { type: CurrencyType; amount: number } } = { success: false };
+    
+    setState(prev => {
+      if (tier > prev.battlePass.tierUnlocked) {
+        return prev;
+      }
+      
+      if (prev.battlePass.claimedTiers.includes(tier)) {
+        return prev;
+      }
+      
+      if (isPremium && !prev.battlePass.premiumPurchased) {
+        return prev;
+      }
+      
+      const tierData = GACHA_CONFIG.BANNERS; // Placeholder - would use BATTLE_PASS_CONFIG.TIERS[tier]
+      const reward = isPremium 
+        ? { type: 'gems' as CurrencyType, amount: 10 + tier * 2 }
+        : { type: 'zel' as CurrencyType, amount: 500 * tier };
+      
+      result = { success: true, reward };
+      
+      return {
+        ...prev,
+        [reward.type]: (prev[reward.type as keyof PlayerState] as number) + reward.amount,
+        battlePass: {
+          ...prev.battlePass,
+          claimedTiers: [...prev.battlePass.claimedTiers, tier],
+        },
+      };
+    });
+    
+    return result;
+  }, []);
+
+  // ============================================================================
+  // SUBSCRIPTION
+  // ============================================================================
+
+  const purchaseSubscription = useCallback((tier: SubscriptionTier): boolean => {
+    if (state.subscription.tier !== 'none') return false;
+    
+    setState(prev => {
+      const benefits = SUBSCRIPTION_CONFIG[tier];
+      const nextRefresh = new Date();
+      nextRefresh.setDate(nextRefresh.getDate() + 30);
+      
+      return {
+        ...prev,
+        subscription: {
+          tier,
+          startDate: new Date().toISOString(),
+          nextRefreshDate: nextRefresh.toISOString(),
+          totalClaimed: 0,
+        },
+        maxEnergy: prev.maxEnergy + benefits.dailyEnergyBonus,
+        gems: prev.gems + benefits.weeklyGems,
+      };
+    });
+    
     return true;
-  };
+  }, [state.subscription.tier]);
 
-  const spendEnergy = (amount: number): boolean => {
-    if (state.energy < amount) return false;
-    setState(prev => ({ ...prev, energy: prev.energy - amount }));
-    return true;
-  };
+  const claimSubscriptionWeekly = useCallback(() => {
+    if (state.subscription.tier === 'none') return 0;
+    
+    const benefits = SUBSCRIPTION_CONFIG[state.subscription.tier];
+    
+    setState(prev => ({
+      ...prev,
+      gems: prev.gems + benefits.weeklyGems,
+      subscription: {
+        ...prev.subscription,
+        totalClaimed: prev.subscription.totalClaimed + benefits.weeklyGems,
+      },
+    }));
+    
+    return benefits.weeklyGems;
+  }, [state.subscription.tier]);
 
-  const processQrScan = (qrHash: string) => {
+  // ============================================================================
+  // QR SCANNING
+  // ============================================================================
+
+  const processQrScan = useCallback((qrHash: string) => {
     const today = new Date().toISOString().split('T')[0];
     const qrState = state.qrState;
     
@@ -249,54 +1151,50 @@ export function useGameState(options: UseGameStateOptions = {}) {
       qrState: {
         scansToday: qrState.lastScanDate === today ? qrState.scansToday + 1 : 1,
         lastScanDate: today,
-        scannedHashes: newScannedHashes
+        scannedHashes: newScannedHashes,
+        lifetimeScans: prev.qrState.lifetimeScans + 1,
       },
       zel: prev.zel + zelReward,
       exp: prev.exp + expReward,
       gems: prev.gems + gemsReward,
-      energy: Math.min(prev.maxEnergy, prev.energy + energyReward)
+      energy: Math.min(prev.maxEnergy, prev.energy + energyReward),
     }));
     
     const message = zelReward > 0 ? `+${zelReward} zel` : gemsReward > 0 ? `+${gemsReward} gems` : `+${energyReward} energy`;
     return { success: true, message, rewardType: reward.type, rewardValue: zelReward || gemsReward || energyReward };
+  }, [state.qrState]);
+
+  // ============================================================================
+  // LEGACY FUNCTIONS (Backward Compatibility)
+  // ============================================================================
+
+  const updateState = (updates: Partial<PlayerState>) => {
+    setState(prev => ({ ...prev, ...updates }));
   };
 
-  const rollGacha = (count: number = 1): { templateId: string; rarity: number }[] => {
-    const results: { templateId: string; rarity: number }[] = [];
-    const pool = GACHA_POOL;
-    const totalWeight = pool.reduce((sum, item) => sum + item.weight, 0);
-    
-    for (let i = 0; i < count; i++) {
-      const rand = Math.random() * totalWeight;
-      let cumulative = 0;
-      let selected = pool[0];
-      
-      for (const item of pool) {
-        cumulative += item.weight;
-        if (rand <= cumulative) {
-          selected = item;
-          break;
-        }
-      }
-      
-      let rarity = 1;
-      if (selected.weight >= 100) rarity = 3;
-      else if (selected.weight >= 20) rarity = 4;
-      else if (selected.weight >= 2) rarity = 5;
-      
-      results.push({ templateId: selected.unitId, rarity });
-      
-      setState(prev => ({
-        ...prev,
-        summonPity: {
-          star5Pulls: rarity === 5 ? 0 : prev.summonPity.star5Pulls + 1,
-          star4Pulls: rarity === 4 ? 0 : prev.summonPity.star4Pulls + 1,
-          lastStar5Pull: rarity === 5 ? rarity : prev.summonPity.lastStar5Pull
-        }
-      }));
-    }
-    
-    return results;
+  const addUnit = (templateId: string): UnitInstance => {
+    const newUnit: UnitInstance = {
+      instanceId: `inst_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      templateId,
+      level: 1,
+      exp: 0,
+      equipment: { weapon: null, armor: null, accessory: null },
+      timesFused: 0,
+    };
+    setState(prev => ({ ...prev, inventory: [...prev.inventory, newUnit] }));
+    return newUnit;
+  };
+
+  const setTeamMember = (slot: number, unitInstanceId: string | null) => {
+    setState(prev => {
+      const newTeam = [...prev.team];
+      newTeam[slot] = unitInstanceId;
+      return { ...prev, team: newTeam };
+    });
+  };
+
+  const spendGems = (amount: number): boolean => {
+    return spendCurrency('gems', amount);
   };
 
   const equipItem = (unitInstanceId: string, slot: EquipSlot, itemInstanceId: string | null) => {
@@ -323,148 +1221,136 @@ export function useGameState(options: UseGameStateOptions = {}) {
     });
   };
 
-  const winBattle = (stageId: number) => {
-    const stage = STAGES.find(s => s.id === stageId);
-    if (!stage) return null;
+  // ============================================================================
+  // LEGACY WIN BATTLE (Calls new system)
+  // ============================================================================
 
-    const zelReward = stage.zelReward;
-    const expReward = stage.expReward;
+  const legacyWinBattle = useCallback((stageId: number) => {
+    const result = winBattle(stageId);
+    if (!result) return null;
     
-    const newInventory = [...state.inventory];
-    const leveledUp: { name: string; oldLevel: number; newLevel: number }[] = [];
-    
-    const teamUnits = state.team
-      .filter(id => id !== null)
-      .map(id => newInventory.find(u => u.instanceId === id))
-      .filter(Boolean);
-    
-    teamUnits.forEach(unit => {
-      if (!unit) return;
-      const template = UNIT_DATABASE[unit.templateId];
-      const newExp = unit.exp + expReward;
-      const expNeeded = getExpForLevel(unit.level);
-      
-      if (newExp >= expNeeded && unit.level < template.maxLevel) {
-        const oldLevel = unit.level;
-        const newLevel = Math.min(template.maxLevel, unit.level + 1);
-        unit.level = newLevel;
-        unit.exp = newExp - expNeeded;
-        leveledUp.push({ name: template.name, oldLevel, newLevel });
-      } else {
-        unit.exp = newExp;
-      }
-    });
-
-    const playerExpGain = expReward * teamUnits.length;
-    const playerNewExp = state.exp + playerExpGain;
-    const playerExpNeeded = state.level * 100;
-    const playerLeveledUp = playerNewExp >= playerExpNeeded;
-    const newPlayerLevel = playerLeveledUp ? state.level + 1 : state.level;
-    const newPlayerExp = playerLeveledUp ? playerNewExp - playerExpNeeded : playerNewExp;
-    
-    setState(prev => ({
-      ...prev,
-      zel: prev.zel + zelReward,
-      exp: newPlayerExp,
-      level: newPlayerLevel,
-      energy: playerLeveledUp ? prev.maxEnergy : prev.energy,
-      inventory: newInventory
-    }));
-
+    // Return legacy format for backward compatibility
     return {
-      zel: zelReward,
-      exp: playerExpGain,
-      playerLeveledUp,
-      leveledUpUnits: leveledUp,
-      equipmentDropped: []
+      zel: result.zel,
+      exp: result.exp,
+      playerLeveledUp: result.playerLeveledUp,
+      leveledUpUnits: result.leveledUpUnits,
+      equipmentDropped: result.equipmentDropped,
     };
-  };
+  }, [winBattle]);
 
-  const fuseUnits = (targetInstanceId: string, materialInstanceIds: string[]) => {
-    const targetUnit = state.inventory.find(u => u.instanceId === targetInstanceId);
-    if (!targetUnit) return { success: false, message: 'Target unit not found' };
+  // ============================================================================
+  // RETURN
+  // ============================================================================
 
-    const template = UNIT_DATABASE[targetUnit.templateId];
-    if (targetUnit.level >= template.maxLevel) return { success: false, message: 'Unit is already at max level' };
-
-    const materialUnits = materialInstanceIds
-      .map(id => state.inventory.find(u => u.instanceId === id))
-      .filter(Boolean);
-
-    if (materialUnits.length === 0) return { success: false, message: 'No materials selected' };
-
-    const fusionCost = getFusionCost(targetUnit.level, materialUnits.length);
-    if (state.zel < fusionCost) return { success: false, message: 'Not enough zel' };
-
-    const expGained = getFusionExpGain(3, targetUnit.level, false);
-    let newExp = targetUnit.exp + expGained;
-    let newLevel = targetUnit.level;
-    const expNeeded = getExpForLevel(newLevel);
-
-    while (newExp >= expNeeded && newLevel < template.maxLevel) {
-      newExp -= expNeeded;
-      newLevel++;
-    }
-
-    const newInventory = state.inventory
-      .filter(u => !materialInstanceIds.includes(u.instanceId))
-      .map(u => {
-        if (u.instanceId === targetInstanceId) {
-          return { ...u, level: newLevel, exp: newExp };
-        }
-        return u;
-      });
-
-    setState(prev => ({
-      ...prev,
-      zel: prev.zel - fusionCost,
-      inventory: newInventory
-    }));
-
-    return { success: true, expGained, leveledUp: newLevel > targetUnit.level, oldLevel: targetUnit.level, newLevel, message: 'Fusion complete!' };
-  };
-
-  const evolveUnit = (targetInstanceId: string) => {
-    const targetUnit = state.inventory.find(u => u.instanceId === targetInstanceId);
-    if (!targetUnit) return { success: false, message: 'Unit not found' };
-
-    const template = UNIT_DATABASE[targetUnit.templateId];
-    if (!template.evolutionTarget) return { success: false, message: 'This unit cannot evolve' };
-
-    const evolutionCost = getEvolutionCost(template.rarity);
-    if (state.zel < evolutionCost) return { success: false, message: 'Not enough zel' };
-
-    setState(prev => ({ ...prev, 
-      inventory: prev.inventory.map(u => {
-        if (u.instanceId === targetInstanceId) {
-          return { ...u, templateId: template.evolutionTarget! };
-        }
-        return u;
-      }),
-      zel: prev.zel - evolutionCost
-    }));
-    return { success: true, newTemplateId: template.evolutionTarget, message: 'Evolution complete!' };
+  // Create backward-compatible state with both 'level' and 'playerLevel'
+  const stateWithLevel: PlayerState & { level: number } = {
+    ...state,
+    level: state.playerLevel,
   };
 
   return {
-    state,
+    // State (backward compatible with 'level' property)
+    state: stateWithLevel,
     isLoaded,
     timeToNextEnergy,
     isSaving,
     lastSaved,
+    
+    // Currency operations
+    addCurrency,
+    spendCurrency,
+    hasCurrency,
+    
+    // Energy operations
+    spendEnergy,
+    refillEnergy,
+    
+    // Daily/Weekly quests
+    updateDailyQuest,
+    claimDailyQuest,
+    claimAllDailyQuests,
+    updateWeeklyQuest,
+    claimWeeklyQuest,
+    
+    // Materials
+    addMaterials,
+    spendMaterials,
+    
+    // Battle results
+    winBattle: legacyWinBattle,
+    
+    // Fusion & Evolution
+    fuseUnits,
+    evolveUnit,
+    
+    // Gacha
+    rollGacha,
+    convertDuplicate,
+    
+    // Equipment
+    enhanceEquipment,
+    
+    // Battle Pass
+    addBattlePassXP,
+    claimBattlePassReward,
+    
+    // Subscription
+    purchaseSubscription,
+    claimSubscriptionWeekly,
+    
+    // QR
+    processQrScan,
+    
+    // Legacy compatibility
     updateState,
     addUnit,
     setTeamMember,
     spendGems,
-    spendEnergy,
-    processQrScan,
-    rollGacha,
     equipItem,
     unequipItem,
-    winBattle,
-    fuseUnits,
-    evolveUnit,
     unitTemplates: UNIT_DATABASE,
-    saveToCloud
+    saveToCloud,
   };
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+function getWeekStart(): Date {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+  const weekStart = new Date(now.setDate(diff));
+  weekStart.setHours(0, 0, 0, 0);
+  return weekStart;
+}
+
+export function calculateStats(template: UnitTemplate, level: number, equipment?: UnitInstance['equipment'], equipInventory?: EquipInstance[]): Stats {
+  const base = {
+    hp: template.baseStats.hp + template.growthRate.hp * (level - 1),
+    atk: template.baseStats.atk + template.growthRate.atk * (level - 1),
+    def: template.baseStats.def + template.growthRate.def * (level - 1),
+    rec: template.baseStats.rec + template.growthRate.rec * (level - 1),
+  };
+
+  if (equipment && equipInventory) {
+    const equipIds = [equipment.weapon, equipment.armor, equipment.accessory].filter(Boolean);
+    equipIds.forEach(eqInstId => {
+      const eqInst = equipInventory.find(e => e.instanceId === eqInstId);
+      if (eqInst) {
+        const eqTemplate = EQUIPMENT_DATABASE[eqInst.templateId];
+        if (eqTemplate && eqTemplate.statsBonus) {
+          // Apply enhancement bonus (roughly +5% per level)
+          const enhancementMultiplier = 1 + (eqInst.enhancementLevel * 0.05);
+          base.hp += Math.floor((eqTemplate.statsBonus.hp || 0) * enhancementMultiplier);
+          base.atk += Math.floor((eqTemplate.statsBonus.atk || 0) * enhancementMultiplier);
+          base.def += Math.floor((eqTemplate.statsBonus.def || 0) * enhancementMultiplier);
+          base.rec += Math.floor((eqTemplate.statsBonus.rec || 0) * enhancementMultiplier);
+        }
+      }
+    });
+  }
+  return base;
 }

@@ -158,9 +158,50 @@ export const RARITY_LABELS = {
   5: 'Legendary',
 } as const;
 
+export const BF_COLORS = {
+  navy: {
+    deep: '#1a1a2e',
+    mid: '#16213e',
+    light: '#252a4a',
+  },
+  gold: {
+    primary: '#b89947',
+    bright: '#c9a227',
+    dim: '#8b7235',
+  },
+  health: '#22c55e',
+  bb: '#3b82f6',
+} as const;
+
 // ============================================================================
 // UI HELPERS - Composable classes for common patterns
 // ============================================================================
+
+export const BF_UI = {
+  // BF2 Styled Cards
+  cardNavy: 'bg-[#1a1a2e] border-2 border-[#b89947]/30 rounded-xl',
+  cardGoldBorder: 'border-2 border-[#b89947] rounded-xl',
+  
+  // BF2 Buttons
+  buttonGold: 'bg-gradient-to-b from-[#c9a227] to-[#b89947] text-zinc-900 font-bold px-4 py-2 rounded-lg hover:from-[#d4af37] hover:to-[#c9a227] transition-colors',
+  buttonBlue: 'bg-gradient-to-b from-[#3b82f6] to-[#2563eb] text-white font-bold px-4 py-2 rounded-lg hover:from-[#4b9bff] hover:to-[#3b82f6] transition-colors',
+  
+  // Status Badges
+  badgeEnergy: 'bg-blue-900/50 border border-blue-500/30 px-2 py-1 rounded text-xs font-bold text-blue-400',
+  badgeCleared: 'bg-emerald-900/50 border border-emerald-500/30 px-2 py-1 rounded text-xs font-bold text-emerald-400',
+  badgeLocked: 'bg-zinc-800/50 border border-zinc-700 px-2 py-1 rounded text-xs font-bold text-zinc-500',
+  
+  // Difficulty Stars
+  difficultyStars: (level: number) => {
+    const filled = Array.from({ length: level }).map((_, i) => 
+      '<span class="text-yellow-400">★</span>'
+    ).join('');
+    const empty = Array.from({ length: 5 - level }).map(() => 
+      '<span class="text-zinc-700">★</span>'
+    ).join('');
+    return { __html: filled + empty };
+  },
+} as const;
 
 export const UI = {
   // Cards and containers

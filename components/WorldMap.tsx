@@ -64,7 +64,7 @@ export default function WorldMap({ completedStages, onSelectStage }: WorldMapPro
         const isActive = fromNode.isUnlocked || (completedStages.includes(fromNode.id));
         
         return (
-      <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <svg key={`path-${i}`} className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
             <defs>
               <linearGradient id={`path-${i}`} x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor={isActive ? '#4ade80' : '#52525b'} stopOpacity="0.5" />
