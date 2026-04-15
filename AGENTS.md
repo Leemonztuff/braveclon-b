@@ -1,10 +1,9 @@
 # AGENTS.md
 
-## Setup (Next.js AI Studio applet)
+## Setup
 
 ```bash
 npm install
-# Create .env.local with GEMINI_API_KEY
 cp .env.example .env.local
 npm run dev
 ```
@@ -38,26 +37,44 @@ lib/           # gameTypes, gameData, gameState, utils
 - `hooks/useBattle.ts`: Battle logic
 - `lib/gameState.ts`: State persistence
 
-## Game Studio Framework
+## OpenCode Game Studio
 
-`opencode-game-studio/` contiene el framework de 54 agentes.
+Configuración global instalada en `~/.config/opencode/`.
 
-### Recommended Agents for Braveclon
+### Directorios
+- `agents/`: 48 agentes especializados
+- `skills/`: 37 workflows (slash commands)
+- `docs/`: Documentación y templates
+
+### Usage
+
+```bash
+# Iniciar sesión
+opencode
+
+# Usar agentes
+@game-designer "Diseña un nuevo sistema de batalla"
+@lead-programmer "Revisa la arquitectura del código"
+@creative-director "Define la visión del juego"
+
+# Usar skills
+/code-review
+/balance-check
+/prototype
+/playtest-report
+/start
+/sprint-plan
+```
+
+### Agents Útiles para Braveclon
 
 | Task | Agent |
 |------|-------|
-| Design new unit/feature | @game-designer |
-| Battle mechanics | @gameplay-programmer |
-| UI/UX improvements | @ui-programmer, @ux-designer |
+| Diseño de mecánicas | @game-designer |
+| Sistema de batalla | @gameplay-programmer |
+| UI/UX | @ui-programmer, @ux-designer |
 | Performance | @performance-analyst |
 | Code review | @lead-programmer |
-| Audio system | @sound-designer |
-
-### Skills Útiles
-
-| Skill | Use Case |
-|-------|----------|
-| `/code-review` | Review de nuevas features |
-| `/balance-check` | Balanceo de stats/ Drop rates |
-| `/prototype` | Test de nuevas mecánicas |
-| `/playtest-report` | Feedback de gameplay | |
+| Audio | @sound-designer |
+| QA | @qa-tester |
+| Balance economy | @economy-designer |

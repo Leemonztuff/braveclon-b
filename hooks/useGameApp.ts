@@ -1,22 +1,59 @@
-import { useState } from 'react';
-import { useGameState } from '@/lib/gameState';
+import { useState, useCallback } from 'react';
+import { useGameState, BattleRewards } from '@/lib/gameState';
 import { STAGES } from '@/lib/gameData';
-import { BattleRewards } from '@/components/BattleRewardsModal';
 
-export type Screen = 'home' | 'units' | 'summon' | 'quest' | 'battle' | 'qrhunt' | 'fusion' | 'evolution' | 'arena' | 'shop';
+export type Screen = 
+  | 'home' 
+  | 'units' 
+  | 'summon' 
+  | 'quest' 
+  | 'battle' 
+  | 'qrhunt' 
+  | 'fusion' 
+  | 'evolution' 
+  | 'arena' 
+  | 'shop' 
+  | 'randall'
+  | 'friends';
 
-export function useGameApp() {
-  const gameState = useGameState();
-  const { isLoaded, spendEnergy, winBattle } = gameState;
+export function useGameApp(userId?: string | null) {
+  const gameState = useGameState({
+    userId: userId || undefined,
+    autoSave: true,
+    saveInterval: 30000
+  });
+  const {
+    isLoaded, 
+    timeToNextEnergy,
+    spendEnergy, 
+    winBattle,
+    addUnit,
+    setTeamMember,
+    spendGems,
+    rollGacha,
+    equipItem,
+    unequipItem,
+    fuseUnits,
+    updateState,
+    processQrScan,
+    evolveUnit
+  } = gameState;
   
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
   const [battleStage, setBattleStage] = useState<number | null>(null);
   const [fusionTargetId, setFusionTargetId] = useState<string | null>(null);
   const [evolutionTargetId, setEvolutionTargetId] = useState<string | null>(null);
+  const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [battleRewards, setBattleRewards] = useState<BattleRewards | null>(null);
 
-  const startBattle = (stageId: number) => {
+  const triggerAlert = useCallback((message: string) => {
+    setAlertMessage(message);
+    setShowAlert(true);
+    setTimeout(() => setShowAlert(false), 3000);
+  }, []);
+
+  const startBattle = useCallback((stageId: number) => {
     const stage = STAGES.find(s => s.id === stageId);
     if (!stage) return;
 
@@ -24,57 +61,96 @@ export function useGameApp() {
       setBattleStage(stageId);
       setCurrentScreen('battle');
     } else {
-      setAlertMessage(`Not enough energy! You need ${stage.energy} ⚡ to start this quest.`);
+      triggerAlert(`Not enough energy! You need ${stage.energy} ⚡ to start this quest.`);
     }
-  };
+  }, [spendEnergy, triggerAlert]);
 
-  const endBattle = (victory: boolean) => {
-    setCurrentScreen('home');
+  const endBattle = useCallback((victory: boolean) => {
     if (victory && battleStage !== null) {
       const rewards = winBattle(battleStage);
       if (rewards) {
         setBattleRewards(rewards);
       }
     }
+    setCurrentScreen('home');
     setBattleStage(null);
-  };
+  }, [battleStage, winBattle]);
 
-  const navigateToFusion = (id: string) => {
+  const dismissBattleRewards = useCallback(() => {
+    setBattleRewards(null);
+  }, []);
+
+  const navigateToFusion = useCallback((id: string) => {
     setFusionTargetId(id);
     setCurrentScreen('fusion');
-  };
+  }, []);
 
-  const navigateToEvolution = (id: string) => {
+  const navigateToEvolution = useCallback((id: string) => {
     setEvolutionTargetId(id);
     setCurrentScreen('evolution');
-  };
+  }, []);
+
+  const navigate = useCallback((screen: Screen) => {
+    setCurrentScreen(screen);
+  }, []);
+
+  const goBack = useCallback(() => {
+    setCurrentScreen('home');
+  }, []);
+
+  const handlePurchase = useCallback((price: number, currency: 'zel' | 'gems') => {
+    const state = gameState.state;
+    if (currency === 'zel' && state.zel >= price) {
+      updateState({ zel: state.zel - price });
+      return true;
+    }
+    if (currency === 'gems' && state.gems >= price) {
+      updateState({ gems: state.gems - price });
+      return true;
+    }
+    return false;
+  }, [gameState.state, updateState]);
+
+  const setFusionTargetIdState = useCallback((id: string | null) => {
+    setFusionTargetId(id);
+  }, []);
+
+  const setEvolutionTargetIdState = useCallback((id: string | null) => {
+    setEvolutionTargetId(id);
+  }, []);
 
   return {
     gameState,
     isLoaded,
+    timeToNextEnergy,
     currentScreen,
-    setCurrentScreen,
+    setCurrentScreen: navigate,
     battleStage,
     fusionTargetId,
     evolutionTargetId,
+    setFusionTargetId: setFusionTargetIdState,
+    setEvolutionTargetId: setEvolutionTargetIdState,
+    setShowAlert,
+    showAlert,
     alertMessage,
-    setAlertMessage,
     battleRewards,
-    setBattleRewards,
     startBattle,
     endBattle,
+    dismissBattleRewards,
     navigateToFusion,
     navigateToEvolution,
-    spendCurrency: (amount: number, currency: 'zel' | 'gems') => {
-      if (currency === 'zel' && gameState.state.zel >= amount) {
-        gameState.updateState({ zel: gameState.state.zel - amount });
-        return true;
-      }
-      if (currency === 'gems' && gameState.state.gems >= amount) {
-        gameState.updateState({ gems: gameState.state.gems - amount });
-        return true;
-      }
-      return false;
-    }
+    navigate,
+    goBack,
+    triggerAlert,
+    handlePurchase,
+    addUnit,
+    setTeamMember,
+    spendGems,
+    rollGacha,
+    equipItem,
+    unequipItem,
+    fuseUnits,
+    processQrScan,
+    evolveUnit,
   };
 }

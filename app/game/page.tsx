@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useGameState } from '@/lib/gameState';
-import { onAuthChange, getCurrentUser, AuthUser } from '@/lib/auth';
+import { useEffect, useState } from 'react';
+import { useGameApp, Screen } from '@/hooks/useGameApp';
+import { BattleRewards } from '@/components/BattleRewardsModal';
 import { X } from 'lucide-react';
 import AuthScreen from '@/components/AuthScreen';
 import HomeScreen from '@/components/HomeScreen';
@@ -13,54 +13,61 @@ import QuestScreen from '@/components/QuestScreen';
 import BattleScreen from '@/components/BattleScreen';
 import QRHuntScreen from '@/components/QRHuntScreen';
 import FusionScreen from '@/components/FusionScreen';
-import { STAGES } from '@/lib/gameData';
-
-type Screen = 'home' | 'units' | 'summon' | 'quest' | 'battle' | 'qrhunt' | 'fusion' | 'shop' | 'arena' | 'randall' | 'friends';
+import EvolutionScreen from '@/components/EvolutionScreen';
+import ArenaScreen from '@/components/ArenaScreen';
+import ShopScreen from '@/components/ShopScreen';
 
 export default function GameApp() {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<{ id: string; email: string } | null>({ id: 'guest', email: '' });
   const [authLoaded, setAuthLoaded] = useState(false);
   
-  const { state, isLoaded, timeToNextEnergy, updateState, addUnit, setTeamMember, spendGems, spendEnergy, processQrScan, rollGacha, equipItem, unequipItem, winBattle, fuseUnits, isSaving, saveToCloud } = useGameState({
-    userId: user?.id,
-    autoSave: true,
-    saveInterval: 30000
-  });
-  
-  const [currentScreen, setCurrentScreen] = useState<Screen>('home');
-  const [battleStage, setBattleStage] = useState<number | null>(null);
-  const [fusionTargetId, setFusionTargetId] = useState<string | null>(null);
-  const [alertMessage, setAlertMessage] = useState<string | null>(null);
-  const [battleRewards, setBattleRewards] = useState<any>(null);
-  const [showAlert, setShowAlert] = useState(false);
+  const {
+    gameState,
+    isLoaded,
+    timeToNextEnergy,
+    currentScreen,
+    battleStage,
+    fusionTargetId,
+    evolutionTargetId,
+    showAlert,
+    alertMessage,
+    battleRewards,
+    startBattle,
+    endBattle,
+    dismissBattleRewards,
+    navigate,
+    goBack,
+    triggerAlert,
+    handlePurchase,
+    addUnit,
+    setTeamMember,
+    spendGems,
+    rollGacha,
+    equipItem,
+    unequipItem,
+    fuseUnits,
+    setFusionTargetId,
+    setEvolutionTargetId,
+    processQrScan,
+    evolveUnit
+  } = useGameApp(user?.id);
 
-  // Check auth status on mount
+  const state = gameState.state;
+
   useEffect(() => {
-    const checkAuth = async () => {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser as any);
-      setAuthLoaded(true);
-    };
-    checkAuth();
-
-    // Listen for auth changes
-    const authListener = onAuthChange((user) => {
-      setUser(user);
-    });
-
-    return () => {
-      if (authListener?.data?.subscription) {
-        authListener.data.subscription.unsubscribe();
-      }
-    };
+    setAuthLoaded(true);
   }, []);
 
-  const handleLogin = (userId: string) => {
-    setUser({ id: userId, email: '' } as AuthUser);
+  const handleStartBattle = (stageId: number) => {
+    startBattle(stageId);
   };
 
-  const handleSkip = () => {
-    setAuthLoaded(true);
+  const handleFusionBack = () => {
+    navigate('units');
+  };
+
+  const handleEvolutionBack = () => {
+    navigate('units');
   };
 
   if (!authLoaded || !isLoaded) {
@@ -74,10 +81,6 @@ export default function GameApp() {
     );
   }
 
-  if (!user) {
-    return <AuthScreen onLogin={handleLogin} onSkip={handleSkip} />;
-  }
-
   const formatTime = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60);
@@ -85,50 +88,123 @@ export default function GameApp() {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'medium') => {
-    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-      const patterns = {
-        light: 10,
-        medium: 20,
-        heavy: 50,
-      };
-      navigator.vibrate(patterns[type]);
+  const renderScreen = () => {
+    switch (currentScreen) {
+      case 'home':
+        return (
+          <HomeScreen 
+            state={state} 
+            onNavigate={navigate} 
+            onStartBattle={handleStartBattle} 
+            timeToNextEnergy={timeToNextEnergy}
+          />
+        );
+      case 'units':
+        return (
+          <UnitsScreen
+            state={state}
+            setTeamMember={setTeamMember}
+            equipItem={equipItem}
+            unequipItem={unequipItem}
+            onNavigateToFusion={(unitId) => {
+              setFusionTargetId(unitId);
+              navigate('fusion');
+            }}
+            onNavigateToEvolution={(unitId) => {
+              setEvolutionTargetId(unitId);
+              navigate('evolution');
+            }}
+            onNavigate={navigate}
+          />
+        );
+      case 'summon':
+        return (
+          <SummonScreen
+            state={state}
+            addUnit={addUnit}
+            spendGems={spendGems}
+            rollGacha={rollGacha}
+            onAlert={triggerAlert}
+          />
+        );
+      case 'quest':
+        return <QuestScreen onStartBattle={handleStartBattle} />;
+      case 'shop':
+        return (
+          <ShopScreen
+            state={state}
+            onBack={goBack}
+            onPurchase={handlePurchase}
+          />
+        );
+      case 'randall':
+        return (
+          <RandallScreen 
+            state={state} 
+            onBack={goBack}
+            onPurchase={handlePurchase}
+          />
+        );
+      case 'qrhunt':
+        return (
+          <QRHuntScreen
+            state={state}
+            onScan={(hash) => processQrScan(hash)}
+            onBack={goBack}
+          />
+        );
+      case 'fusion':
+        return (
+          <FusionScreen
+            state={state}
+            targetInstanceId={fusionTargetId!}
+            fuseUnits={fuseUnits}
+            onBack={handleFusionBack}
+            onAlert={triggerAlert}
+          />
+        );
+      case 'evolution':
+        return (
+          <EvolutionScreen
+            state={state}
+            targetInstanceId={evolutionTargetId!}
+            onBack={handleEvolutionBack}
+            evolveUnit={evolveUnit}
+            onAlert={triggerAlert}
+          />
+        );
+      case 'battle':
+        return battleStage !== null ? (
+          <BattleScreen
+            state={state}
+            stageId={battleStage}
+            onEnd={endBattle}
+          />
+        ) : null;
+      case 'arena':
+        return (
+          <ArenaScreen
+            onStartBattle={() => {}}
+            onBack={goBack}
+          />
+        );
+      case 'friends':
+        return (
+          <div className="flex flex-col items-center justify-center h-full p-4">
+            <div className="text-6xl mb-4">👥</div>
+            <h2 className="text-xl font-bold text-zinc-300 mb-2">Coming Soon</h2>
+            <p className="text-zinc-500 text-center">Friends system will be available in a future update.</p>
+            <button 
+              onClick={goBack}
+              className="mt-6 px-6 py-3 bg-zinc-800 text-zinc-300 rounded-lg font-bold"
+            >
+              Go Back
+            </button>
+          </div>
+        );
+      default:
+        return null;
     }
-  };
-
-  const startBattle = (stageId: number) => {
-    const stage = STAGES.find(s => s.id === stageId);
-    if (!stage) return;
-
-    if (spendEnergy(stage.energy)) {
-      triggerHaptic('medium');
-      setBattleStage(stageId);
-      setCurrentScreen('battle');
-    } else {
-      triggerHaptic('light');
-      setAlertMessage(`Not enough energy! You need ${stage.energy} ⚡ to start this quest.`);
-      setShowAlert(true);
-      setTimeout(() => setShowAlert(false), 3000);
-    }
-  };
-
-  const endBattle = (victory: boolean) => {
-    if (victory) {
-      triggerHaptic('heavy');
-      if (battleStage !== null) {
-        const rewards = winBattle(battleStage);
-        setBattleRewards(rewards);
-      }
-    }
-    setCurrentScreen('home');
-    setBattleStage(null);
-  };
-
-  const handleNavigation = (screen: Screen) => {
-    if (screen === 'qrhunt') {
-      triggerHaptic('light');
-    }
-    setCurrentScreen(screen);
   };
 
   return (
@@ -168,101 +244,9 @@ export default function GameApp() {
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="w-full h-full animate-fadeIn">
-            {currentScreen === 'home' && <HomeScreen state={state} onNavigate={handleNavigation} onStartBattle={startBattle} timeToNextEnergy={timeToNextEnergy} />}
-            {currentScreen === 'units' && (
-              <UnitsScreen
-                state={state}
-                setTeamMember={setTeamMember}
-                equipItem={equipItem}
-                unequipItem={unequipItem}
-                onNavigateToFusion={(unitId) => {
-                  setFusionTargetId(unitId);
-                  setCurrentScreen('fusion');
-                }}
-              />
-            )}
-            {currentScreen === 'summon' && (
-              <SummonScreen
-                state={state}
-                addUnit={addUnit}
-                spendGems={spendGems}
-                rollGacha={rollGacha}
-                onAlert={(msg) => {
-                  setAlertMessage(msg);
-                  setShowAlert(true);
-                  setTimeout(() => setShowAlert(false), 3000);
-                }}
-              />
-            )}
-            {currentScreen === 'quest' && <QuestScreen onStartBattle={startBattle} />}
-            {currentScreen === 'shop' && (
-              <RandallScreen 
-                state={state} 
-                onBack={() => setCurrentScreen('home')}
-                onPurchase={(price, currency) => {
-                  if (currency === 'zel' && state.zel >= price) {
-                    updateState({ zel: state.zel - price });
-                    return true;
-                  }
-                  if (currency === 'gems' && state.gems >= price) {
-                    updateState({ gems: state.gems - price });
-                    return true;
-                  }
-                  return false;
-                }}
-              />
-            )}
-            {currentScreen === 'randall' && (
-              <RandallScreen 
-                state={state} 
-                onBack={() => setCurrentScreen('home')}
-                onPurchase={(price, currency) => {
-                  if (currency === 'zel' && state.zel >= price) {
-                    updateState({ zel: state.zel - price });
-                    return true;
-                  }
-                  if (currency === 'gems' && state.gems >= price) {
-                    updateState({ gems: state.gems - price });
-                    return true;
-                  }
-                  return false;
-                }}
-              />
-            )}
-            {currentScreen === 'qrhunt' && (
-              <QRHuntScreen
-                state={state}
-                onScan={processQrScan}
-                onBack={() => setCurrentScreen('home')}
-              />
-            )}
-            {currentScreen === 'fusion' && fusionTargetId && (
-              <FusionScreen
-                state={state}
-                targetInstanceId={fusionTargetId}
-                fuseUnits={fuseUnits}
-                onBack={() => {
-                  setFusionTargetId(null);
-                  setCurrentScreen('units');
-                }}
-                onAlert={(msg) => {
-                  setAlertMessage(msg);
-                  setShowAlert(true);
-                  setTimeout(() => setShowAlert(false), 3000);
-                }}
-              />
-            )}
-            {currentScreen === 'battle' && battleStage !== null && (
-              <BattleScreen
-                state={state}
-                stageId={battleStage}
-                onEnd={endBattle}
-              />
-            )}
+            {renderScreen()}
           </div>
         </div>
-
-        
 
         {showAlert && alertMessage && (
           <div className="fixed top-20 left-4 right-4 bg-red-950/90 backdrop-blur border border-red-800/50 rounded-lg p-3 shadow-lg animate-slideDown z-50">
@@ -311,7 +295,7 @@ export default function GameApp() {
                 )}
               </div>
               <button
-                onClick={() => setBattleRewards(null)}
+                onClick={dismissBattleRewards}
                 className="w-full rounded-2xl bg-amber-400 py-3 text-black font-black hover:bg-amber-300 transition-colors"
               >
                 CONTINUE

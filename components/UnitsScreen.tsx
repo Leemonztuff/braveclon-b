@@ -16,14 +16,16 @@ export default function UnitsScreen({
   equipItem,
   unequipItem,
   onNavigateToFusion,
-  onNavigateToEvolution
+  onNavigateToEvolution,
+  onNavigate
 }: { 
   state: PlayerState, 
   setTeamMember: (index: number, id: string | null) => void,
   equipItem: (unitId: string, slot: EquipSlot, itemId: string | null) => void,
   unequipItem: (unitId: string, slot: EquipSlot) => void,
   onNavigateToFusion?: (unitId: string) => void,
-  onNavigateToEvolution?: (unitId: string) => void
+  onNavigateToEvolution?: (unitId: string) => void,
+  onNavigate?: (screen: any) => void
 }) {
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [inspectUnitId, setInspectUnitId] = useState<string | null>(null);

@@ -13,9 +13,9 @@ interface HomeScreenProps {
 
 const REEL_MENU = [
   { id: 'quest', label: 'QUEST', icon: '/icons/combat/melee.svg', desc: 'Story Mode' },
-  { id: 'gate', label: 'GATE', icon: '/icons/entity/loot.svg', desc: 'Special' },
   { id: 'arena', label: 'ARENA', icon: '/icons/game/combat.svg', desc: 'PvP' },
-  { id: 'summon_lab', label: 'SUMMON LAB', icon: '/icons/entity/potion.svg', desc: 'Special' },
+  { id: 'qrhunt', label: 'QR HUNT', icon: '/icons/entity/potion.svg', desc: 'Special' },
+  { id: 'summon', label: 'SUMMON', icon: '/icons/entity/potion.svg', desc: 'Gacha' },
 ];
 
 const BOTTOM_MENU = [
@@ -24,7 +24,7 @@ const BOTTOM_MENU = [
   { id: 'randall', label: 'RANDALL', icon: '/icons/game/castle.svg' },
   { id: 'shop', label: 'GEMS', icon: '/icons/entity/loot.svg' },
   { id: 'summon', label: 'SUMMON', icon: '/icons/entity/potion.svg' },
-  { id: 'friends', label: 'FRIENDS', icon: '/icons/game/party.svg' },
+  { id: 'arena', label: 'ARENA', icon: '/icons/game/combat.svg' },
 ];
 
 export default function HomeScreen({ state, onNavigate, onStartBattle, timeToNextEnergy }: HomeScreenProps) {
@@ -36,18 +36,16 @@ export default function HomeScreen({ state, onNavigate, onStartBattle, timeToNex
       onNavigate('quest');
     } else if (id === 'arena') {
       onNavigate('arena');
-    } else if (id === 'gate') {
-      onNavigate('quest'); 
+    } else if (id === 'qrhunt') {
+      onNavigate('qrhunt');
+    } else if (id === 'summon') {
+      onNavigate('summon');
     }
   };
 
   const handleBottomClick = (id: string) => {
     if (id === 'home') return;
-    if (id === 'shop') {
-      onNavigate('shop');
-    } else {
-      onNavigate(id as any);
-    }
+    onNavigate(id as any);
   };
 
   return (
