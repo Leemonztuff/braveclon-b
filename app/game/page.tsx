@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useGameApp, Screen } from '@/hooks/useGameApp';
 import { BattleRewards } from '@/components/BattleRewardsModal';
 import { X } from 'lucide-react';
@@ -19,7 +19,6 @@ import ShopScreen from '@/components/ShopScreen';
 
 export default function GameApp() {
   const [user, setUser] = useState<{ id: string; email: string } | null>({ id: 'guest', email: '' });
-  const [authLoaded, setAuthLoaded] = useState(false);
   
   const {
     gameState,
@@ -54,10 +53,6 @@ export default function GameApp() {
 
   const state = gameState.state;
 
-  useEffect(() => {
-    setAuthLoaded(true);
-  }, []);
-
   const handleStartBattle = (stageId: number) => {
     startBattle(stageId);
   };
@@ -70,7 +65,7 @@ export default function GameApp() {
     navigate('units');
   };
 
-  if (!authLoaded || !isLoaded) {
+  if (!isLoaded) {
     return (
       <div className="flex h-screen items-center justify-center bg-zinc-950 text-white">
         <div className="text-center">
