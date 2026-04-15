@@ -1,20 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getCurrentUser, onAuthChange, AuthUser } from '@/lib/auth';
 
 export default function LandingPage() {
   const [showFeatures, setShowFeatures] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser as AuthUser | null);
+      setLoading(false);
+    };
+    checkAuth();
+
+    const authListener = onAuthChange((user) => {
+      setUser(user);
+    });
+
+    return () => {
+      if (authListener?.data?.subscription) {
+        authListener.data.subscription.unsubscribe();
+      }
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="text-amber-400 animate-spin text-4xl">⚔️</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      {/* Hero Section */}
       <div className="relative overflow-hidden">
-        {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-b from-amber-500/10 via-zinc-950 to-zinc-950" />
         
         <div className="relative max-w-4xl mx-auto px-4 py-20 text-center">
-          {/* Logo */}
           <div className="mb-8">
             <div className="inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg shadow-amber-500/25 mb-6">
               <span className="text-6xl">⚔️</span>
@@ -27,18 +54,35 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* CTA */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link
-              href="/game"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-amber-400 text-zinc-950 font-black text-lg rounded-full hover:bg-amber-300 transition-all transform hover:scale-105 shadow-lg shadow-amber-500/25"
-            >
-              <span>🎮</span>
-              JUGAR AHORA
-            </Link>
-          </div>
+          {/* Auth State */}
+          {user ? (
+            <div className="flex flex-col items-center gap-4 mb-12">
+              <div className="flex items-center gap-3 bg-zinc-900/50 px-6 py-3 rounded-full border border-zinc-800">
+                <div className="w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center text-zinc-950 font-black">
+                  {user.email?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <span className="text-zinc-300">Conectado</span>
+              </div>
+              <Link
+                href="/game"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-amber-400 text-zinc-950 font-black text-lg rounded-full hover:bg-amber-300 transition-all transform hover:scale-105 shadow-lg shadow-amber-500/25"
+              >
+                <span>🎮</span>
+                CONTINUAR
+              </Link>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+              <Link
+                href="/game"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-amber-400 text-zinc-950 font-black text-lg rounded-full hover:bg-amber-300 transition-all transform hover:scale-105 shadow-lg shadow-amber-500/25"
+              >
+                <span>🎮</span>
+                JUGAR AHORA
+              </Link>
+            </div>
+          )}
 
-          {/* Stats preview */}
           <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto mb-12">
             <div className="bg-zinc-900/50 rounded-2xl p-4 border border-zinc-800">
               <div className="text-2xl font-black text-amber-400">50+</div>
@@ -56,7 +100,6 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Features Toggle */}
       <div className="max-w-3xl mx-auto px-4 py-8">
         <button
           onClick={() => setShowFeatures(!showFeatures)}
@@ -102,7 +145,6 @@ export default function LandingPage() {
         )}
       </div>
 
-      {/* Footer */}
       <footer className="max-w-4xl mx-auto px-4 py-8 text-center">
         <p className="text-zinc-600 text-sm">
           Braveclon es un fan game inspirado en Brave Frontier. No asociado con Alim o gumi.
