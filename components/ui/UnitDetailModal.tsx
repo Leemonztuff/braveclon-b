@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 import { X, Zap, Scale, Sword, Shield } from 'lucide-react';
 import { PlayerState, calculateStats } from '@/lib/gameState';
 import { UNIT_DATABASE, EQUIPMENT_DATABASE, EquipSlot, getExpForLevel, ELEMENT_ICONS, Element, EquipmentTemplate } from '@/lib/gameData';
