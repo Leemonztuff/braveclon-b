@@ -7,7 +7,7 @@ export interface BattleRewards {
   exp: number;
   playerLeveledUp: boolean;
   leveledUpUnits: { name: string; oldLevel: number; newLevel: number }[];
-  equipmentDropped: string[];
+  equipmentDropped: string[] | { templateId: string }[];
 }
 
 export function BattleRewardsModal({ rewards, onClose }: { rewards: BattleRewards, onClose: () => void }) {
@@ -51,12 +51,13 @@ export function BattleRewardsModal({ rewards, onClose }: { rewards: BattleReward
           <div className={`w-full bg-zinc-800 ${BORDERS.radius.lg} p-4 mb-6`}>
             <h3 className="text-sm font-bold text-zinc-400 mb-2 uppercase">Equipment Found</h3>
             <div className="flex flex-col gap-2">
-              {rewards.equipmentDropped.map((eqId: string, i: number) => {
+              {rewards.equipmentDropped.map((eq, i: number) => {
+                const eqId = typeof eq === 'string' ? eq : eq.templateId;
                 const template = EQUIPMENT_DATABASE[eqId];
                 return (
                   <div key={i} className="flex items-center gap-2 text-sm font-bold text-white bg-zinc-900 p-2 rounded-lg border border-zinc-700">
-                    <span className="text-xl">{template.icon}</span>
-                    <span>{template.name}</span>
+                    <span className="text-xl">{template?.icon || '⚔️'}</span>
+                    <span>{template?.name || eqId}</span>
                   </div>
                 );
               })}

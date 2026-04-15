@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { useGameState, BattleRewards } from '@/lib/gameState';
+import { useGameState } from '@/lib/gameState';
+import { BattleRewards } from '@/components/BattleRewardsModal';
 import { STAGES } from '@/lib/gameData';
 
 export type Screen = 
