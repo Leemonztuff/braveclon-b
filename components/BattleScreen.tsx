@@ -148,11 +148,6 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
     }, 900);
   }, []);
 
-  useEffect(() => {
-    if (!autoBattle || turnState !== 'player_input') return;
-    executeTurn();
-  }, [autoBattle, turnState, executeTurn]);
-
   const addLog = useCallback((msg: string) => {
     setCombatLog(prev => [...prev.slice(-4), msg]);
   }, []);
@@ -352,7 +347,12 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
     setTurnCount(prev => prev + 1);
     setSelectedEnemy(null);
     setTurnState('player_input');
-  }, [turnState, enemyUnits, playerUnits, selectedEnemy, leaderSkill, addLog, onEnd]);
+  }, [turnState, enemyUnits, playerUnits, selectedEnemy, leaderSkill, addLog, onEnd, wait, spawnCrystal, spawnDamageNumber]);
+
+  useEffect(() => {
+    if (!autoBattle || turnState !== 'player_input') return;
+    executeTurn();
+  }, [autoBattle, turnState, executeTurn]);
 
   const totalHp = playerUnits.reduce((sum, u) => sum + u.hp, 0);
   const totalMaxHp = playerUnits.reduce((sum, u) => sum + u.maxHp, 0);
