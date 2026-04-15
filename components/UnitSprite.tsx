@@ -2,18 +2,19 @@ import { motion, AnimatePresence } from 'motion/react';
 import { BattleUnit } from '@/lib/battleTypes';
 import { ElementalParticles } from './ElementalParticles';
 
-export function UnitSprite({ unit, onClick, interactive, hitEffectElement, hideStats, isItemSelected }: { unit: BattleUnit, onClick?: () => void, interactive?: boolean, hitEffectElement?: string | null, hideStats?: boolean, isItemSelected?: boolean }) {
+export function UnitSprite({ unit, onClick, interactive, hitEffectElement, hideStats, isItemSelected, scale = 1 }: { unit: BattleUnit, onClick?: () => void, interactive?: boolean, hitEffectElement?: string | null, hideStats?: boolean, isItemSelected?: boolean, scale?: number }) {
   const hpPercent = (unit.hp / unit.maxHp) * 100;
   const bbPercent = (unit.bbGauge / unit.maxBb) * 100;
   const isBbReady = unit.bbGauge >= unit.maxBb;
 
   const variants: any = {
     idle: { y: [0, -4, 0], transition: { repeat: Infinity, duration: 2, ease: "easeInOut" } },
-    attacking: { x: unit.isPlayer ? -60 : 60, scale: 1.1, zIndex: 20, transition: { type: "spring", stiffness: 400, damping: 15 } },
+    // Side-scroller: Players on LEFT attack RIGHT (+x), Enemies on RIGHT attack LEFT (-x)
+    attacking: { x: unit.isPlayer ? 60 : -60, scale: 1.1, zIndex: 20, transition: { type: "spring", stiffness: 400, damping: 15 } },
     skill: { 
-      x: unit.isPlayer ? [-40, -120, -80] : [40, 120, 80],
+      x: unit.isPlayer ? [40, 120, 80] : [-40, -120, -80],
       scale: [1, 1.5, 1.3], 
-      rotate: [0, unit.isPlayer ? -5 : 5, unit.isPlayer ? 5 : -5, 0],
+      rotate: [0, unit.isPlayer ? 5 : -5, unit.isPlayer ? -5 : 5, 0],
       filter: ["brightness(1)", "brightness(2) drop-shadow(0 0 25px rgba(250,204,21,1))", "brightness(1.5) drop-shadow(0 0 15px rgba(250,204,21,0.8))"], 
       zIndex: 30, 
       transition: { duration: 0.4, times: [0, 0.5, 1] } 
@@ -52,7 +53,9 @@ export function UnitSprite({ unit, onClick, interactive, hitEffectElement, hideS
       )}
 
       {/* Sprite */}
-      <div className={`relative w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center ${unit.queuedBb ? 'drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]' : ''}`}>
+      <div className={`relative w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center ${unit.queuedBb ? 'drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]' : ''}`}
+        style={{ transform: `scale(${scale})` }}
+      >
         <img 
           src={unit.template.spriteUrl} 
           alt={unit.template.name} 

@@ -124,8 +124,10 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
   const getTargetPosition = useCallback((targetId: string, isEnemy: boolean) => {
     const list = isEnemy ? enemyUnits : playerUnits;
     const idx = list.findIndex(u => u.id === targetId);
-    const baseLeft = idx === -1 ? 50 : Math.min(90, 16 + idx * 14);
-    const top = isEnemy ? 18 : 72;
+    // Side-scroller: Enemies on RIGHT (75-88%), Players on LEFT (12-25%)
+    // Damage numbers appear in center-right area near enemies
+    const baseLeft = idx === -1 ? 75 : Math.max(70, 88 - idx * 10);
+    const top = 35 + (idx * 15); // Stack vertically like units
     return { left: `${baseLeft}%`, top: `${top}%` };
   }, [enemyUnits, playerUnits]);
 
@@ -140,8 +142,9 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
 
   const spawnCrystal = useCallback((type: 'BC' | 'HC', element: string) => {
     const id = `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    const left = `${20 + Math.random() * 60}%`;
-    const top = `${30 + Math.random() * 30}%`;
+    // Side-scroller: crystals spawn in center area (between players and enemies)
+    const left = `${40 + Math.random() * 30}%`;
+    const top = `${25 + Math.random() * 40}%`;
     setCombatCrystals(prev => [...prev.slice(-6), { id, type, left, top, element }]);
     window.setTimeout(() => {
       setCombatCrystals(prev => prev.filter(item => item.id !== id));
@@ -425,49 +428,101 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
         </div>
       </div>
 
+      {/* ═══════════════════════════════════════════════════════════════
+          BATTLEFIELD - Side-scroller style (Brave Frontier)
+          Players on LEFT, Enemies on RIGHT
+      ═══════════════════════════════════════════════════════════════ */}
       <div className="flex-1 relative z-20 px-3 pb-3">
-        <div className="relative mx-auto flex max-w-[400px] flex-col gap-3">
-          <div className="rounded-[30px] border border-white/10 bg-slate-950/80 p-3 shadow-[0_35px_80px_rgba(0,0,0,0.35)] backdrop-blur-sm">
-            <div className="flex justify-center items-end gap-3">
-              {enemyUnits.map(unit => (
+        <div className="relative mx-auto flex max-w-[400px] flex-col h-full gap-2">
+          
+          {/* Battle Area - Side scroller battlefield */}
+          <div className="relative flex-1 min-h-[200px] rounded-[28px] border border-white/10 bg-[#0a1220] overflow-hidden shadow-[inset_0_0_60px_rgba(0,0,0,0.5)]">
+            
+            {/* Background layers for parallax feel */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0d1a2d] via-[#0a1428] to-[#0d1a2d]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center_70%_50%,rgba(40,80,140,0.3),transparent_50%)]" />
+            
+            {/* Ground line */}
+            <div className="absolute bottom-[15%] left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
+            
+            {/* Player zone indicator (left) */}
+            <div className="absolute left-2 top-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-1">
+              <span className="text-[8px] uppercase tracking-widest text-emerald-400/60">Your Party</span>
+            </div>
+            
+            {/* Enemy zone indicator (right) */}
+            <div className="absolute right-2 top-2 rounded-lg bg-red-500/10 border border-red-500/20 px-2 py-1">
+              <span className="text-[8px] uppercase tracking-widest text-red-400/60">Enemies</span>
+            </div>
+
+            {/* ════ ENEMIES (Right side) ════ */}
+            <div className="absolute right-[8%] top-1/2 -translate-y-1/2 flex flex-col gap-4">
+              {enemyUnits.map((unit, idx) => (
                 <div
                   key={unit.id}
-                  className={`relative flex flex-col items-center transition-all ${selectedEnemy === unit.id ? 'scale-110' : ''} ${unit.isDead ? 'opacity-40' : ''}`}
+                  className={`relative cursor-pointer transition-all duration-200 ${selectedEnemy === unit.id ? 'scale-110 z-10' : ''} ${unit.isDead ? 'opacity-30 grayscale' : ''}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (turnState === 'player_input' && !unit.isDead) selectEnemyTarget(unit.id);
                   }}
                 >
-                  <div className={`absolute inset-x-0 -bottom-2 h-2 rounded-full bg-white/5 ${selectedEnemy === unit.id ? 'opacity-100' : 'opacity-40'}`} />
+                  {/* Selection ring */}
+                  {selectedEnemy === unit.id && (
+                    <div className="absolute -inset-3 rounded-full border-2 border-yellow-400/60 animate-pulse" />
+                  )}
                   <UnitSprite
                     unit={unit}
                     hideStats
                     hitEffectElement={bbHitEffect?.targetId === unit.id ? bbHitEffect.element : null}
+                    scale={0.9}
                   />
-                  <div className="mt-2 text-[10px] uppercase tracking-[0.2em] text-slate-400">
-                    {unit.template.name}
+                  {/* HP bar below enemy */}
+                  <div className="mt-1 mx-auto w-14">
+                    <div className="h-1.5 rounded-full bg-black/50 overflow-hidden border border-red-900/30">
+                      <div 
+                        className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all"
+                        style={{ width: `${(unit.hp / unit.maxHp) * 100}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
 
-          <div className="relative rounded-[36px] border border-white/10 bg-[#0b1628]/90 min-h-[180px] overflow-hidden shadow-[inset_0_0_40px_rgba(0,0,0,0.45)]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.08),transparent_36%)] pointer-events-none" />
-            <div className="absolute inset-x-0 top-4 flex justify-center">
-              <div className="rounded-full bg-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-slate-300 backdrop-blur-sm">
-                Battlefield
-              </div>
+            {/* ════ PLAYERS (Left side) ════ */}
+            <div className="absolute left-[8%] top-1/2 -translate-y-1/2 flex flex-col gap-4">
+              {playerUnits.map((unit, idx) => (
+                <div
+                  key={unit.id}
+                  className={`relative transition-all duration-200 ${unit.isDead ? 'opacity-30 grayscale' : ''}`}
+                >
+                  <UnitSprite
+                    unit={unit}
+                    hideStats
+                    scale={0.9}
+                  />
+                  {/* HP bar below player */}
+                  <div className="mt-1 mx-auto w-14">
+                    <div className="h-1.5 rounded-full bg-black/50 overflow-hidden border border-emerald-900/30">
+                      <div 
+                        className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all"
+                        style={{ width: `${(unit.hp / unit.maxHp) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
 
+            {/* ════ Floating damages & effects (center area) ════ */}
             {floatingDamages.map(damage => (
               <motion.div
                 key={damage.id}
-                initial={{ opacity: 0, y: 0, scale: 0.8 }}
-                animate={{ opacity: 1, y: -40, scale: 1 }}
-                exit={{ opacity: 0, y: -60, scale: 1.1 }}
-                transition={{ duration: 0.7, ease: 'easeOut' }}
-                className={`pointer-events-none absolute font-black ${damage.isCrit ? 'text-yellow-300 text-2xl' : 'text-white text-xl'} drop-shadow-[0_0_8px_rgba(0,0,0,0.9)]`}
+                initial={{ opacity: 0, y: 0, scale: 0.5 }}
+                animate={{ opacity: 1, y: -50, scale: 1.2 }}
+                exit={{ opacity: 0, y: -80, scale: 1.4 }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+                className={`pointer-events-none absolute font-black ${damage.isCrit ? 'text-yellow-300 text-2xl' : 'text-white text-xl'} drop-shadow-[0_0_10px_rgba(0,0,0,1)]`}
                 style={{ left: damage.left, top: damage.top }}
               >
                 {damage.value}
@@ -477,11 +532,11 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
             {combatCrystals.map(crystal => (
               <motion.div
                 key={crystal.id}
-                initial={{ opacity: 0, scale: 0.4, y: -20 }}
-                animate={{ opacity: 1, scale: 1, y: 20 }}
-                exit={{ opacity: 0, scale: 0.6, y: 40 }}
-                transition={{ duration: 0.9, ease: 'easeOut' }}
-                className={`pointer-events-none absolute rounded-full border border-white/20 px-2 py-1 text-[10px] font-bold ${crystal.type === 'BC' ? 'bg-sky-500/90 text-white shadow-[0_0_20px_rgba(56,189,248,0.55)]' : 'bg-emerald-500/90 text-white shadow-[0_0_20px_rgba(16,185,129,0.55)]'}`}
+                initial={{ opacity: 0, scale: 0.3, x: 0 }}
+                animate={{ opacity: 1, scale: 1, x: 50 }}
+                exit={{ opacity: 0, scale: 0.5, x: 100 }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+                className={`pointer-events-none absolute rounded-full border border-white/30 px-2 py-1 text-[9px] font-bold ${crystal.type === 'BC' ? 'bg-sky-500/90 text-white shadow-[0_0_15px_rgba(56,189,248,0.5)]' : 'bg-emerald-500/90 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]'}`}
                 style={{ left: crystal.left, top: crystal.top }}
               >
                 {crystal.type}
@@ -489,26 +544,27 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
             ))}
           </div>
 
+          {/* ════ Player Unit Selector (Bottom) ════ */}
           <div className="grid grid-cols-3 gap-2">
             {playerUnits.map((unit, idx) => (
-              <div key={unit.id} className="rounded-[20px] border border-white/10 bg-slate-950/80 p-2 shadow-[0_12px_35px_rgba(0,0,0,0.25)]">
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-[10px] uppercase tracking-[0.22em] text-slate-400">{idx === 5 ? 'Friend' : `Unit ${idx + 1}`}</span>
-                  <span className="text-[10px] font-bold text-slate-100">{unit.hp}/{unit.maxHp}</span>
+              <div key={unit.id} className="rounded-[18px] border border-white/10 bg-slate-950/80 p-2 shadow-[0_8px_25px_rgba(0,0,0,0.3)]">
+                <div className="flex items-center justify-between gap-1 mb-1">
+                  <span className="text-[9px] uppercase tracking-[0.15em] text-slate-400">{idx === 5 ? 'Friend' : `Unit ${idx + 1}`}</span>
+                  <span className="text-[9px] font-bold text-slate-100">{unit.hp}/{unit.maxHp}</span>
                 </div>
                 <button
                   onClick={() => toggleBb(unit.id)}
-                  className={`w-full rounded-2xl bg-slate-900/90 p-2 transition hover:brightness-110 ${turnState === 'player_input' && unit.bbGauge >= unit.maxBb ? 'ring-2 ring-sky-400/60' : ''}`}
+                  className={`w-full rounded-xl bg-slate-900/90 p-1.5 transition hover:brightness-110 ${turnState === 'player_input' && unit.bbGauge >= unit.maxBb ? 'ring-2 ring-sky-400/60' : ''} ${unit.isDead ? 'opacity-50' : ''}`}
                   disabled={turnState !== 'player_input' || unit.isDead}
                 >
-                  <UnitSprite unit={unit} hideStats />
+                  <UnitSprite unit={unit} hideStats scale={0.7} />
                 </button>
-                <div className="mt-2 space-y-1">
-                  <div className="h-2 rounded-full bg-slate-900/80 overflow-hidden border border-slate-800">
-                    <div className="h-full bg-gradient-to-r from-emerald-500 to-lime-400" style={{ width: `${(unit.hp / unit.maxHp) * 100}%` }} />
+                <div className="mt-1.5 space-y-1">
+                  <div className="h-1.5 rounded-full bg-slate-900/80 overflow-hidden border border-slate-800">
+                    <div className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400" style={{ width: `${(unit.hp / unit.maxHp) * 100}%` }} />
                   </div>
-                  <div className="h-2 rounded-full bg-slate-900/80 overflow-hidden border border-slate-800">
-                    <div className={`h-full transition-all ${unit.bbGauge >= unit.maxBb ? 'bg-cyan-400' : 'bg-sky-500'}`} style={{ width: `${(unit.bbGauge / unit.maxBb) * 100}%` }} />
+                  <div className="h-1.5 rounded-full bg-slate-900/80 overflow-hidden border border-slate-800">
+                    <div className={`h-full transition-all ${unit.bbGauge >= unit.maxBb ? 'bg-cyan-400 animate-pulse' : 'bg-sky-500'}`} style={{ width: `${(unit.bbGauge / unit.maxBb) * 100}%` }} />
                   </div>
                 </div>
               </div>
