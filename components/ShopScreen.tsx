@@ -40,18 +40,20 @@ const SHOP_ITEMS: Record<ShopTab, ShopItem[]> = {
 };
 
 interface ShopScreenProps {
-  zel: number;
-  gems: number;
-  onPurchase: (item: ShopItem) => boolean;
+  state: {
+    zel: number;
+    gems: number;
+  };
   onBack: () => void;
+  onPurchase: (price: number, currency: 'zel' | 'gems') => boolean;
 }
 
-export default function ShopScreen({ zel, gems, onPurchase, onBack }: ShopScreenProps) {
+export default function ShopScreen({ state, onBack, onPurchase }: ShopScreenProps) {
   const [activeTab, setActiveTab] = useState<ShopTab>('units');
   const [purchasedItems, setPurchasedItems] = useState<string[]>([]);
 
   const handleBuy = (item: ShopItem) => {
-    const success = onPurchase(item);
+    const success = onPurchase(item.price, item.currency);
     if (success) {
       setPurchasedItems(prev => [...prev, item.id]);
     }
@@ -72,11 +74,11 @@ export default function ShopScreen({ zel, gems, onPurchase, onBack }: ShopScreen
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1 bg-zinc-800 px-3 py-1 rounded-lg">
             <span className="text-yellow-400">💰</span>
-            <span className="font-bold text-white">{zel.toLocaleString()}</span>
+            <span className="font-bold text-white">{state.zel.toLocaleString()}</span>
           </div>
           <div className="flex items-center gap-1 bg-zinc-800 px-3 py-1 rounded-lg">
             <span className="text-blue-400">💎</span>
-            <span className="font-bold text-white">{gems}</span>
+            <span className="font-bold text-white">{state.gems}</span>
           </div>
         </div>
       </div>
@@ -111,7 +113,7 @@ export default function ShopScreen({ zel, gems, onPurchase, onBack }: ShopScreen
             className="grid grid-cols-2 gap-3"
           >
             {SHOP_ITEMS[activeTab].map((item) => {
-              const canAfford = item.currency === 'zel' ? zel >= item.price : gems >= item.price;
+              const canAfford = item.currency === 'zel' ? state.zel >= item.price : state.gems >= item.price;
               const wasPurchased = purchasedItems.includes(item.id);
               
               return (

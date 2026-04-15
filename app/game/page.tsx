@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useGameApp, Screen } from '@/hooks/useGameApp';
 import { BattleRewards } from '@/components/BattleRewardsModal';
 import { X } from 'lucide-react';
@@ -18,7 +18,7 @@ import ArenaScreen from '@/components/ArenaScreen';
 import ShopScreen from '@/components/ShopScreen';
 
 export default function GameApp() {
-  const [user, setUser] = useState<{ id: string; email: string } | null>({ id: 'guest', email: '' });
+  const [user] = useState<{ id: string; email: string } | null>({ id: 'guest', email: '' });
   
   const {
     gameState,
@@ -48,24 +48,25 @@ export default function GameApp() {
     setFusionTargetId,
     setEvolutionTargetId,
     processQrScan,
-    evolveUnit
+    evolveUnit,
+    setShowAlert
   } = useGameApp(user?.id);
 
-  const state = gameState.state;
+  const state = gameState?.state;
+  const isGameLoaded = gameState?.isLoaded ?? isLoaded;
 
-  const handleStartBattle = (stageId: number) => {
-    startBattle(stageId);
+  const handleStartBattle = useCallback((stageId: number) => {
+    if (startBattle) startBattle(stageId);
+  }, [startBattle]);
+
+  const formatTime = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const handleFusionBack = () => {
-    navigate('units');
-  };
-
-  const handleEvolutionBack = () => {
-    navigate('units');
-  };
-
-  if (!isLoaded) {
+  if (!isGameLoaded) {
     return (
       <div className="flex h-screen items-center justify-center bg-zinc-950 text-white">
         <div className="text-center">
@@ -76,14 +77,9 @@ export default function GameApp() {
     );
   }
 
-  const formatTime = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
   const renderScreen = () => {
+    if (!state) return null;
+
     switch (currentScreen) {
       case 'home':
         return (
@@ -102,11 +98,11 @@ export default function GameApp() {
             equipItem={equipItem}
             unequipItem={unequipItem}
             onNavigateToFusion={(unitId) => {
-              setFusionTargetId(unitId);
+              setFusionTargetId?.(unitId);
               navigate('fusion');
             }}
             onNavigateToEvolution={(unitId) => {
-              setEvolutionTargetId(unitId);
+              setEvolutionTargetId?.(unitId);
               navigate('evolution');
             }}
             onNavigate={navigate}
@@ -144,7 +140,7 @@ export default function GameApp() {
         return (
           <QRHuntScreen
             state={state}
-            onScan={(hash) => processQrScan(hash)}
+            onScan={processQrScan}
             onBack={goBack}
           />
         );
@@ -154,7 +150,7 @@ export default function GameApp() {
             state={state}
             targetInstanceId={fusionTargetId!}
             fuseUnits={fuseUnits}
-            onBack={handleFusionBack}
+            onBack={goBack}
             onAlert={triggerAlert}
           />
         );
@@ -163,7 +159,7 @@ export default function GameApp() {
           <EvolutionScreen
             state={state}
             targetInstanceId={evolutionTargetId!}
-            onBack={handleEvolutionBack}
+            onBack={goBack}
             evolveUnit={evolveUnit}
             onAlert={triggerAlert}
           />
@@ -203,9 +199,9 @@ export default function GameApp() {
   };
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col bg-zinc-950 text-zinc-100">
-      <div className="relative flex h-full w-full flex-col overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950 safe-area">
-        {currentScreen !== 'battle' && (
+    <div className="flex flex-col h-[100dvh] w-full bg-zinc-950 text-zinc-100">
+      <div className="relative flex flex-col h-full w-full flex-col overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950 safe-area">
+        {currentScreen !== 'battle' && state && (
           <div className="flex items-center justify-between bg-zinc-950/80 backdrop-blur-sm px-4 py-3 border-b border-zinc-800/50 z-40">
             <div className="flex flex-col gap-0.5">
               <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Lv. {state.level}</span>
@@ -250,7 +246,7 @@ export default function GameApp() {
               <div>
                 <p className="text-sm font-medium text-red-100">{alertMessage}</p>
               </div>
-              <button onClick={() => setShowAlert(false)} className="ml-auto text-red-200 hover:text-red-100">
+              <button onClick={() => setShowAlert?.(false)} className="ml-auto text-red-200 hover:text-red-100">
                 <X size={18} />
               </button>
             </div>

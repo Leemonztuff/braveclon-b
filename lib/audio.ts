@@ -1,4 +1,4 @@
-export const playSound = (type: 'hit' | 'bb_cast' | 'bb_hit' | 'weakness' | 'bb_ready' | 'heal') => {
+export const playSound = (type: 'hit' | 'bb_cast' | 'bb_hit' | 'weakness' | 'bb_ready' | 'heal' | 'victory' | 'defeat') => {
   try {
     const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
     if (!AudioContext) return;
@@ -43,38 +43,47 @@ export const playSound = (type: 'hit' | 'bb_cast' | 'bb_hit' | 'weakness' | 'bb_
       osc.type = 'square';
       osc.frequency.setValueAtTime(100, now);
       osc.frequency.exponentialRampToValueAtTime(10, now + 0.4);
-      
-      // Add noise for impact
-      const noise = ctx.createBufferSource();
-      const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.4, ctx.sampleRate);
-      const output = buffer.getChannelData(0);
-      for (let i = 0; i < buffer.length; i++) {
-        output[i] = Math.random() * 2 - 1;
-      }
-      noise.buffer = buffer;
-      const noiseFilter = ctx.createBiquadFilter();
-      noiseFilter.type = 'lowpass';
-      noiseFilter.frequency.value = 1000;
-      const noiseGain = ctx.createGain();
-      noiseGain.gain.setValueAtTime(0.3, now);
-      noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-      noise.connect(noiseFilter);
-      noiseFilter.connect(noiseGain);
-      noiseGain.connect(ctx.destination);
-      noise.start(now);
-
-      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.setValueAtTime(0.1, now);
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
       osc.start(now);
       osc.stop(now + 0.4);
     } else if (type === 'weakness') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(800, now);
-      osc.frequency.exponentialRampToValueAtTime(1600, now + 0.2);
-      gain.gain.setValueAtTime(0.2, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.setValueAtTime(1320, now + 0.1);
+      osc.frequency.setValueAtTime(1760, now + 0.2);
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.08, now + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
       osc.start(now);
-      osc.stop(now + 0.2);
+      osc.stop(now + 0.25);
+    } else if (type === 'hit') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(150, now);
+      osc.frequency.exponentialRampToValueAtTime(50, now + 0.15);
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    } else if (type === 'victory') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523, now);
+      osc.frequency.setValueAtTime(659, now + 0.15);
+      osc.frequency.setValueAtTime(784, now + 0.3);
+      osc.frequency.setValueAtTime(1047, now + 0.45);
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.15, now + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+      osc.start(now);
+      osc.stop(now + 0.6);
+    } else if (type === 'defeat') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(200, now);
+      osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+      osc.start(now);
+      osc.stop(now + 0.5);
     } else {
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(400, now);

@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PlayerState, calculateStats } from '@/lib/gameState';
-import { UNIT_DATABASE, ENEMIES, STAGES, getElementMultiplier, ELEMENT_ICONS } from '@/lib/gameData';
+import { UNIT_DATABASE, ENEMIES, STAGES, getElementMultiplier, ELEMENT_ICONS, Element, LeaderSkill } from '@/lib/gameData';
 import { BattleUnit } from '@/lib/battleTypes';
 import { playSound } from '@/lib/audio';
 import { UnitSprite } from './UnitSprite';
 import { motion, AnimatePresence } from 'motion/react';
 import { BBCutIn } from './BBCutIn';
 import { UnitStatusBox } from './UnitStatusBox';
-import { StatBar } from './ui/StatBar';
 
 interface BattleScreenProps {
   state: PlayerState;
@@ -15,8 +14,47 @@ interface BattleScreenProps {
   onEnd: (victory: boolean) => void;
 }
 
+// Calcular daño con fórmula BF2 mejorada
+function calculateDamage(
+  attacker: BattleUnit, 
+  target: BattleUnit, 
+  isBb: boolean,
+  leaderSkill?: LeaderSkill
+): { damage: number; isWeakness: boolean; elementalBonus: number } {
+  const basePower = isBb ? attacker.template.skill.power : 1.0;
+  const elementMultiplier = getElementMultiplier(attacker.template.element as Element, target.template.element as Element);
+  const isWeakness = elementMultiplier > 1.0;
+  
+  // Fórmula de daño BF2: (ATK * Power - DEF * 0.5) * Elemental
+  let rawDamage = Math.max(1, (attacker.atk * basePower) - (target.def * 0.5));
+  let finalDamage = Math.floor(rawDamage * elementMultiplier);
+  
+  // Aplicar leader skill bonus
+  let elementalBonus = 0;
+  if (leaderSkill?.elementBoost) {
+    const boost = leaderSkill.elementBoost[attacker.template.element as Element] || 0;
+    elementalBonus = Math.floor(finalDamage * boost);
+    finalDamage += elementalBonus;
+  }
+  
+  // Bonus de leader skill de stat
+  if (leaderSkill?.statBoost?.atk) {
+    finalDamage = Math.floor(finalDamage * (1 + leaderSkill.statBoost.atk));
+  }
+  
+  return { damage: finalDamage, isWeakness, elementalBonus };
+}
+
+// Obtener líder del equipo
+function getLeader(units: BattleUnit[]): BattleUnit | undefined {
+  return units.find(u => u.isPlayer && !u.isDead);
+}
+
 export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProps) {
   const [turnCount, setTurnCount] = useState(1);
+  const [selectedEnemy, setSelectedEnemy] = useState<string | null>(null);
+  
+  // Inicializar unidades del jugador desde el equipo
   const [playerUnits, setPlayerUnits] = useState<BattleUnit[]>(() => {
     return state.team
       .filter(id => id !== null)
@@ -41,6 +79,7 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
       });
   });
 
+  // Inicializar enemigos del stage
   const [enemyUnits, setEnemyUnits] = useState<BattleUnit[]>(() => {
     const stageData = STAGES.find(s => s.id === stageId) || STAGES[0];
     return stageData.enemies.map((enemyId, idx) => {
@@ -67,16 +106,59 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
   const [bbFlash, setBbFlash] = useState(false);
   const [bbCutInUnit, setBbCutInUnit] = useState<BattleUnit | null>(null);
   const [bbHitEffect, setBbHitEffect] = useState<{ targetId: string, element: string } | null>(null);
-  const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
+  const [floatingDamages, setFloatingDamages] = useState<Array<{ id: string; targetId: string; value: number; left: string; top: string; element: string; isCrit: boolean }>>([]);
+  const [combatCrystals, setCombatCrystals] = useState<Array<{ id: string; type: 'BC' | 'HC'; left: string; top: string; element: string }>>([]);
+  const [autoBattle, setAutoBattle] = useState(false);
+  const [battleSpeed, setBattleSpeed] = useState<'x1' | 'x2'>('x1');
 
   const totalBB = playerUnits.reduce((sum, u) => sum + u.bbGauge, 0);
   const totalMaxBB = playerUnits.reduce((sum, u) => sum + u.maxBb, 0);
 
-  const addLog = (msg: string) => {
-    setCombatLog(prev => [...prev.slice(-4), msg]);
-  };
+  // Obtener leader skill del líder
+  const leader = getLeader(playerUnits);
+  const leaderSkill = leader?.template.leaderSkill;
 
-  const toggleBb = (id: string) => {
+  const speedFactor = battleSpeed === 'x2' ? 0.65 : 1;
+  const wait = useCallback((ms: number) => new Promise<void>(resolve => setTimeout(resolve, Math.max(30, ms * speedFactor))), [speedFactor]);
+
+  const getTargetPosition = useCallback((targetId: string, isEnemy: boolean) => {
+    const list = isEnemy ? enemyUnits : playerUnits;
+    const idx = list.findIndex(u => u.id === targetId);
+    const baseLeft = idx === -1 ? 50 : Math.min(90, 16 + idx * 14);
+    const top = isEnemy ? 18 : 72;
+    return { left: `${baseLeft}%`, top: `${top}%` };
+  }, [enemyUnits, playerUnits]);
+
+  const spawnDamageNumber = useCallback((targetId: string, value: number, isCrit: boolean, element: string, isEnemy: boolean) => {
+    const position = getTargetPosition(targetId, isEnemy);
+    const id = `${targetId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    setFloatingDamages(prev => [...prev.slice(-4), { id, targetId, value, left: position.left, top: position.top, element, isCrit }]);
+    window.setTimeout(() => {
+      setFloatingDamages(prev => prev.filter(item => item.id !== id));
+    }, 900);
+  }, [getTargetPosition]);
+
+  const spawnCrystal = useCallback((type: 'BC' | 'HC', element: string) => {
+    const id = `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const left = `${20 + Math.random() * 60}%`;
+    const top = `${30 + Math.random() * 30}%`;
+    setCombatCrystals(prev => [...prev.slice(-6), { id, type, left, top, element }]);
+    window.setTimeout(() => {
+      setCombatCrystals(prev => prev.filter(item => item.id !== id));
+    }, 900);
+  }, []);
+
+  useEffect(() => {
+    if (!autoBattle || turnState !== 'player_input') return;
+    executeTurn();
+  }, [autoBattle, turnState, executeTurn]);
+
+  const addLog = useCallback((msg: string) => {
+    setCombatLog(prev => [...prev.slice(-4), msg]);
+  }, []);
+
+  // Toggle BB para una unidad
+  const toggleBb = useCallback((id: string) => {
     if (turnState !== 'player_input') return;
     setPlayerUnits(prev => prev.map(u => {
       if (u.id === id && u.bbGauge >= u.maxBb && !u.isDead) {
@@ -84,73 +166,101 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
       }
       return u;
     }));
-  };
+  }, [turnState]);
 
-  const executeTurn = async () => {
+  // Seleccionar enemigo como target
+  const selectEnemyTarget = useCallback((id: string) => {
+    if (turnState !== 'player_input') return;
+    setSelectedEnemy(prev => prev === id ? null : id);
+  }, [turnState]);
+
+  // Ejecutar turno completo
+  const executeTurn = useCallback(async () => {
     if (turnState !== 'player_input') return;
     setTurnState('player_executing');
     
     let currentEnemies = [...enemyUnits];
     let currentPlayer = [...playerUnits];
+    let targetingEnemy = selectedEnemy; // Usar enemigo seleccionado o el primero vivo
 
-    // Player attacks
+    // ═══════════════════════════════════════════════════════════════
+    // FASE 1: ATAQUES DEL JUGADOR
+    // ═══════════════════════════════════════════════════════════════
     for (let i = 0; i < currentPlayer.length; i++) {
       const attacker = currentPlayer[i];
       if (attacker.isDead) continue;
 
-      const targetIdx = currentEnemies.findIndex(e => !e.isDead);
-      if (targetIdx === -1) break;
+      // Determinar objetivo
+      let targetIdx: number;
+      if (targetingEnemy) {
+        targetIdx = currentEnemies.findIndex(e => e.id === targetingEnemy && !e.isDead);
+        if (targetIdx === -1) targetIdx = currentEnemies.findIndex(e => !e.isDead);
+      } else {
+        targetIdx = currentEnemies.findIndex(e => !e.isDead);
+      }
+      
+      if (targetIdx === -1) break; // Todos muertos
       const target = currentEnemies[targetIdx];
 
       const isBb = attacker.queuedBb;
-      const powerMultiplier = isBb ? attacker.template.skill.power : 1.0;
-      const elementMultiplier = getElementMultiplier(attacker.template.element, target.template.element);
-      const isWeakness = elementMultiplier > 1.0;
       
-      let rawDamage = Math.max(1, (attacker.atk * powerMultiplier) - (target.def * 0.5));
-      let finalDamage = Math.floor(rawDamage * elementMultiplier);
+      // Calcular daño con leader skill
+      const { damage, isWeakness, elementalBonus } = calculateDamage(
+        attacker, target, isBb, leaderSkill
+      );
 
+      // Animación: atacante se mueve
       currentPlayer[i] = { ...attacker, actionState: isBb ? 'skill' : 'attacking' };
       setPlayerUnits([...currentPlayer]);
       
+      // Cut-in para BB
       if (isBb) {
         setBbCutInUnit(attacker);
         playSound('bb_cast');
-        await new Promise(r => setTimeout(r, 1500));
+        await wait(1400);
         setBbCutInUnit(null);
         setBbFlash(true);
-        setTimeout(() => setBbFlash(false), 150);
-        await new Promise(r => setTimeout(r, 200));
+        window.setTimeout(() => setBbFlash(false), 150);
+        await wait(180);
       } else {
-        await new Promise(r => setTimeout(r, 200));
+        await wait(220);
       }
 
+      // Aplicar daño
+      const newTargetHp = Math.max(0, target.hp - damage);
       currentEnemies[targetIdx] = {
         ...target,
-        hp: Math.max(0, target.hp - finalDamage),
-        isDead: target.hp - finalDamage <= 0,
+        hp: newTargetHp,
+        isDead: newTargetHp <= 0,
         actionState: isBb ? 'bb_hurt' : 'hurt',
         isWeaknessHit: isWeakness
       };
       setEnemyUnits([...currentEnemies]);
+      spawnDamageNumber(target.id, damage, isWeakness, attacker.template.element, true);
+      if (!isBb) {
+        spawnCrystal('BC', attacker.template.element);
+      }
 
+      // Efectos visuales y sonido
       if (isBb) {
         setBbHitEffect({ targetId: target.id, element: attacker.template.element });
         playSound('bb_hit');
-        if (isWeakness) setTimeout(() => playSound('weakness'), 100);
-        setTimeout(() => setBbHitEffect(null), 800);
+        if (isWeakness) window.setTimeout(() => playSound('weakness'), 100);
+        window.setTimeout(() => setBbHitEffect(null), 800);
       } else {
-        if (isWeakness) {
-          playSound('weakness');
-        } else {
-          playSound('hit');
-        }
+        if (isWeakness) playSound('weakness');
+        else playSound('hit');
       }
 
-      addLog(`${attacker.template.name} ${isBb ? 'uses BB!' : 'attacks'} ${target.template.name} for ${finalDamage} dmg! ${isWeakness ? '(Weakness!)' : ''}`);
+      // Log
+      let logMsg = `${attacker.template.name} ${isBb ? 'uses ' + attacker.template.skill.name + '!' : 'attacks'} ${target.template.name} for ${damage} damage!`;
+      if (isWeakness) logMsg += ' (Weakness!)';
+      if (elementalBonus > 0) logMsg += ` (+${elementalBonus} leader bonus!)`;
+      addLog(logMsg);
       
-      await new Promise(r => setTimeout(r, 400));
+      await wait(380);
 
+      // Reset y BB gauge gain
       currentPlayer[i] = {
         ...currentPlayer[i],
         queuedBb: false,
@@ -165,18 +275,23 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
       setPlayerUnits([...currentPlayer]);
       setEnemyUnits([...currentEnemies]);
       
-      await new Promise(r => setTimeout(r, 100));
+      await wait(100);
     }
 
+    // Verificar Victoria
     if (currentEnemies.every(e => e.isDead)) {
       setTurnState('victory');
-      addLog("Victory!");
-      setTimeout(() => onEnd(true), 2000);
+      addLog("VICTORY! Stage cleared!");
+      playSound('victory');
+      setTimeout(() => onEnd(true), 2500);
       return;
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // FASE 2: ATAQUES DEL ENEMIGO
+    // ═══════════════════════════════════════════════════════════════
     setTurnState('enemy_executing');
-
+    
     for (let i = 0; i < currentEnemies.length; i++) {
       const attacker = currentEnemies[i];
       if (attacker.isDead) continue;
@@ -185,38 +300,35 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
       if (targetIdx === -1) break;
       const target = currentPlayer[targetIdx];
 
-      const elementMultiplier = getElementMultiplier(attacker.template.element, target.template.element);
-      const isWeakness = elementMultiplier > 1.0;
-      let rawDamage = Math.max(1, attacker.atk - (target.def * 0.5));
-      let finalDamage = Math.floor(rawDamage * elementMultiplier);
+      const { damage, isWeakness } = calculateDamage(attacker, target, false);
 
+      // Animación enemigo
       currentEnemies[i] = { ...attacker, actionState: 'attacking' };
       setEnemyUnits([...currentEnemies]);
-      await new Promise(r => setTimeout(r, 200));
+      await wait(220);
 
+      // Daño al jugador
+      const newTargetHp = Math.max(0, target.hp - damage);
       currentPlayer[targetIdx] = {
         ...target,
-        hp: Math.max(0, target.hp - finalDamage),
-        isDead: target.hp - finalDamage <= 0,
-        bbGauge: Math.min(target.maxBb, target.bbGauge + 2),
+        hp: newTargetHp,
+        isDead: newTargetHp <= 0,
+        bbGauge: Math.min(target.maxBb, target.bbGauge + 2), // BB gauge por recibir daño
         actionState: 'hurt',
         isWeaknessHit: isWeakness
       };
       setPlayerUnits([...currentPlayer]);
+      spawnDamageNumber(target.id, damage, isWeakness, attacker.template.element, false);
+      spawnCrystal('BC', attacker.template.element);
 
-      if (isWeakness) {
-        playSound('weakness');
-      } else {
-        playSound('hit');
-      }
-      addLog(`${attacker.template.name} attacks ${target.template.name} for ${finalDamage} dmg! ${isWeakness ? '(Weakness!)' : ''}`);
+      if (isWeakness) playSound('weakness');
+      else playSound('hit');
       
-      await new Promise(r => setTimeout(r, 400));
+      addLog(`${attacker.template.name} attacks ${target.template.name} for ${damage} damage!${isWeakness ? ' (Weakness!)' : ''}`);
+      await wait(360);
 
-      currentEnemies[i] = {
-        ...currentEnemies[i],
-        actionState: 'idle'
-      };
+      // Reset estados
+      currentEnemies[i] = { ...currentEnemies[i], actionState: 'idle' };
       currentPlayer[targetIdx] = {
         ...currentPlayer[targetIdx],
         actionState: currentPlayer[targetIdx].isDead ? 'dead' : 'idle',
@@ -228,200 +340,205 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
       await new Promise(r => setTimeout(r, 100));
     }
 
+    // Verificar Derrota
     if (currentPlayer.every(p => p.isDead)) {
       setTurnState('defeat');
-      addLog("Defeat...");
-      setTimeout(() => onEnd(false), 2000);
+      addLog("DEFEAT! Your party has fallen...");
+      setTimeout(() => onEnd(false), 2500);
       return;
     }
 
+    // Siguiente turno
     setTurnCount(prev => prev + 1);
+    setSelectedEnemy(null);
     setTurnState('player_input');
-  };
+  }, [turnState, enemyUnits, playerUnits, selectedEnemy, leaderSkill, addLog, onEnd]);
+
+  const totalHp = playerUnits.reduce((sum, u) => sum + u.hp, 0);
+  const totalMaxHp = playerUnits.reduce((sum, u) => sum + u.maxHp, 0);
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950 relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f0f1a]" />
+    <div className="flex flex-col h-full bg-[#080b13] relative overflow-hidden text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(94,146,255,0.15),transparent_38%),linear-gradient(180deg,#121c32_0%,#05070e_100%)]" />
+      <div className="absolute inset-x-0 top-0 h-48 bg-[radial-gradient(circle,_rgba(137,199,255,0.12),transparent_35%)] pointer-events-none" />
+      <div className="absolute inset-x-0 top-0 h-72 bg-[linear-gradient(180deg,rgba(16,38,66,0.85)_0%,rgba(9,10,19,0.02)_60%)] pointer-events-none" />
 
-      {/* Top HUD - Estilo BF2 */}
-      <div className="relative z-20 h-12 shrink-0 bg-gradient-to-b from-[#4a78a6] to-[#2b4c7e] border-b-2 border-[#b89947] flex items-center px-3 justify-between text-xs font-bold text-white shadow-md">
-        <div className="flex gap-4">
-          <div className="flex items-center gap-1.5">
-            <span className="text-yellow-400 text-base drop-shadow-md">💰</span> 
-            <span className="drop-shadow-md tabular-nums text-white">{state.zel.toLocaleString()}</span>
+      <div className="relative z-20 h-12 shrink-0 bg-gradient-to-b from-[#2d4f7d] to-[#15203b] border-b border-white/10 flex items-center px-3 justify-between text-xs font-bold text-white shadow-xl shadow-slate-950/40">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1 text-sm text-yellow-300">
+            <span>💰</span>
+            <span className="tabular-nums">{state.zel.toLocaleString()}</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-blue-400 text-base drop-shadow-md">💎</span> 
-            <span className="drop-shadow-md text-white">{state.gems}</span>
+          <div className="flex items-center gap-1 text-sm text-sky-300">
+            <span>💎</span>
+            <span>{state.gems}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 bg-black/30 px-2 py-1 rounded">
-            <span className="text-zinc-300 text-[10px] font-bold">TURN</span>
-            <span className="text-white font-black tabular-nums text-sm">{turnCount}</span>
+          <div className="rounded-xl bg-black/30 px-2 py-1 text-[10px] tracking-[0.2em] uppercase text-white/80">
+            Turn {turnCount}
           </div>
-          <div className={`font-black tracking-widest text-[11px] px-2 py-0.5 rounded ${
-            turnState === 'player_input' ? 'bg-green-600 text-white' :
-            turnState === 'player_executing' ? 'bg-yellow-600 text-white' :
-            turnState === 'enemy_executing' ? 'bg-red-600 text-white' :
-            turnState === 'victory' ? 'bg-yellow-500 text-black' :
-            'bg-red-800 text-white'
+          <div className={`rounded-xl px-2 py-1 text-[10px] font-bold tracking-[0.22em] ${
+            turnState === 'player_input' ? 'bg-emerald-500/20 text-emerald-200' :
+            turnState === 'player_executing' ? 'bg-amber-500/20 text-amber-200' :
+            turnState === 'enemy_executing' ? 'bg-rose-500/20 text-rose-200' :
+            turnState === 'victory' ? 'bg-yellow-500/20 text-yellow-200' :
+            'bg-red-500/20 text-red-200'
           }`}>
             {turnState === 'player_input' ? 'YOUR TURN' :
-             turnState === 'player_executing' ? 'ATTACKING...' :
+             turnState === 'player_executing' ? 'ATTACKING' :
              turnState === 'enemy_executing' ? 'ENEMY TURN' :
-             turnState === 'victory' ? 'VICTORY!' :
+             turnState === 'victory' ? 'VICTORY' :
              'DEFEAT'}
           </div>
         </div>
 
-        <button className="bg-gradient-to-b from-[#2b4c7e] to-[#1a2e4c] border border-[#b89947] px-3 py-1 rounded shadow-inner text-[10px] uppercase tracking-wider drop-shadow-md text-white hover:brightness-110">
+        <button className="rounded-xl bg-slate-900/70 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-slate-200 border border-white/10 shadow-inner hover:bg-slate-800">
           MENU
         </button>
       </div>
 
-      {/* BB Cut-in Overlay */}
       <AnimatePresence>
         {bbCutInUnit && <BBCutIn unit={bbCutInUnit} />}
       </AnimatePresence>
 
       <AnimatePresence>
         {bbFlash && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-white/30 z-[60] pointer-events-none mix-blend-screen"
+            className="absolute inset-0 bg-white/25 z-[60] pointer-events-none mix-blend-screen"
           />
         )}
       </AnimatePresence>
 
-      {/* Combat Log */}
-      <div className="relative z-10 px-2 py-1">
-        <div className="bg-black/50 p-1.5 rounded text-[10px] font-mono max-h-16 overflow-hidden">
+      <div className="relative z-20 px-3 py-2">
+        <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-2 text-[10px] font-mono text-slate-300 shadow-lg shadow-black/20">
           {combatLog.map((log, i) => (
-            <div key={i} className="text-zinc-300 truncate">{log}</div>
+            <div key={i} className="truncate">{log}</div>
           ))}
         </div>
       </div>
 
-      {/* Battle Area */}
-      <div className="flex-1 relative z-10 flex flex-col justify-between py-2 px-2">
-        
-        {/* Enemies - Top Area */}
-        <div className="flex justify-center gap-2 flex-wrap max-w-[320px] mx-auto">
-          {enemyUnits.map(unit => (
-            <div key={unit.id} className="flex flex-col items-center">
-              <UnitSprite 
-                unit={unit} 
-                hitEffectElement={bbHitEffect?.targetId === unit.id ? bbHitEffect.element : null}
-              />
-              {/* Enemy HP Bar */}
-              <div className="w-14 h-1.5 bg-zinc-900 rounded-full mt-1 overflow-hidden border border-zinc-700">
-                <div 
-                  className={`h-full transition-all ${unit.hp / unit.maxHp > 0.5 ? 'bg-green-500' : unit.hp / unit.maxHp > 0.25 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                  style={{ width: `${(unit.hp / unit.maxHp) * 100}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* VS Text */}
-        <div className="text-center py-1">
-          <span className="text-2xl font-black text-white/20 tracking-widest">VS</span>
-        </div>
-
-        {/* Players - Bottom Area */}
-        <div className="flex justify-center flex-wrap gap-x-2 gap-y-2 mt-auto max-w-[360px] mx-auto">
-          {playerUnits.map((unit) => (
-            <div key={unit.id} className="flex flex-col items-center">
-              <UnitSprite 
-                unit={unit} 
-                onClick={() => toggleBb(unit.id)} 
-                interactive={turnState === 'player_input'}
-                hitEffectElement={bbHitEffect?.targetId === unit.id ? bbHitEffect.element : null}
-              />
-              {/* Player Mini HP/BB Bar */}
-              <div className="w-14 mt-1 space-y-0.5">
-                <div className="h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-zinc-700">
-                  <div 
-                    className={`h-full transition-all ${unit.hp / unit.maxHp > 0.5 ? 'bg-green-500' : unit.hp / unit.maxHp > 0.25 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                    style={{ width: `${(unit.hp / unit.maxHp) * 100}%` }}
+      <div className="flex-1 relative z-20 px-3 pb-3">
+        <div className="relative mx-auto flex max-w-[400px] flex-col gap-3">
+          <div className="rounded-[30px] border border-white/10 bg-slate-950/80 p-3 shadow-[0_35px_80px_rgba(0,0,0,0.35)] backdrop-blur-sm">
+            <div className="flex justify-center items-end gap-3">
+              {enemyUnits.map(unit => (
+                <div
+                  key={unit.id}
+                  className={`relative flex flex-col items-center transition-all ${selectedEnemy === unit.id ? 'scale-110' : ''} ${unit.isDead ? 'opacity-40' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (turnState === 'player_input' && !unit.isDead) selectEnemyTarget(unit.id);
+                  }}
+                >
+                  <div className={`absolute inset-x-0 -bottom-2 h-2 rounded-full bg-white/5 ${selectedEnemy === unit.id ? 'opacity-100' : 'opacity-40'}`} />
+                  <UnitSprite
+                    unit={unit}
+                    hideStats
+                    hitEffectElement={bbHitEffect?.targetId === unit.id ? bbHitEffect.element : null}
                   />
+                  <div className="mt-2 text-[10px] uppercase tracking-[0.2em] text-slate-400">
+                    {unit.template.name}
+                  </div>
                 </div>
-                <div className="h-1 bg-zinc-900 rounded-full overflow-hidden border border-zinc-700">
-                  <div 
-                    className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 transition-all"
-                    style={{ width: `${(unit.bbGauge / unit.maxBb) * 100}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Bottom Panel - Unit Status Grid + BB Total + Action */}
-      <div className="relative z-20 bg-gradient-to-b from-[#1e3a5f] to-[#0d1b2a] border-t-2 border-[#b89947] flex flex-col">
-        
-        {/* Unit Status Grid - 6 slots BF2 style */}
-        <div className="grid grid-cols-6 gap-1 p-1">
-          {Array.from({ length: 6 }).map((_, idx) => {
-            const unit = playerUnits[idx];
-            return (
-              <UnitStatusBox 
-                key={idx} 
-                unit={unit} 
-                onClick={() => unit && toggleBb(unit.id)}
-                interactive={turnState === 'player_input'} 
-              />
-            );
-          })}
-        </div>
-
-        {/* BB Gauge Total + Action Button */}
-        <div className="flex items-center gap-2 px-2 pb-2">
-          {/* Total BB Gauge */}
-          <div className="flex-1 flex flex-col gap-1">
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-zinc-400 font-bold">BB GAUGE</span>
-              <span className="text-cyan-400 font-bold">{totalBB}/{totalMaxBB}</span>
-            </div>
-            <div className="h-3 bg-zinc-900 rounded-full overflow-hidden border border-zinc-700">
-              <div 
-                className="h-full bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 transition-all relative"
-                style={{ width: `${Math.min(100, (totalBB / totalMaxBB) * 100)}%` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent" />
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* Action Button */}
-          <div className="w-24 shrink-0">
-            {turnState === 'player_input' ? (
-              <button 
-                onClick={executeTurn}
-                className="w-full h-12 bg-gradient-to-b from-[#2563eb] to-[#1e40af] border-2 border-[#60a5fa] rounded-lg font-black text-sm text-white shadow-[0_0_20px_rgba(37,99,235,0.6)] active:scale-95 transition-transform tracking-widest"
+          <div className="relative rounded-[36px] border border-white/10 bg-[#0b1628]/90 min-h-[180px] overflow-hidden shadow-[inset_0_0_40px_rgba(0,0,0,0.45)]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.08),transparent_36%)] pointer-events-none" />
+            <div className="absolute inset-x-0 top-4 flex justify-center">
+              <div className="rounded-full bg-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-slate-300 backdrop-blur-sm">
+                Battlefield
+              </div>
+            </div>
+
+            {floatingDamages.map(damage => (
+              <motion.div
+                key={damage.id}
+                initial={{ opacity: 0, y: 0, scale: 0.8 }}
+                animate={{ opacity: 1, y: -40, scale: 1 }}
+                exit={{ opacity: 0, y: -60, scale: 1.1 }}
+                transition={{ duration: 0.7, ease: 'easeOut' }}
+                className={`pointer-events-none absolute font-black ${damage.isCrit ? 'text-yellow-300 text-2xl' : 'text-white text-xl'} drop-shadow-[0_0_8px_rgba(0,0,0,0.9)]`}
+                style={{ left: damage.left, top: damage.top }}
               >
-                FIGHT
-              </button>
-            ) : turnState === 'victory' ? (
-              <div className="w-full h-12 bg-gradient-to-b from-yellow-400 to-yellow-600 border-2 border-yellow-200 text-black flex items-center justify-center rounded-lg font-black text-xs shadow-[0_0_20px_rgba(250,204,21,0.6)]">
-                STAGE CLEARED!
+                {damage.value}
+              </motion.div>
+            ))}
+
+            {combatCrystals.map(crystal => (
+              <motion.div
+                key={crystal.id}
+                initial={{ opacity: 0, scale: 0.4, y: -20 }}
+                animate={{ opacity: 1, scale: 1, y: 20 }}
+                exit={{ opacity: 0, scale: 0.6, y: 40 }}
+                transition={{ duration: 0.9, ease: 'easeOut' }}
+                className={`pointer-events-none absolute rounded-full border border-white/20 px-2 py-1 text-[10px] font-bold ${crystal.type === 'BC' ? 'bg-sky-500/90 text-white shadow-[0_0_20px_rgba(56,189,248,0.55)]' : 'bg-emerald-500/90 text-white shadow-[0_0_20px_rgba(16,185,129,0.55)]`}
+                style={{ left: crystal.left, top: crystal.top }}
+              >
+                {crystal.type}
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            {playerUnits.map((unit, idx) => (
+              <div key={unit.id} className="rounded-[20px] border border-white/10 bg-slate-950/80 p-2 shadow-[0_12px_35px_rgba(0,0,0,0.25)]">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-[10px] uppercase tracking-[0.22em] text-slate-400">{idx === 5 ? 'Friend' : `Unit ${idx + 1}`}</span>
+                  <span className="text-[10px] font-bold text-slate-100">{unit.hp}/{unit.maxHp}</span>
+                </div>
+                <button
+                  onClick={() => toggleBb(unit.id)}
+                  className={`w-full rounded-2xl bg-slate-900/90 p-2 transition hover:brightness-110 ${turnState === 'player_input' && unit.bbGauge >= unit.maxBb ? 'ring-2 ring-sky-400/60' : ''}`}
+                  disabled={turnState !== 'player_input' || unit.isDead}
+                >
+                  <UnitSprite unit={unit} hideStats />
+                </button>
+                <div className="mt-2 space-y-1">
+                  <div className="h-2 rounded-full bg-slate-900/80 overflow-hidden border border-slate-800">
+                    <div className="h-full bg-gradient-to-r from-emerald-500 to-lime-400" style={{ width: `${(unit.hp / unit.maxHp) * 100}%` }} />
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-900/80 overflow-hidden border border-slate-800">
+                    <div className={`h-full transition-all ${unit.bbGauge >= unit.maxBb ? 'bg-cyan-400' : 'bg-sky-500'}`} style={{ width: `${(unit.bbGauge / unit.maxBb) * 100}%` }} />
+                  </div>
+                </div>
               </div>
-            ) : turnState === 'defeat' ? (
-              <div className="w-full h-12 bg-gradient-to-b from-red-600 to-red-900 border-2 border-red-400 text-white flex items-center justify-center rounded-lg font-black text-xs shadow-[0_0_20px_rgba(220,38,38,0.6)]">
-                GAME OVER
-              </div>
-            ) : (
-              <div className="w-full h-12 bg-zinc-800 border-2 border-zinc-600 text-zinc-400 flex items-center justify-center rounded-lg font-bold text-[10px]">
-                EXECUTING...
-              </div>
-            )}
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="relative z-20 bg-[#07101c] border-t border-white/10 px-3 py-3">
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <button
+            onClick={() => setAutoBattle(prev => !prev)}
+            className={`flex-1 rounded-2xl border px-3 py-2 text-[11px] uppercase tracking-[0.2em] ${autoBattle ? 'border-emerald-400 bg-emerald-500/15 text-emerald-200' : 'border-slate-700 text-slate-300'}`}
+          >
+            Auto
+          </button>
+          <button
+            onClick={() => setBattleSpeed(prev => prev === 'x1' ? 'x2' : 'x1')}
+            className="flex-1 rounded-2xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-[11px] uppercase tracking-[0.2em] text-slate-300"
+          >
+            Speed {battleSpeed}
+          </button>
+          <button className="flex-1 rounded-2xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-[11px] uppercase tracking-[0.2em] text-slate-300">
+            Pause
+          </button>
+        </div>
+        <div className="rounded-2xl bg-slate-900/80 p-3 border border-white/10">
+          <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-2">
+            <span>Team HP</span>
+            <span>{totalHp}/{totalMaxHp}</span>
+          </div>
+          <div className="h-3 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
+            <div className="h-full bg-gradient-to-r from-emerald-500 via-lime-400 to-emerald-300" style={{ width: `${Math.min(100, (totalHp / totalMaxHp) * 100)}%` }} />
           </div>
         </div>
       </div>
