@@ -113,10 +113,20 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
 
   const totalBB = playerUnits.reduce((sum, u) => sum + u.bbGauge, 0);
   const totalMaxBB = playerUnits.reduce((sum, u) => sum + u.maxBb, 0);
+  const overdrivePercent = totalMaxBB ? Math.min(100, Math.floor((totalBB / totalMaxBB) * 100)) : 0;
 
   // Obtener leader skill del líder
   const leader = getLeader(playerUnits);
   const leaderSkill = leader?.template.leaderSkill;
+
+  const elementColorClass: Record<Element, string> = {
+    Fire: 'bg-red-500',
+    Water: 'bg-blue-500',
+    Earth: 'bg-emerald-500',
+    Thunder: 'bg-yellow-400',
+    Light: 'bg-amber-200',
+    Dark: 'bg-violet-500'
+  };
 
   const speedFactor = battleSpeed === 'x2' ? 0.65 : 1;
   const wait = useCallback((ms: number) => new Promise<void>(resolve => setTimeout(resolve, Math.max(30, ms * speedFactor))), [speedFactor]);
@@ -433,88 +443,72 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
           Players on LEFT, Enemies on RIGHT
       ═══════════════════════════════════════════════════════════════ */}
       <div className="flex-1 relative z-20 px-3 pb-3">
-        <div className="relative mx-auto flex max-w-[400px] flex-col h-full gap-2">
+        <div className="relative mx-auto flex max-w-[520px] flex-col h-full gap-2">
           
-          {/* Battle Area - Side scroller battlefield */}
-          <div className="relative flex-1 min-h-[200px] rounded-[28px] border border-white/10 bg-[#0a1220] overflow-hidden shadow-[inset_0_0_60px_rgba(0,0,0,0.5)]">
-            
-            {/* Background layers for parallax feel */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0d1a2d] via-[#0a1428] to-[#0d1a2d]" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center_70%_50%,rgba(40,80,140,0.3),transparent_50%)]" />
-            
-            {/* Ground line */}
-            <div className="absolute bottom-[15%] left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
-            
-            {/* Player zone indicator (left) */}
-            <div className="absolute left-2 top-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-1">
-              <span className="text-[8px] uppercase tracking-widest text-emerald-400/60">Your Party</span>
-            </div>
-            
-            {/* Enemy zone indicator (right) */}
-            <div className="absolute right-2 top-2 rounded-lg bg-red-500/10 border border-red-500/20 px-2 py-1">
-              <span className="text-[8px] uppercase tracking-widest text-red-400/60">Enemies</span>
-            </div>
+          {/* Battle Area - UI-focused battlefield */}
+          <div className="relative flex-1 min-h-[280px] rounded-[28px] border border-white/10 bg-[#0a1220] overflow-hidden shadow-[inset_0_0_60px_rgba(0,0,0,0.5)]">
+            <div className="absolute inset-0 bg-gradient-to-b from-[#16213b]/80 via-[#0b121f]/90 to-[#03050a]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_45%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),transparent_40%)] pointer-events-none" />
 
-            {/* ════ ENEMIES (Right side) ════ */}
-            <div className="absolute right-[8%] top-1/2 -translate-y-1/2 flex flex-col gap-4">
-              {enemyUnits.map((unit, idx) => (
-                <div
-                  key={unit.id}
-                  className={`relative cursor-pointer transition-all duration-200 ${selectedEnemy === unit.id ? 'scale-110 z-10' : ''} ${unit.isDead ? 'opacity-30 grayscale' : ''}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (turnState === 'player_input' && !unit.isDead) selectEnemyTarget(unit.id);
-                  }}
-                >
-                  {/* Selection ring */}
-                  {selectedEnemy === unit.id && (
-                    <div className="absolute -inset-3 rounded-full border-2 border-yellow-400/60 animate-pulse" />
-                  )}
-                  <UnitSprite
-                    unit={unit}
-                    hideStats
-                    hitEffectElement={bbHitEffect?.targetId === unit.id ? bbHitEffect.element : null}
-                    scale={0.9}
-                  />
-                  {/* HP bar below enemy */}
-                  <div className="mt-1 mx-auto w-14">
-                    <div className="h-1.5 rounded-full bg-black/50 overflow-hidden border border-red-900/30">
-                      <div 
-                        className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all"
-                        style={{ width: `${(unit.hp / unit.maxHp) * 100}%` }}
-                      />
-                    </div>
-                  </div>
+            <div className="absolute left-1/2 top-3 -translate-x-1/2 w-[88%] rounded-[32px] border border-white/10 bg-slate-950/85 p-3 shadow-[0_0_40px_rgba(255,255,255,0.08)] backdrop-blur-sm">
+              <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.24em] text-slate-400 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-900/80 text-sm text-sky-300 shadow-[inset_0_0_5px_rgba(255,255,255,0.12)]">⚡</span>
+                  <span className="text-slate-300">OVERDRIVE</span>
                 </div>
-              ))}
+                <span className="font-bold text-white tabular-nums">{totalBB}/{totalMaxBB}</span>
+              </div>
+              <div className="h-3 rounded-full bg-slate-900/80 overflow-hidden border border-white/10">
+                <div
+                  className={`h-full transition-all duration-500 ${overdrivePercent >= 100 ? 'bg-red-500 animate-pulse' : 'bg-sky-500'}`}
+                  style={{ width: `${overdrivePercent}%` }}
+                />
+              </div>
             </div>
 
-            {/* ════ PLAYERS (Left side) ════ */}
-            <div className="absolute left-[8%] top-1/2 -translate-y-1/2 flex flex-col gap-4">
+            <div className="absolute left-6 top-24 h-14 w-14 rounded-3xl border border-white/10 bg-white/5 shadow-[0_0_20px_rgba(255,255,255,0.08)]" />
+            <div className="absolute right-6 top-24 h-14 w-14 rounded-3xl border border-white/10 bg-white/5 shadow-[0_0_20px_rgba(255,255,255,0.08)]" />
+
+            <div className="relative z-10 grid grid-cols-2 gap-3 px-4 pt-24 pb-24">
               {playerUnits.map((unit, idx) => (
                 <div
                   key={unit.id}
-                  className={`relative transition-all duration-200 ${unit.isDead ? 'opacity-30 grayscale' : ''}`}
+                  className={`relative rounded-3xl border border-white/10 bg-slate-950/90 p-3 overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.25)] ${unit.isDead ? 'opacity-40 grayscale' : ''}`}
                 >
-                  <UnitSprite
-                    unit={unit}
-                    hideStats
-                    scale={0.9}
-                  />
-                  {/* HP bar below player */}
-                  <div className="mt-1 mx-auto w-14">
-                    <div className="h-1.5 rounded-full bg-black/50 overflow-hidden border border-emerald-900/30">
-                      <div 
-                        className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all"
-                        style={{ width: `${(unit.hp / unit.maxHp) * 100}%` }}
+                  <div className={`absolute top-3 ${idx % 2 === 0 ? 'left-3' : 'right-3'} h-3 w-3 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.12)] ${elementColorClass[unit.template.element as Element]}`} />
+                  <div className="flex items-center gap-3">
+                    <div className="shrink-0">
+                      <UnitSprite
+                        unit={unit}
+                        hideStats
+                        scale={0.8}
                       />
                     </div>
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="text-[10px] uppercase tracking-[0.2em] text-slate-300 font-semibold truncate">
+                        {unit.template.name}
+                      </div>
+                      <div className="text-[9px] text-slate-400">HP: {unit.hp}/{unit.maxHp}</div>
+                      <div className="h-2 rounded-full bg-[#111827] overflow-hidden border border-slate-800">
+                        <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400" style={{ width: `${(unit.hp / unit.maxHp) * 100}%` }} />
+                      </div>
+                      <div className="h-2 rounded-full bg-[#111827] overflow-hidden border border-slate-800">
+                        <div className={`h-full transition-all ${unit.bbGauge >= unit.maxBb ? 'bg-red-500 animate-pulse' : 'bg-sky-500'}`} style={{ width: `${(unit.bbGauge / unit.maxBb) * 100}%` }} />
+                      </div>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => toggleBb(unit.id)}
+                    disabled={turnState !== 'player_input' || unit.isDead}
+                    className={`mt-3 w-full rounded-2xl border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.22em] transition ${turnState === 'player_input' && unit.bbGauge >= unit.maxBb ? 'border-yellow-400 bg-yellow-500/10 text-yellow-200 hover:bg-yellow-500/15' : 'border-slate-800 bg-slate-900/90 text-slate-300 hover:bg-slate-800'} ${unit.isDead ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {unit.bbGauge >= unit.maxBb ? (unit.queuedBb ? 'CANCEL BB' : 'READY BB') : 'CHARGE BB'}
+                  </button>
                 </div>
               ))}
             </div>
 
-            {/* ════ Floating damages & effects (center area) ════ */}
             {floatingDamages.map(damage => (
               <motion.div
                 key={damage.id}
@@ -543,61 +537,57 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
               </motion.div>
             ))}
           </div>
-
-          {/* ════ Player Unit Selector (Bottom) ════ */}
-          <div className="grid grid-cols-3 gap-2">
-            {playerUnits.map((unit, idx) => (
-              <div key={unit.id} className="rounded-[18px] border border-white/10 bg-slate-950/80 p-2 shadow-[0_8px_25px_rgba(0,0,0,0.3)]">
-                <div className="flex items-center justify-between gap-1 mb-1">
-                  <span className="text-[9px] uppercase tracking-[0.15em] text-slate-400">{idx === 5 ? 'Friend' : `Unit ${idx + 1}`}</span>
-                  <span className="text-[9px] font-bold text-slate-100">{unit.hp}/{unit.maxHp}</span>
-                </div>
-                <button
-                  onClick={() => toggleBb(unit.id)}
-                  className={`w-full rounded-xl bg-slate-900/90 p-1.5 transition hover:brightness-110 ${turnState === 'player_input' && unit.bbGauge >= unit.maxBb ? 'ring-2 ring-sky-400/60' : ''} ${unit.isDead ? 'opacity-50' : ''}`}
-                  disabled={turnState !== 'player_input' || unit.isDead}
-                >
-                  <UnitSprite unit={unit} hideStats scale={0.7} />
-                </button>
-                <div className="mt-1.5 space-y-1">
-                  <div className="h-1.5 rounded-full bg-slate-900/80 overflow-hidden border border-slate-800">
-                    <div className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400" style={{ width: `${(unit.hp / unit.maxHp) * 100}%` }} />
-                  </div>
-                  <div className="h-1.5 rounded-full bg-slate-900/80 overflow-hidden border border-slate-800">
-                    <div className={`h-full transition-all ${unit.bbGauge >= unit.maxBb ? 'bg-cyan-400 animate-pulse' : 'bg-sky-500'}`} style={{ width: `${(unit.bbGauge / unit.maxBb) * 100}%` }} />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
       <div className="relative z-20 bg-[#07101c] border-t border-white/10 px-3 py-3">
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <button
-            onClick={() => setAutoBattle(prev => !prev)}
-            className={`flex-1 rounded-2xl border px-3 py-2 text-[11px] uppercase tracking-[0.2em] ${autoBattle ? 'border-emerald-400 bg-emerald-500/15 text-emerald-200' : 'border-slate-700 text-slate-300'}`}
-          >
-            Auto
-          </button>
-          <button
-            onClick={() => setBattleSpeed(prev => prev === 'x1' ? 'x2' : 'x1')}
-            className="flex-1 rounded-2xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-[11px] uppercase tracking-[0.2em] text-slate-300"
-          >
-            Speed {battleSpeed}
-          </button>
-          <button className="flex-1 rounded-2xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-[11px] uppercase tracking-[0.2em] text-slate-300">
-            Pause
-          </button>
-        </div>
-        <div className="rounded-2xl bg-slate-900/80 p-3 border border-white/10">
-          <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-2">
-            <span>Team HP</span>
-            <span>{totalHp}/{totalMaxHp}</span>
+        <div className="relative rounded-[32px] border border-white/10 bg-slate-950/90 p-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
+          <div className="grid grid-cols-5 gap-2 mb-3">
+            {['⚔️','🛡️','🧪','✨','🤖'].map((icon, idx) => (
+              <div key={idx} className="flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-slate-900/90 p-3 text-white shadow-inner shadow-black/20">
+                <div className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-slate-800 to-slate-900 text-lg shadow-[0_0_10px_rgba(255,255,255,0.08)]">{icon}</div>
+                <div className="mt-2 text-[8px] uppercase tracking-[0.3em] text-slate-400 text-center leading-tight">
+                  {['Attack','Guard','Item','BB','Auto'][idx]}
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="h-3 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
-            <div className="h-full bg-gradient-to-r from-emerald-500 via-lime-400 to-emerald-300" style={{ width: `${Math.min(100, (totalHp / totalMaxHp) * 100)}%` }} />
+
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.22em] text-slate-400">
+              <span>Battle Commands</span>
+              <span>{battleSpeed === 'x2' ? 'Fast Mode' : 'Normal Mode'}</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => setAutoBattle(prev => !prev)}
+                className={`rounded-2xl border px-3 py-2 text-[11px] uppercase tracking-[0.22em] transition ${autoBattle ? 'border-emerald-300 bg-emerald-500/10 text-emerald-200 shadow-[0_0_15px_rgba(52,211,153,0.3)]' : 'border-slate-800 bg-slate-900/90 text-slate-300 hover:border-slate-500 hover:bg-slate-800'}`}
+              >
+                🤖 Auto
+              </button>
+              <button
+                onClick={() => setBattleSpeed(prev => prev === 'x1' ? 'x2' : 'x1')}
+                className="rounded-2xl border border-slate-800 bg-slate-900/90 px-3 py-2 text-[11px] uppercase tracking-[0.22em] text-slate-300 hover:border-slate-500 hover:bg-slate-800"
+              >
+                ⚡ Speed {battleSpeed}
+              </button>
+              <button
+                className="rounded-2xl border border-slate-800 bg-slate-900/90 px-3 py-2 text-[11px] uppercase tracking-[0.22em] text-slate-300 hover:border-slate-500 hover:bg-slate-800"
+              >
+                🪩 Menu
+              </button>
+            </div>
+
+            <div className="rounded-3xl bg-[#06090f] border border-white/10 p-3">
+              <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.22em] text-slate-400 mb-2">
+                <span>Team HP</span>
+                <span className="font-semibold text-white">{totalHp}/{totalMaxHp}</span>
+              </div>
+              <div className="h-3 rounded-full bg-slate-900 overflow-hidden border border-slate-800">
+                <div className="h-full bg-gradient-to-r from-emerald-500 via-lime-400 to-emerald-300" style={{ width: `${Math.min(100, (totalHp / totalMaxHp) * 100)}%` }} />
+              </div>
+            </div>
           </div>
         </div>
       </div>
