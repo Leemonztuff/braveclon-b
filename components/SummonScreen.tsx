@@ -71,12 +71,13 @@ const Particles = ({ rarity }: { rarity: number }) => {
   );
 };
 
-export default function SummonScreen({ state, spendGems, addUnit, rollGacha, onAlert }: { 
-  state: PlayerState, 
-  spendGems: (amount: number) => boolean, 
-  addUnit: (id: string) => void, 
-  rollGacha: (bannerId: string, count?: number) => SummonResult[], 
-  onAlert: (msg: string) => void 
+export default function SummonScreen({ state, spendGems, addUnit, rollGacha, onAlert, onBack }: {
+  state: PlayerState,
+  spendGems: (amount: number) => boolean,
+  addUnit: (id: string) => void,
+  rollGacha: (bannerId: string, count?: number) => SummonResult[],
+  onAlert: (msg: string) => void,
+  onBack?: () => void
 }) {
   const [summonResult, setSummonResult] = useState<UnitTemplate | null>(null);
   const [phase, setPhase] = useState<SummonPhase>('idle');
@@ -132,6 +133,16 @@ export default function SummonScreen({ state, spendGems, addUnit, rollGacha, onA
           75% { transform: translate(-5px, 5px) rotate(0deg); }
         }
       `}</style>
+
+      {/* Back Button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-4 left-4 z-50 text-zinc-400 hover:text-white p-2 bg-zinc-800/80 rounded-full backdrop-blur-sm transition-all hover:bg-zinc-700"
+        >
+          ←
+        </button>
+      )}
       
       <div className="absolute top-4 right-4 flex flex-col items-end gap-2 z-50">
         <div className="flex items-center gap-2">

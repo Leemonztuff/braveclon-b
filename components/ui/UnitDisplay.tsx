@@ -26,6 +26,10 @@ interface UnitDisplayProps {
   showStats?: boolean;
   showElement?: boolean;
   onClick?: () => void;
+  onContextMenu?: (e: React.MouseEvent) => void;
+  onTouchStart?: () => void;
+  onTouchEnd?: () => void;
+  onTouchMove?: () => void;
   interactive?: boolean;
   className?: string;
 }
@@ -77,6 +81,10 @@ export function UnitDisplay({
   showStats = false,
   showElement = false,
   onClick,
+  onContextMenu,
+  onTouchStart,
+  onTouchEnd,
+  onTouchMove,
   interactive = false,
   className = ''
 }: UnitDisplayProps) {
@@ -170,6 +178,10 @@ export function UnitDisplay({
   return (
     <motion.button
       onClick={onClick}
+      onContextMenu={onContextMenu}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      onTouchMove={onTouchMove}
       whileTap={onClick && interactive ? { scale: 0.95 } : undefined}
       className={`
         relative ${sizeClasses.container} ${BORDERS.radius.lg} border-2 overflow-hidden flex flex-col items-center justify-center

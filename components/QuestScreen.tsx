@@ -144,7 +144,7 @@ function RegionTabs({ regions, activeRegion, onSelect }: RegionTabsProps) {
   );
 }
 
-export default function QuestScreen({ onStartBattle }: { onStartBattle: (stageId: number) => void }) {
+export default function QuestScreen({ onStartBattle, onBack }: { onStartBattle: (stageId: number) => void, onBack?: () => void }) {
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [activeRegion, setActiveRegion] = useState('All');
   const [completedStages, setCompletedStages] = useState<number[]>([]);
@@ -170,7 +170,14 @@ export default function QuestScreen({ onStartBattle }: { onStartBattle: (stageId
     <div className="flex flex-col h-full bg-[#16213e]">
       {/* Header with toggle */}
       <div className="flex justify-between items-center p-4 border-b border-[#b89947]/30 bg-[#1a1a2e]">
-        <h2 className="text-xl font-black italic text-[#b89947] uppercase tracking-wider">World Map</h2>
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <button onClick={onBack} className="text-zinc-400 hover:text-white p-1 bg-zinc-800 rounded-full active:scale-95 transition-transform">
+              ←
+            </button>
+          )}
+          <h2 className="text-xl font-black italic text-[#b89947] uppercase tracking-wider">World Map</h2>
+        </div>
         
         {/* View toggle */}
         <div className="flex bg-zinc-800 rounded-lg p-1">

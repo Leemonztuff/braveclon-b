@@ -17,7 +17,8 @@ export default function UnitsScreen({
   unequipItem,
   onNavigateToFusion,
   onNavigateToEvolution,
-  onNavigate
+  onNavigate,
+  onBack
 }: { 
   state: PlayerState, 
   setTeamMember: (index: number, id: string | null) => void,
@@ -25,7 +26,8 @@ export default function UnitsScreen({
   unequipItem: (unitId: string, slot: EquipSlot) => void,
   onNavigateToFusion?: (unitId: string) => void,
   onNavigateToEvolution?: (unitId: string) => void,
-  onNavigate?: (screen: any) => void
+  onNavigate?: (screen: any) => void,
+  onBack?: () => void
 }) {
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [inspectUnitId, setInspectUnitId] = useState<string | null>(null);
@@ -36,6 +38,35 @@ export default function UnitsScreen({
   const [elementFilter, setElementFilter] = useState<Element | 'all'>('all');
   const [rarityFilter, setRarityFilter] = useState<number | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [contextMenu, setContextMenu] = useState<{ unitId: string; x: number; y: number } | null>(null);
+
+  // Context menu handlers
+  const handleContextMenu = (e: React.MouseEvent, unitId: string) => {
+    e.preventDefault();
+    setContextMenu({ unitId, x: e.clientX, y: e.clientY });
+  };
+
+  const handleLongPress = (unitId: string) => {
+    setContextMenu({ unitId, x: 0, y: 0 });
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu(null);
+  };
+
+  // Long press detection for mobile
+  const longPressTimerRef = { current: null as NodeJS.Timeout | null };
+  const handleTouchStart = (unitId: string) => {
+    longPressTimerRef.current = setTimeout(() => {
+      handleLongPress(unitId);
+    }, 500);
+  };
+  const handleTouchEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
 
   const handleSelectUnit = (instanceId: string) => {
     if (selectedSlot !== null) {
@@ -49,9 +80,19 @@ export default function UnitsScreen({
   };
 
   return (
-    <div className="flex flex-col h-full p-4">
+    <div className="flex flex-col h-full p-4" onClick={closeContextMenu}>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-black italic text-zinc-100 uppercase tracking-wider">Manage Squad</h2>
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <button 
+              onClick={onBack} 
+              className="text-zinc-400 hover:text-white p-1 bg-zinc-800 rounded-full active:scale-95 transition-transform"
+            >
+              <X size={20} />
+            </button>
+          )}
+          <h2 className="text-xl font-black italic text-zinc-100 uppercase tracking-wider">Manage Squad</h2>
+        </div>
         
         <div className="flex gap-1">
           {(['inventory', 'equipment', 'team'] as Tab[]).map(tab => (
@@ -162,6 +203,10 @@ export default function UnitsScreen({
                       variant="frame"
                       interactive
                       onClick={() => setInspectUnitId(unit.instanceId)}
+                      onContextMenu={(e) => handleContextMenu(e, unit.instanceId)}
+                      onTouchStart={() => handleTouchStart(unit.instanceId)}
+                      onTouchEnd={handleTouchEnd}
+                      onTouchMove={handleTouchEnd}
                       className="w-full"
                     />
                   );
@@ -311,6 +356,67 @@ export default function UnitsScreen({
           </div>
         </div>
       )}
+
+      {/* Context Menu for Quick Actions */}
+      {contextMenu && (() => {
+        const unit = state.inventory.find(u => u.instanceId === contextMenu.unitId);
+        if (!unit) return null;
+        const template = UNIT_DATABASE[unit.templateId];
+        const canFuse = !state.team.includes(unit.instanceId) && unit.level < template.maxLevel;
+        const canEvolve = unit.level >= template.maxLevel && !!template.evolutionTarget;
+
+        return (
+          <div
+            className="fixed z-[100] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl py-1 min-w-[160px] animate-in fade-in zoom-in-95 duration-150"
+            style={{
+              top: contextMenu.y > window.innerHeight - 200 ? contextMenu.y - 150 : contextMenu.y,
+              left: contextMenu.x > window.innerWidth - 180 ? contextMenu.x - 160 : contextMenu.x,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-3 py-2 border-b border-zinc-800">
+              <div className="font-bold text-sm text-white">{template.name}</div>
+              <div className="text-[10px] text-zinc-500">Lv. {unit.level} · {ELEMENT_ICONS[template.element]}</div>
+            </div>
+            <button
+              onClick={() => {
+                setInspectUnitId(contextMenu.unitId);
+                closeContextMenu();
+              }}
+              className="w-full px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white flex items-center gap-2"
+            >
+              <span>🔍</span> View Details
+            </button>
+            {canFuse && onNavigateToFusion && (
+              <button
+                onClick={() => {
+                  onNavigateToFusion(contextMenu.unitId);
+                  closeContextMenu();
+                }}
+                className="w-full px-3 py-2 text-left text-sm text-blue-400 hover:bg-zinc-800 hover:text-blue-300 flex items-center gap-2"
+              >
+                <span>⚡</span> Fuse Unit
+              </button>
+            )}
+            {canEvolve && onNavigateToEvolution && (
+              <button
+                onClick={() => {
+                  onNavigateToEvolution(contextMenu.unitId);
+                  closeContextMenu();
+                }}
+                className="w-full px-3 py-2 text-left text-sm text-purple-400 hover:bg-zinc-800 hover:text-purple-300 flex items-center gap-2"
+              >
+                <span>✨</span> Evolve Unit
+              </button>
+            )}
+            {!canFuse && !canEvolve && (
+              <div className="px-3 py-2 text-xs text-zinc-600 italic">
+                No actions available
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

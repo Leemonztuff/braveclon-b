@@ -106,6 +106,7 @@ export default function GameApp() {
               navigate('evolution');
             }}
             onNavigate={navigate}
+            onBack={goBack}
           />
         );
       case 'summon':
@@ -116,10 +117,11 @@ export default function GameApp() {
             spendGems={spendGems}
             rollGacha={rollGacha}
             onAlert={triggerAlert}
+            onBack={goBack}
           />
         );
       case 'quest':
-        return <QuestScreen onStartBattle={handleStartBattle} />;
+        return <QuestScreen onStartBattle={handleStartBattle} onBack={goBack} />;
       case 'shop':
         return (
           <ShopScreen
