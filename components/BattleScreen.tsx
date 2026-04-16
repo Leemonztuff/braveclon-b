@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { PlayerState } from '@/lib/gameState';
 import { useBattle } from '@/hooks/useBattle';
 import { STAGES } from '@/lib/gameData';
@@ -13,249 +13,133 @@ interface BattleScreenProps {
 }
 
 const ELEMENT_COLORS: Record<string, string> = {
-  Fire: 'bg-red-500',
-  Water: 'bg-blue-500',
-  Earth: 'bg-green-600',
-  Thunder: 'bg-yellow-400',
-  Light: 'bg-yellow-100',
-  Dark: 'bg-purple-700',
+  Fire: '#ff4444',
+  Water: '#4488ff',
+  Earth: '#44cc44',
+  Thunder: '#ffcc00',
+  Light: '#ffffaa',
+  Dark: '#aa44ff',
 };
 
-const ELEMENT_ICONS: Record<string, string> = {
-  Fire: '🔥',
-  Water: '💧',
-  Earth: '🪨',
-  Thunder: '⚡',
-  Light: '✨',
-  Dark: '🌑',
-};
-
-const BF_GOLD = '#b89947';
-
-function EnemyUnitCard({ unit, onClick, isSelected }: { 
-  unit: any; 
-  onClick?: () => void;
-  isSelected?: boolean;
-}) {
-  const hpPercent = (unit.hp / unit.maxHp) * 100;
-  const bbPercent = (unit.bbGauge / unit.maxBb) * 100;
-
-  return (
-    <motion.div
-      className={`
-        relative w-14 h-14 rounded-full overflow-hidden
-        border-2 cursor-pointer transition-all duration-150
-        ${unit.isDead 
-          ? 'border-zinc-700 bg-zinc-900/50 opacity-40' 
-          : unit.actionState === 'hurt' || unit.actionState === 'bb_hurt'
-            ? 'border-red-500 bg-red-500/20 animate-pulse'
-            : 'border-amber-600/60 bg-[#1a1a2e]'
-        }
-        ${unit.isWeaknessHit ? 'border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.6)]' : ''}
-        ${isSelected ? 'border-cyan-400 ring-2 ring-cyan-400/50' : ''}
-      `}
-      onClick={onClick}
-      whileTap={{ scale: 0.95 }}
-      animate={{
-        x: unit.actionState === 'attacking' ? -15 : unit.actionState === 'hurt' || unit.actionState === 'bb_hurt' ? 5 : 0,
-        scale: unit.actionState === 'bb_hurt' ? 1.1 : 1,
-      }}
-      transition={{ duration: 0.15 }}
-    >
-      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-[#252a4a] to-[#1a1a2e]">
-        <span className="text-2xl">{unit.isDead ? '💀' : unit.template.element === 'Fire' ? '🔥' : 
-         unit.template.element === 'Water' ? '💧' : 
-         unit.template.element === 'Earth' ? '🪨' : 
-         unit.template.element === 'Thunder' ? '⚡' : 
-         unit.template.element === 'Light' ? '✨' : '🌑'}</span>
-      </div>
-      
-      {!unit.isDead && (
-        <div className={`absolute top-0 right-0 w-4 h-4 rounded-full flex items-center justify-center text-[8px] ${ELEMENT_COLORS[unit.template.element]} border border-white/20`}>
-          {ELEMENT_ICONS[unit.template.element]}
-        </div>
-      )}
-
-      <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-14">
-        <div className="h-1.5 bg-red-950 rounded-full overflow-hidden border border-red-900/50">
-          <div 
-            className="h-full bg-gradient-to-b from-green-400 to-green-600 transition-all duration-300"
-            style={{ width: `${hpPercent}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-14">
-        <div className="h-1 bg-blue-950 rounded-full overflow-hidden">
-          <div 
-            className={`h-full transition-all duration-300 ${
-              unit.bbGauge >= unit.maxBb 
-                ? 'bg-gradient-to-b from-yellow-300 to-yellow-500 animate-pulse' 
-                : 'bg-gradient-to-b from-blue-400 to-blue-600'
-            }`}
-            style={{ width: `${bbPercent}%` }}
-          />
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function PlayerUnitCard({ unit, idx, onClick, isSelected }: { 
+function UnitFrame({ unit, idx, isPlayer, onClick, isTargeting }: { 
   unit: any; 
   idx: number;
+  isPlayer: boolean;
   onClick?: () => void;
-  isSelected?: boolean;
+  isTargeting?: boolean;
 }) {
   const hpPercent = (unit.hp / unit.maxHp) * 100;
-  const bbPercent = (unit.bbGauge / unit.maxBb) * 100;
-  const bbReady = unit.bbGauge >= unit.maxBb;
+  const isLeader = isPlayer && idx === 0;
 
   return (
     <motion.div
-      className={`
-        relative w-16 h-16 rounded-full overflow-hidden
-        border-2 cursor-pointer transition-all duration-150
-        ${unit.isDead 
-          ? 'border-zinc-700 bg-zinc-900/50 opacity-40' 
-          : unit.actionState === 'hurt'
-            ? 'border-red-500 bg-red-500/20 animate-pulse'
-            : unit.queuedBb
-              ? 'border-purple-400 bg-purple-500/30 shadow-[0_0_20px_rgba(168,85,247,0.5)]'
-              : 'border-amber-600/60 bg-[#1a1a2e]'
-        }
-        ${unit.isWeaknessHit ? 'border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.6)]' : ''}
-        ${isSelected ? 'border-cyan-400 ring-2 ring-cyan-400/50' : ''}
-      `}
-      onClick={onClick}
-      whileTap={{ scale: 0.95 }}
-      animate={{
-        x: unit.actionState === 'attacking' ? 15 : unit.actionState === 'hurt' ? -5 : 0,
-        scale: unit.actionState === 'skill' ? 1.1 : 1,
-      }}
-      transition={{ duration: 0.15 }}
+      className="flex flex-col items-center"
+      initial={{ opacity: 0, x: isPlayer ? 50 : -50 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: idx * 0.1 }}
     >
-      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-[#252a4a] to-[#1a1a2e]">
-        <span className="text-2xl">{unit.isDead ? '💀' : unit.template.element === 'Fire' ? '🔥' : 
-         unit.template.element === 'Water' ? '💧' : 
-         unit.template.element === 'Earth' ? '🪨' : 
-         unit.template.element === 'Thunder' ? '⚡' : 
-         unit.template.element === 'Light' ? '✨' : '🌑'}</span>
-      </div>
-
-      {idx === 0 && !unit.isDead && (
-        <div className="absolute -top-1 -left-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center text-[8px] font-bold text-black">
-          L
+      <motion.div
+        className={`
+          relative w-16 h-16 rounded-full overflow-hidden
+          border-2 cursor-pointer transition-all duration-150
+          ${unit.isDead 
+            ? 'border-gray-600 bg-gray-800 opacity-40' 
+            : unit.actionState === 'hurt'
+              ? 'border-red-500 bg-red-500/30 animate-pulse'
+              : 'border-amber-500 bg-gradient-to-b from-gray-700 to-gray-900'
+          }
+          ${unit.isWeaknessHit ? 'border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.6)]' : ''}
+          ${isTargeting ? 'border-cyan-400 ring-2 ring-cyan-400/50 scale-110' : ''}
+        `}
+        onClick={onClick}
+        whileTap={{ scale: 0.95 }}
+        animate={{
+          x: unit.actionState === 'attacking' ? (isPlayer ? 20 : -20) : 0,
+          scale: unit.actionState === 'bb_hurt' ? 1.15 : 1,
+        }}
+        transition={{ duration: 0.2 }}
+      >
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-3xl filter drop-shadow-lg">
+            {unit.isDead ? '☠️' : unit.template.element === 'Fire' ? '🔥' : 
+             unit.template.element === 'Water' ? '💧' : 
+             unit.template.element === 'Earth' ? '🌲' : 
+             unit.template.element === 'Thunder' ? '⚡' : 
+             unit.template.element === 'Light' ? '☀️' : '🌙'}
+          </span>
         </div>
-      )}
 
-      {!unit.isDead && (
-        <div className={`absolute top-0 right-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${ELEMENT_COLORS[unit.template.element]} border border-white/20`}>
-          {ELEMENT_ICONS[unit.template.element]}
-        </div>
-      )}
+        {isLeader && !unit.isDead && (
+          <div className="absolute -top-1 -left-1 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center text-[10px] font-bold text-black border border-white">
+            L
+          </div>
+        )}
 
-      <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-16">
-        <div className="h-1.5 bg-red-950 rounded-full overflow-hidden border border-red-900/50">
+        {!unit.isDead && (
           <div 
-            className="h-full bg-gradient-to-b from-green-400 to-green-600 transition-all duration-300"
-            style={{ width: `${hpPercent}%` }}
-          />
-        </div>
-      </div>
+            className="absolute top-0 right-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white border border-white/30"
+            style={{ backgroundColor: ELEMENT_COLORS[unit.template.element] }}
+          >
+          </div>
+        )}
 
-      <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-16">
-        <div className="h-1 bg-blue-950 rounded-full overflow-hidden">
-          <div 
-            className={`h-full transition-all duration-300 ${
-              bbReady 
-                ? 'bg-gradient-to-b from-yellow-300 to-yellow-500 animate-pulse' 
-                : 'bg-gradient-to-b from-blue-400 to-blue-600'
-            }`}
-            style={{ width: `${bbPercent}%` }}
-          />
-        </div>
-      </div>
+        {unit.queuedBb && !unit.isDead && (
+          <div className="absolute inset-0 rounded-full border-2 border-purple-500 bg-purple-500/20" />
+        )}
 
-      {bbReady && !unit.isDead && (
-        <>
-          <div className="absolute inset-[-4px] rounded-full border-2 border-purple-400 animate-pulse opacity-50" />
-          <div className="absolute -bottom-1 -right-1 text-[8px] font-bold bg-purple-500 text-white px-1.5 rounded-full">
+        {unit.bbGauge >= unit.maxBb && !unit.isDead && (
+          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-[8px] font-bold text-white border border-purple-400 animate-bounce">
             BB
           </div>
-        </>
-      )}
+        )}
+      </motion.div>
 
-      {unit.queuedBb && (
-        <div className="absolute inset-0 rounded-full border-2 border-purple-400 bg-purple-500/20" />
-      )}
-    </motion.div>
-  );
-}
-
-function BBButton({ unit, onClick, disabled }: { 
-  unit: any; 
-  onClick?: () => void;
-  disabled?: boolean;
-}) {
-  const bbReady = unit.bbGauge >= unit.maxBb;
-
-  return (
-    <motion.button
-      className={`
-        relative w-14 h-14 rounded-full
-        ${unit.isDead 
-          ? 'bg-zinc-800 opacity-40 cursor-not-allowed' 
-          : bbReady
-            ? 'bg-gradient-to-b from-yellow-300 to-yellow-500 cursor-pointer hover:scale-110 active:scale-95 shadow-[0_0_20px_rgba(250,204,21,0.6)]'
-            : 'bg-gradient-to-b from-blue-600 to-blue-800 cursor-pointer hover:scale-105 active:scale-95'
-        }
-        transition-all duration-200 flex items-center justify-center
-        border-2 ${bbReady ? 'border-white' : 'border-amber-600/50'}
-        ${disabled ? 'pointer-events-none' : ''}
-      `}
-      onClick={onClick}
-      disabled={disabled}
-      whileTap={{ scale: 0.9 }}
-      animate={bbReady && !unit.isDead ? { scale: [1, 1.05, 1] } : {}}
-      transition={{ repeat: Infinity, duration: 1.5 }}
-    >
-      <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 bg-[#1a1a2e] flex items-center justify-center">
-        <span className="text-xl">{unit.isDead ? '💀' : unit.template.element === 'Fire' ? '🔥' : 
-         unit.template.element === 'Water' ? '💧' : 
-         unit.template.element === 'Earth' ? '🪨' : 
-         unit.template.element === 'Thunder' ? '⚡' : 
-         unit.template.element === 'Light' ? '✨' : '🌑'}</span>
+      <div className="mt-1 w-20">
+        <div className="h-2 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
+          <motion.div 
+            className="h-full bg-gradient-to-r from-green-600 to-green-400"
+            initial={{ width: 0 }}
+            animate={{ width: `${hpPercent}%` }}
+            transition={{ duration: 0.3 }}
+          />
+        </div>
+        <div className="flex justify-between mt-0.5">
+          <span className="text-[9px] text-gray-400 font-mono">
+            {Math.floor(unit.hp)}
+          </span>
+          <span className="text-[8px] text-gray-500">
+            {Math.floor(unit.maxHp)}
+          </span>
+        </div>
       </div>
 
-      {!bbReady && !unit.isDead && (
-        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-black/80 rounded-full flex items-center justify-center text-[8px] font-bold text-blue-400">
-          {Math.floor(unit.bbGauge)}
+      {!unit.isDead && (
+        <div className="mt-0.5 flex gap-0.5">
+          {[...Array(5)].map((_, i) => (
+            <div 
+              key={i}
+              className={`w-1.5 h-2 rounded-sm ${
+                (unit.bbGauge / unit.maxBb) * 5 > i 
+                  ? 'bg-cyan-400 animate-pulse' 
+                  : 'bg-gray-700'
+              }`}
+            />
+          ))}
         </div>
       )}
-
-      {bbReady && !unit.isDead && (
-        <div className="absolute -top-1 -right-1 w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center text-[8px] font-bold text-white animate-bounce">
-          BB
-        </div>
-      )}
-
-      {unit.queuedBb && (
-        <div className="absolute inset-0 rounded-full border-2 border-purple-400 bg-purple-500/30" />
-      )}
-    </motion.button>
+    </motion.div>
   );
 }
 
 export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProps) {
   const stage = STAGES.find(s => s.id === stageId);
-  
-  const handleVictory = useCallback((victory: boolean) => {
-    setTimeout(() => onEnd(victory), 2000);
+
+  const handleVictory = useCallback(() => {
+    setTimeout(() => onEnd(true), 2500);
   }, [onEnd]);
 
-  const handleDefeat = useCallback((victory: boolean) => {
-    setTimeout(() => onEnd(victory), 2000);
+  const handleDefeat = useCallback(() => {
+    setTimeout(() => onEnd(false), 2500);
   }, [onEnd]);
 
   const {
@@ -268,88 +152,56 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
     handleUnitClick,
     floatingTexts,
   } = useBattle(state, stageId, (victory) => {
-    handleVictory(victory);
+    if (victory) handleVictory();
+    else handleDefeat();
   });
 
-  const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(true);
 
-  const handleEnemyClick = (enemyId: string) => {
-    if (turnState === 'player_input' && selectedTarget) {
-      // Execute attack on selected enemy
-      setSelectedTarget(null);
-    } else if (turnState === 'player_input') {
-      setSelectedTarget(enemyId);
-    }
-  };
+  useEffect(() => {
+    const timer = setTimeout(() => setShowHelp(false), 4000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <div className="w-full h-full flex flex-col bg-gradient-to-b from-[#0d0d1a] via-[#16213e] to-[#1a1a2e] overflow-hidden select-none">
-      {/* Stage Header */}
-      <div className="h-12 flex items-center justify-between px-4 bg-gradient-to-b from-[#1a1a2e]/95 to-[#0d0d1a]/95 border-b border-amber-600/30">
-        <div className="flex flex-col">
-          <span className="text-xs font-bold text-amber-500 uppercase tracking-wider">
-            {stage?.name || 'Battle'}
-          </span>
-          <span className="text-[10px] text-zinc-400">
-            {stage?.area || 'Unknown Area'}
-          </span>
+    <div className="w-full h-full flex flex-col bg-gradient-to-b from-[#1a1a2e] via-[#0f0f1a] to-[#0a0a12] overflow-hidden select-none">
+      {/* Top Bar - Zel & Karma */}
+      <div className="h-10 flex items-center justify-between px-4 bg-gradient-to-b from-[#2a2a4a] to-[#1a1a2e] border-b border-[#b89947]/20">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1">
+            <span className="text-yellow-500">♦</span>
+            <span className="text-xs font-bold text-yellow-500">{stage?.zelReward || 0}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-pink-400">★</span>
+            <span className="text-xs font-bold text-pink-400">0</span>
+          </div>
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <div className="text-xs text-zinc-500 font-mono">
-            TURN {turnCount}
-          </div>
-          <div className={`
-            text-xs font-bold px-2 py-0.5 rounded
-            ${turnState === 'player_input' ? 'bg-emerald-500/20 text-emerald-400' : ''}
-            ${turnState === 'player_executing' || turnState === 'enemy_executing' ? 'bg-red-500/20 text-red-400' : ''}
-            ${turnState === 'victory' ? 'bg-yellow-500/20 text-yellow-400 animate-pulse' : ''}
-            ${turnState === 'defeat' ? 'bg-zinc-500/20 text-zinc-400' : ''}
-          `}>
-            {turnState === 'player_input' ? 'YOUR TURN' : 
-             turnState === 'player_executing' || turnState === 'enemy_executing' ? 'EXECUTING' :
-             turnState === 'victory' ? 'VICTORY!' : 'DEFEAT'}
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500">TURN {turnCount}</span>
         </div>
       </div>
 
-      {/* Enemy Row - Top */}
-      <div className="h-[30%] min-h-[120px] flex items-end justify-center px-2 pb-2 relative">
-        <div className="absolute bottom-0 left-1/4 right-1/4 h-1 bg-gradient-to-r from-transparent via-amber-600/20 to-transparent" />
-        <div className="flex gap-2 justify-center items-end">
-          {enemyUnits.map((enemy) => (
-            <EnemyUnitCard 
-              key={enemy.id} 
-              unit={enemy} 
-              onClick={() => handleEnemyClick(enemy.id)}
-              isSelected={selectedTarget === enemy.id}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Battle Arena - Middle */}
-      <div className="flex-1 relative overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-6xl font-black text-amber-600/10 select-none">VS</span>
-        </div>
-
+      {/* Battle Area */}
+      <div className="flex-1 flex flex-col relative">
+        {/* Floating Texts */}
         <AnimatePresence>
           {floatingTexts.map((ft) => (
             <motion.div
               key={ft.id}
               initial={{ opacity: 1, y: 0, scale: 0.5 }}
               animate={{ 
-                opacity: ft.type === 'heal' || ft.type === 'bc' || ft.type === 'bb' ? 0 : 1,
-                y: ft.type === 'heal' || ft.type === 'bc' || ft.type === 'bb' ? 30 : -40,
-                scale: ft.type === 'weak' ? 1.5 : 1,
+                opacity: 0,
+                y: -50,
+                scale: ft.type === 'weak' ? 1.3 : 1,
               }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.8 }}
-              className={`absolute text-2xl font-black ${
-                ft.type === 'damage' ? 'text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]' :
+              transition={{ duration: 1 }}
+              className={`absolute text-3xl font-black z-50 ${
+                ft.type === 'damage' ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]' :
                 ft.type === 'heal' ? 'text-green-400' :
                 ft.type === 'weak' ? 'text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]' :
-                ft.type === 'bc' ? 'text-cyan-400' :
+                ft.type === 'bc' ? 'text-cyan-300' :
                 ft.type === 'bb' ? 'text-purple-400' :
                 'text-white'
               }`}
@@ -360,58 +212,112 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
           ))}
         </AnimatePresence>
 
-        {/* Command Buttons */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3">
+        {/* VS */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <span className="text-8xl font-black text-[#b89947]/5 select-none">VS</span>
+        </div>
+
+        {/* Enemy Row - LEFT SIDE */}
+        <div className="absolute left-2 top-1/4 flex flex-col gap-2">
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider ml-1">ENEMY</div>
+          <div className="flex flex-col gap-3">
+            {enemyUnits.map((enemy, idx) => (
+              <UnitFrame 
+                key={enemy.id} 
+                unit={enemy} 
+                idx={idx}
+                isPlayer={false}
+                onClick={() => {
+                  if (turnState === 'player_input' && !enemy.isDead) {
+                    handleUnitClick(enemy.id);
+                  }
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Player Row - RIGHT SIDE */}
+        <div className="absolute right-2 top-1/4 flex flex-col gap-2 items-end">
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider mr-1">YOUR UNIT</div>
+          <div className="flex flex-col gap-3">
+            {playerUnits.map((unit, idx) => (
+              <UnitFrame 
+                key={unit.id} 
+                unit={unit} 
+                idx={idx}
+                isPlayer={true}
+                onClick={() => {
+                  if (turnState === 'player_input' && !unit.isDead) {
+                    handleUnitClick(unit.id);
+                  }
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Battle Log */}
+        <div className="absolute bottom-16 left-2 right-2">
+          <div className="text-xs text-gray-400 bg-black/40 p-2 rounded text-center">
+            {combatLog[combatLog.length - 1] || 'Tap your units to attack!'}
+          </div>
+        </div>
+
+        {/* Attack Button */}
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
           <motion.button
             onClick={executeTurn}
             disabled={turnState !== 'player_input'}
             className={`
-              px-6 py-3 rounded-lg font-bold text-sm uppercase tracking-wider
-              transition-all duration-200
+              px-8 py-3 rounded-full font-bold text-sm uppercase tracking-wider
+              transition-all duration-200 shadow-lg
               ${turnState === 'player_input'
-                ? 'bg-gradient-to-b from-amber-500 to-amber-700 text-black hover:scale-105 active:scale-95 shadow-lg'
-                : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black hover:scale-105 active:scale-95'
+                : turnState === 'victory'
+                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-black animate-pulse'
+                  : turnState === 'defeat'
+                    ? 'bg-gray-700 text-gray-400'
+                    : 'bg-gray-800 text-gray-500 cursor-not-allowed'
               }
             `}
             whileTap={turnState === 'player_input' ? { scale: 0.95 } : {}}
           >
-            ⚔️ Attack
+            {turnState === 'player_input' ? '⚔️ ATTACK' : 
+             turnState === 'victory' ? '🎉 VICTORY!' :
+             turnState === 'defeat' ? '💀 DEFEAT...' :
+             'Wait...'}
           </motion.button>
         </div>
-
-        {/* Combat Log */}
-        <div className="absolute top-2 left-2 right-2 text-xs text-zinc-400 bg-black/30 p-1 rounded text-center">
-          {combatLog[combatLog.length - 1] || 'Battle Started!'}
-        </div>
       </div>
 
-      {/* Player Row */}
-      <div className="h-[25%] min-h-[100px] flex items-start justify-center px-2 pt-2">
-        <div className="flex gap-2 justify-center items-start">
-          {playerUnits.map((unit, idx) => (
-            <PlayerUnitCard 
-              key={unit.id} 
-              unit={unit}
-              idx={idx}
-              onClick={() => turnState === 'player_input' && !unit.isDead && handleUnitClick(unit.id)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* BB Buttons Row */}
-      <div className="h-20 bg-gradient-to-t from-[#0d0d1a] to-[#1a1a2e] border-t border-amber-600/30 px-2 py-2">
-        <div className="flex justify-center gap-2 h-full">
-          {playerUnits.map((unit) => (
-            <BBButton 
-              key={unit.id}
-              unit={unit}
-              disabled={turnState !== 'player_input' || unit.isDead}
-              onClick={() => turnState === 'player_input' && !unit.isDead && handleUnitClick(unit.id)}
-            />
-          ))}
-        </div>
-      </div>
+      {/* Help Overlay */}
+      <AnimatePresence>
+        {showHelp && turnState === 'player_input' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/70 flex items-center justify-center z-50"
+            onClick={() => setShowHelp(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              className="bg-gradient-to-b from-[#2a2a4a] to-[#1a1a2e] p-6 rounded-2xl border border-amber-500/30 max-w-[280px]"
+            >
+              <h3 className="text-lg font-bold text-amber-400 text-center mb-3">How to Play</h3>
+              <div className="text-xs text-gray-300 space-y-2">
+                <p>• <span className="text-amber-400">Tap your units</span> to queue Brave Burst</p>
+                <p>• When BB gauge is <span className="text-purple-400">purple</span>, tap to use it!</p>
+                <p>• Tap <span className="text-amber-400">ATTACK</span> to execute turn</p>
+                <p>• Element advantage: <span className="text-red-400">Fire</span> &gt; <span className="text-green-400">Earth</span> &gt; <span className="text-blue-400">Water</span> &gt; <span className="text-red-400">Fire</span></p>
+              </div>
+              <p className="text-[10px] text-gray-500 text-center mt-4">Tap to dismiss</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
