@@ -66,10 +66,6 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
     playerUnits,
   };
 
-  const gridData = {
-    ...battleState,
-  };
-
   return (
     <div className="flex flex-col w-full h-full bg-[#0a0a14]">
       <BattleTopHud 
@@ -83,7 +79,12 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
 
       <BattleControlsBar battleState={controlsData} />
 
-      <BattleBottomGrid battleState={gridData} />
+      <BattleBottomGrid 
+        playerUnits={playerUnits}
+        enemyUnits={enemyUnits}
+        turnState={turnState}
+        onUnitClick={handleUnitClick}
+      />
     </div>
   );
 }
