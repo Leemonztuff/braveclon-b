@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { useGameApp, Screen } from '@/hooks/useGameApp';
 import { BattleRewards } from '@/components/BattleRewardsModal';
 import { X } from 'lucide-react';
+import ViewportWrapper from '@/components/ViewportWrapper';
 import AuthScreen from '@/components/AuthScreen';
 import HomeScreen from '@/components/HomeScreen';
 import RandallScreen from '@/components/RandallScreen';
@@ -202,8 +203,9 @@ export default function GameApp() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] w-full bg-zinc-950 text-zinc-100">
-      <div className="relative flex flex-col h-full w-full flex-col overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950 safe-area">
+    <ViewportWrapper>
+      <div className="flex flex-col h-full w-full bg-zinc-950 text-zinc-100">
+        <div className="relative flex flex-col h-full w-full flex-col overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950 safe-area">
         {currentScreen !== 'battle' && state && (
           <div className="flex items-center justify-between bg-zinc-950/80 backdrop-blur-sm px-4 py-3 border-b border-zinc-800/50 z-40">
             <div className="flex flex-col gap-0.5">
@@ -299,5 +301,6 @@ export default function GameApp() {
         )}
       </div>
     </div>
+    </ViewportWrapper>
   );
 }
