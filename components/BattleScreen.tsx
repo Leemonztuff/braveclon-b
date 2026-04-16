@@ -1,4 +1,14 @@
-﻿export default function BattleScreen() {
+'use client';
+
+import { PlayerState } from '@/lib/gameState';
+
+interface BattleScreenProps {
+  state: PlayerState;
+  stageId: number;
+  onEnd: (victory: boolean) => void;
+}
+
+export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProps) {
   return (
     <div className="w-full h-screen flex flex-col justify-between bg-black text-white">
       <div className="flex justify-between items-center px-4 py-2 bg-gray-900">
@@ -96,3 +106,5 @@
         </div>
       </div>
     </div>
+  );
+}
