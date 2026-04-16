@@ -83,10 +83,13 @@ export default function SummonScreen({ state, spendGems, addUnit, rollGacha, onA
   const [phase, setPhase] = useState<SummonPhase>('idle');
   const [isShaking, setIsShaking] = useState(false);
 
-  const handleSummon = () => {
+const handleSummon = () => {
     if (phase !== 'idle') return;
     
-    if (spendGems(50)) {
+    const summonCost = 5;
+    
+    if (state.gems >= summonCost) {
+      spendGems(summonCost);
       const results = rollGacha('standard', 1);
       const randomId = results[0].templateId;
       const rarity = results[0].rarity;
@@ -107,7 +110,7 @@ export default function SummonScreen({ state, spendGems, addUnit, rollGacha, onA
         addUnit(randomId);
       }, gateDuration);
     } else {
-      onAlert("Not enough gems! You need 5 💎 to summon a hero.");
+      onAlert(`Not enough gems! You need ${summonCost} 💎 to summon.`);
     }
   };
 

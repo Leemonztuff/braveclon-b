@@ -69,32 +69,34 @@ export function BattleArena({ battleState }: { battleState: BattleStateData }) {
         ))}
       </AnimatePresence>
 
-      {/* SIDE-SCROLLER LAYOUT - Multiple rows, side by side */}
-      <div className="absolute inset-0 flex items-end justify-between px-2">
+      {/* SIDE-SCROLLER LAYOUT - Grid formation like classic JRPG */}
+      <div className="absolute inset-0 flex items-center justify-between px-1">
         
-        {/* Player Units - LEFT side (multiple rows) */}
-        <div className="flex flex-col justify-end gap-1 ml-1">
-          <AnimatePresence>
-            {playerUnits.slice(0, 6).map((unit, idx) => (
-              <motion.div
-                key={unit.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.08 }}
-                className="py-0.5"
-              >
-                <UnitSprite 
-                  unit={unit}
-                  hideStats={true}
-                  onClick={() => turnState === 'player_input' && !unit.isDead && handleUnitClick(unit.id)}
-                  interactive={turnState === 'player_input' && !unit.isDead}
-                  isItemSelected={!!selectedItem}
-                  hitEffectElement={bbHitEffect?.targetId === unit.id ? bbHitEffect.element : null}
-                  scale={0.9}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
+        {/* Player Units - LEFT side (grid: back row first, front row last) */}
+        <div className="flex ml-1">
+          <div className="flex flex-col-reverse gap-0.5 w-16 content-end">
+            {playerUnits.slice(0, 6).map((unit, idx) => {
+              const isBackRow = idx < 3;
+              return (
+                <motion.div
+                  key={unit.id}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                >
+                  <UnitSprite 
+                    unit={unit}
+                    hideStats={true}
+                    onClick={() => turnState === 'player_input' && !unit.isDead && handleUnitClick(unit.id)}
+                    interactive={turnState === 'player_input' && !unit.isDead}
+                    isItemSelected={!!selectedItem}
+                    hitEffectElement={bbHitEffect?.targetId === unit.id ? bbHitEffect.element : null}
+                    scale={0.8}
+                  />
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
 
         {/* VS - Center */}
@@ -102,27 +104,26 @@ export function BattleArena({ battleState }: { battleState: BattleStateData }) {
           VS
         </div>
 
-        {/* Enemy Units - RIGHT side (multiple rows) */}
-        <div className="flex flex-col justify-end gap-1 mr-1">
-          <AnimatePresence>
+        {/* Enemy Units - RIGHT side (grid: back row first, front row last) */}
+        <div className="flex mr-1">
+          <div className="flex flex-col-reverse gap-0.5 w-16 content-end">
             {enemyUnits.slice(0, 6).map((unit, idx) => (
               <motion.div
                 key={unit.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.08 }}
-                className="py-0.5"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
               >
                 <UnitSprite 
                   unit={unit}
                   hideStats={true}
                   interactive={false}
                   hitEffectElement={bbHitEffect?.targetId === unit.id ? bbHitEffect.element : null}
-                  scale={0.9}
+                  scale={0.8}
                 />
               </motion.div>
             ))}
-          </AnimatePresence>
+          </div>
         </div>
       </div>
     </motion.div>
