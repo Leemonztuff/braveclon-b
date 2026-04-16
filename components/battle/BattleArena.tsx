@@ -70,10 +70,10 @@ export function BattleArena({ battleState }: { battleState: BattleStateData }) {
       </AnimatePresence>
 
       {/* SIDE-SCROLLER LAYOUT - All units on SAME horizontal level */}
-      <div className="absolute inset-0 flex items-center justify-between px-4">
+      <div className="absolute inset-0 flex items-end justify-between px-4 pb-8">
         
         {/* Player Units - LEFT side (facing right) */}
-        <div className="flex items-center gap-2 ml-2">
+        <div className="flex items-end gap-2 ml-2 pb-2">
           <AnimatePresence>
             {playerUnits.slice(0, 5).map((unit, idx) => (
               <motion.div
@@ -102,7 +102,7 @@ export function BattleArena({ battleState }: { battleState: BattleStateData }) {
         </div>
 
         {/* Enemy Units - RIGHT side (facing left) */}
-        <div className="flex items-center gap-2 mr-2">
+        <div className="flex items-end gap-2 mr-2 pb-2">
           <AnimatePresence>
             {enemyUnits.slice(0, 5).map((unit, idx) => (
               <motion.div
