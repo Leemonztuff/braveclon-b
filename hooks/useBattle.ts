@@ -39,7 +39,12 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
           maxBb: template.skill.cost,
           isDead: false,
           queuedBb: false,
-          actionState: 'idle'
+          actionState: 'idle',
+          statusEffects: [],
+          atkBuff: 1.0,
+          defBuff: 1.0,
+          recBuff: 1.0,
+          elementalMitigation: 0
         };
       });
   });
@@ -64,7 +69,12 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
         maxBb: 100,
         isDead: false,
         queuedBb: false,
-        actionState: 'idle'
+        actionState: 'idle',
+        statusEffects: [],
+        atkBuff: 1.0,
+        defBuff: 1.0,
+        recBuff: 1.0,
+        elementalMitigation: 0
       };
     });
   });
@@ -221,8 +231,29 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
         }
       }
       
-      let rawDamage = Math.max(1, (attacker.atk * powerMultiplier) - (target.def * 0.5));
-      let finalDamage = Math.floor(rawDamage * elementMultiplier);
+      // Apply status effect debuffs (poison, weak, etc)
+      let atkMultiplier = attacker.atkBuff;
+      let defMultiplier = target.defBuff;
+      
+      // Poison deals damage at start of turn
+      const poisonEffect = attacker.statusEffects.find(e => e.type === 'poison');
+      if (poisonEffect && attacker.isPlayer && attacker.hp > 1) {
+        const poisonDmg = Math.floor(attacker.maxHp * 0.1 * poisonEffect.power);
+        currentPlayer[i] = { 
+          ...attacker, 
+          hp: Math.max(1, attacker.hp - poisonDmg),
+          statusEffects: attacker.statusEffects.map(e => 
+            e.type === 'poison' ? { ...e, turnsRemaining: e.turnsRemaining - 1 } : e
+          )
+        };
+        addLog(`${attacker.template.name} takes ${poisonDmg} poison damage!`);
+        setPlayerUnits([...currentPlayer]);
+        await new Promise(r => setTimeout(r, 300));
+      }
+      
+      // Calculate damage with all modifiers
+      let rawDamage = Math.max(1, (attacker.atk * atkMultiplier * powerMultiplier) - (target.def * defMultiplier * 0.5));
+      let finalDamage = Math.floor(rawDamage * elementMultiplier * (1 - target.elementalMitigation));
 
       // ANIMATION: Attacker moves
       currentPlayer[i] = { ...attacker, actionState: isBb ? 'skill' : 'attacking' };
@@ -256,6 +287,18 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
         playSound('bb_hit');
         if (isWeakness) setTimeout(() => playSound('weakness'), 100);
         setTimeout(() => setBbHitEffect(null), 800);
+        
+        // Apply status effects from BB attacks
+        if (attacker.template.skill.statusEffect && Math.random() < attacker.template.skill.statusEffect.chance) {
+          const effect = attacker.template.skill.statusEffect;
+          currentEnemies[targetIdx] = {
+            ...currentEnemies[targetIdx],
+            statusEffects: [...currentEnemies[targetIdx].statusEffects, { type: effect.type, turnsRemaining: effect.turns, power: effect.power }]
+          };
+          setEnemyUnits([...currentEnemies]);
+          addLog(`${target.template.name} is affected by ${effect.type}!`);
+          await new Promise(r => setTimeout(r, 300));
+        }
       } else {
         if (isWeakness) {
           playSound('weakness');

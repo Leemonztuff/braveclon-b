@@ -27,6 +27,17 @@ export const ELEMENT_BG_GRADIENTS: Record<Element, string> = {
   Dark: 'from-purple-700 to-black',
 };
 
+// Elemental Resistance Matrix: attacker -> target -> multiplier
+// 2.0 = double damage (weakness), 0.5 = half damage (resistance), 0 = immune
+export const ELEMENT_RESISTANCE: Record<Element, Partial<Record<Element, number>>> = {
+  Fire:    { Fire: 0.5, Water: 2.0, Earth: 1.0, Thunder: 1.0, Light: 1.0, Dark: 1.0 },
+  Water:   { Fire: 2.0, Water: 0.5, Earth: 1.0, Thunder: 1.0, Light: 1.0, Dark: 1.0 },
+  Earth:   { Fire: 1.0, Water: 1.0, Earth: 0.5, Thunder: 2.0, Light: 1.0, Dark: 1.0 },
+  Thunder: { Fire: 1.0, Water: 1.0, Earth: 2.0, Thunder: 0.5, Light: 1.0, Dark: 1.0 },
+  Light:   { Fire: 1.0, Water: 1.0, Earth: 1.0, Thunder: 1.0, Dark: 2.0, Light: 1.0 },
+  Dark:    { Fire: 1.0, Water: 1.0, Earth: 1.0, Thunder: 1.0, Light: 2.0, Dark: 0.5 },
+};
+
 export interface Stats {
   hp: number;
   atk: number;
@@ -45,7 +56,7 @@ export interface EquipmentTemplate {
   icon: string;
 }
 
-export type SkillType = 'damage' | 'heal' | 'buff' | 'leader' | 'extra';
+export type SkillType = 'damage' | 'heal' | 'buff' | 'debuff' | 'leader' | 'extra';
 
 export interface Skill {
   id: string;
@@ -56,6 +67,12 @@ export interface Skill {
   cost: number; // BB gauge cost
   target?: 'self' | 'ally' | 'all_allies' | 'enemy' | 'all_enemies';
   turns?: number; // Duration for buffs
+  statusEffect?: {
+    type: 'poison' | 'weak' | 'sick' | 'injured' | 'curse' | 'paralysis';
+    chance: number; // 0-1 probability
+    power: number; // Effect magnitude
+    turns: number; // Duration
+  };
 }
 
 // Leader skill - passive buff to team
@@ -122,13 +139,13 @@ export const UNIT_DATABASE: Record<string, UnitTemplate> = {
   'mat_light': { id: 'mat_light', name: 'Light Nymph', element: 'Light', rarity: 1, baseStats: { hp: 100, atk: 10, def: 10, rec: 10 }, growthRate: { hp: 0, atk: 0, def: 0, rec: 0 }, maxLevel: 1, skill: { id: 's_mat', name: 'None', type: 'damage', description: 'Material', power: 0, cost: 999 }, spriteUrl: `${BASE_URL}/abbys_sprite_021.png` },
   'mat_dark': { id: 'mat_dark', name: 'Dark Nymph', element: 'Dark', rarity: 1, baseStats: { hp: 100, atk: 10, def: 10, rec: 10 }, growthRate: { hp: 0, atk: 0, def: 0, rec: 0 }, maxLevel: 1, skill: { id: 's_mat', name: 'None', type: 'damage', description: 'Material', power: 0, cost: 999 }, spriteUrl: `${BASE_URL}/abbys_sprite_020.png` },
 
-  // Evolved Forms (4-star) - with leader skills
-  'u1_4': { id: 'u1_4', name: 'Ignis Vargas', element: 'Fire', rarity: 4, baseStats: { hp: 1800, atk: 600, def: 450, rec: 300 }, growthRate: { hp: 50, atk: 20, def: 15, rec: 10 }, maxLevel: 60, skill: { id: 's1_4', name: 'Burst Flare', type: 'damage', description: 'Strong Fire damage to all enemies', power: 1.8, cost: 24 }, leaderSkill: { id: 'ls1_4', name: 'Fire Lord', description: '+30% Fire damage to team', elementBoost: { Fire: 0.3 } }, spriteUrl: `${BASE_URL}/abbys_sprite_001.png` },
-  'u2_4': { id: 'u2_4', name: 'Aqua Selena', element: 'Water', rarity: 4, baseStats: { hp: 1650, atk: 500, def: 500, rec: 450 }, growthRate: { hp: 45, atk: 16, def: 16, rec: 14 }, maxLevel: 60, skill: { id: 's2_4', name: 'Glacial Dance', type: 'heal', description: 'Greatly heals all allies', power: 1.5, cost: 28 }, leaderSkill: { id: 'ls2_4', name: 'Water Guardian', description: '+30% Water damage to team', elementBoost: { Water: 0.3 } }, spriteUrl: `${BASE_URL}/abbys_sprite_002.png` },
-  'u3_4': { id: 'u3_4', name: 'Terra Lance', element: 'Earth', rarity: 4, baseStats: { hp: 1950, atk: 450, def: 600, rec: 250 }, growthRate: { hp: 55, atk: 14, def: 20, rec: 8 }, maxLevel: 60, skill: { id: 's3_4', name: 'Grand Pike', type: 'damage', description: 'Strong Earth damage to all enemies', power: 1.8, cost: 24 }, leaderSkill: { id: 'ls3_4', name: 'Earth Warden', description: '+30% Earth damage to team', elementBoost: { Earth: 0.3 } }, spriteUrl: `${BASE_URL}/abbys_sprite_003.png` },
-  'u4_4': { id: 'u4_4', name: 'Bolt Eze', element: 'Thunder', rarity: 4, baseStats: { hp: 1500, atk: 650, def: 350, rec: 300 }, growthRate: { hp: 40, atk: 24, def: 12, rec: 10 }, maxLevel: 60, skill: { id: 's4_4', name: 'Thunder Storm', type: 'damage', description: 'Strong Thunder damage to all enemies', power: 1.9, cost: 26 }, leaderSkill: { id: 'ls4_4', name: 'Thunder Lord', description: '+30% Thunder damage to team', elementBoost: { Thunder: 0.3 } }, spriteUrl: `${BASE_URL}/abbys_sprite_004.png` },
-  'u5_4': { id: 'u5_4', name: 'Lux Atro', element: 'Light', rarity: 4, baseStats: { hp: 1700, atk: 550, def: 550, rec: 350 }, growthRate: { hp: 48, atk: 18, def: 18, rec: 12 }, maxLevel: 60, skill: { id: 's5_4', name: 'Divine Light', type: 'damage', description: 'Strong Light damage to all enemies', power: 1.8, cost: 24 }, leaderSkill: { id: 'ls5_4', name: 'Light Bearer', description: '+30% Light damage to team', elementBoost: { Light: 0.3 } }, spriteUrl: `${BASE_URL}/abbys_sprite_005.png` },
-  'u6_4': { id: 'u6_4', name: 'Nox Magress', element: 'Dark', rarity: 4, baseStats: { hp: 2100, atk: 480, def: 650, rec: 150 }, growthRate: { hp: 60, atk: 15, def: 22, rec: 6 }, maxLevel: 60, skill: { id: 's6_4', name: 'Abyssal Guard', type: 'damage', description: 'Strong Dark damage to all enemies', power: 1.7, cost: 24 }, leaderSkill: { id: 'ls6_4', name: 'Dark Shield', description: '+15% damage reduction to team', damageReduction: 0.15 }, spriteUrl: `${BASE_URL}/abbys_sprite_006.png` },
+  // Evolved Forms (4-star) - with leader skills and status effects
+  'u1_4': { id: 'u1_4', name: 'Ignis Vargas', element: 'Fire', rarity: 4, baseStats: { hp: 1800, atk: 600, def: 450, rec: 300 }, growthRate: { hp: 50, atk: 20, def: 15, rec: 10 }, maxLevel: 60, skill: { id: 's1_4', name: 'Burst Flare', type: 'damage', description: 'Strong Fire damage to all enemies + burn', power: 1.8, cost: 24, target: 'all_enemies', statusEffect: { type: 'poison', chance: 0.5, power: 1, turns: 3 } }, leaderSkill: { id: 'ls1_4', name: 'Fire Lord', description: '+30% Fire damage to team', elementBoost: { Fire: 0.3 } }, spriteUrl: `${BASE_URL}/abbys_sprite_001.png` },
+  'u2_4': { id: 'u2_4', name: 'Aqua Selena', element: 'Water', rarity: 4, baseStats: { hp: 1650, atk: 500, def: 500, rec: 450 }, growthRate: { hp: 45, atk: 16, def: 16, rec: 14 }, maxLevel: 60, skill: { id: 's2_4', name: 'Glacial Dance', type: 'heal', description: 'Greatly heals all allies', power: 1.5, cost: 28, target: 'all_allies' }, leaderSkill: { id: 'ls2_4', name: 'Water Guardian', description: '+30% Water damage to team', elementBoost: { Water: 0.3 } }, spriteUrl: `${BASE_URL}/abbys_sprite_002.png` },
+  'u3_4': { id: 'u3_4', name: 'Terra Lance', element: 'Earth', rarity: 4, baseStats: { hp: 1950, atk: 450, def: 600, rec: 250 }, growthRate: { hp: 55, atk: 14, def: 20, rec: 8 }, maxLevel: 60, skill: { id: 's3_4', name: 'Grand Pike', type: 'damage', description: 'Strong Earth damage + weakness', power: 1.8, cost: 24, target: 'all_enemies', statusEffect: { type: 'weak', chance: 0.4, power: 0.5, turns: 2 } }, leaderSkill: { id: 'ls3_4', name: 'Earth Warden', description: '+30% Earth damage to team', elementBoost: { Earth: 0.3 } }, spriteUrl: `${BASE_URL}/abbys_sprite_003.png` },
+  'u4_4': { id: 'u4_4', name: 'Bolt Eze', element: 'Thunder', rarity: 4, baseStats: { hp: 1500, atk: 650, def: 350, rec: 300 }, growthRate: { hp: 40, atk: 24, def: 12, rec: 10 }, maxLevel: 60, skill: { id: 's4_4', name: 'Thunder Storm', type: 'damage', description: 'Strong Thunder damage + paralysis', power: 1.9, cost: 26, target: 'all_enemies', statusEffect: { type: 'paralysis', chance: 0.3, power: 1, turns: 2 } }, leaderSkill: { id: 'ls4_4', name: 'Thunder Lord', description: '+30% Thunder damage to team', elementBoost: { Thunder: 0.3 } }, spriteUrl: `${BASE_URL}/abbys_sprite_004.png` },
+  'u5_4': { id: 'u5_4', name: 'Lux Atro', element: 'Light', rarity: 4, baseStats: { hp: 1700, atk: 550, def: 550, rec: 350 }, growthRate: { hp: 48, atk: 18, def: 18, rec: 12 }, maxLevel: 60, skill: { id: 's5_4', name: 'Divine Light', type: 'damage', description: 'Strong Light damage + curse', power: 1.8, cost: 24, target: 'all_enemies', statusEffect: { type: 'curse', chance: 0.5, power: 0.5, turns: 3 } }, leaderSkill: { id: 'ls5_4', name: 'Light Bearer', description: '+30% Light damage to team', elementBoost: { Light: 0.3 } }, spriteUrl: `${BASE_URL}/abbys_sprite_005.png` },
+  'u6_4': { id: 'u6_4', name: 'Nox Magress', element: 'Dark', rarity: 4, baseStats: { hp: 2100, atk: 480, def: 650, rec: 150 }, growthRate: { hp: 60, atk: 15, def: 22, rec: 6 }, maxLevel: 60, skill: { id: 's6_4', name: 'Abyssal Guard', type: 'damage', description: 'Strong Dark damage + injury', power: 1.7, cost: 24, target: 'all_enemies', statusEffect: { type: 'injured', chance: 0.6, power: 0.5, turns: 2 } }, leaderSkill: { id: 'ls6_4', name: 'Dark Shield', description: '+15% damage reduction to team', damageReduction: 0.15 }, spriteUrl: `${BASE_URL}/abbys_sprite_006.png` },
 
   'u1': {
     id: 'u1',
