@@ -44,7 +44,8 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
           atkBuff: 1.0,
           defBuff: 1.0,
           recBuff: 1.0,
-          elementalMitigation: 0
+          elementalMitigation: 0,
+          hitCount: 0
         };
       });
   });
@@ -74,7 +75,8 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
         atkBuff: 1.0,
         defBuff: 1.0,
         recBuff: 1.0,
-        elementalMitigation: 0
+        elementalMitigation: 0,
+        hitCount: 0
       };
     });
   });
@@ -255,9 +257,18 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
       let rawDamage = Math.max(1, (attacker.atk * atkMultiplier * powerMultiplier) - (target.def * defMultiplier * 0.5));
       let finalDamage = Math.floor(rawDamage * elementMultiplier * (1 - target.elementalMitigation));
 
+      // Increment hit count for OD system
+      const newHitCount = attacker.hitCount + 1;
+      const isOD = newHitCount >= 8; // 8th hit triggers Overdrive
+      
       // ANIMATION: Attacker moves
-      currentPlayer[i] = { ...attacker, actionState: isBb ? 'skill' : 'attacking' };
+      currentPlayer[i] = { ...attacker, hitCount: newHitCount, actionState: isBb ? 'skill' : 'attacking' };
       setPlayerUnits([...currentPlayer]);
+      
+      if (isOD) {
+        addLog(`⚡ OVERDRIVE! ${attacker.template.name}'s BB is ready!`);
+        addFloatingText('OD!', 'buff', attacker.id, true);
+      }
       
       if (isBb) {
         setBbCutInUnit(attacker);
@@ -339,9 +350,10 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
 
       currentPlayer[i] = {
         ...currentPlayer[i],
-        queuedBb: false,
-        bbGauge: isBb ? 0 : currentPlayer[i].bbGauge, // Only reset if BB was used, otherwise keep accumulated BC
-        actionState: 'idle'
+        queuedBb: isOD ? true : currentPlayer[i].queuedBb, // Auto-queue BB on OD
+        bbGauge: isBb ? 0 : (isOD ? currentPlayer[i].maxBb : currentPlayer[i].bbGauge), // Fill BB on OD
+        actionState: 'idle',
+        hitCount: 0 // Reset hit count after turn
       };
       currentEnemies[targetIdx] = {
         ...currentEnemies[targetIdx],

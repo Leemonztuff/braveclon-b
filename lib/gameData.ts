@@ -234,6 +234,7 @@ export const UNIT_DATABASE: Record<string, UnitTemplate> = {
     growthRate: { hp: 45, atk: 18, def: 12, rec: 10 },
     maxLevel: 60,
     skill: { id: 's7', name: 'Flame Breath', type: 'damage', description: 'Fire damage to all enemies', power: 1.7, cost: 24 },
+    extraSkill: { id: 'es7', name: 'Firestorm', type: 'buff', description: '+20% ATK to self after 3 hits', power: 1.2, cost: 0, target: 'self', turns: 3 },
     spriteUrl: `${BASE_URL}/abbys_sprite_007.png`
   },
   'u8': {
@@ -244,7 +245,8 @@ export const UNIT_DATABASE: Record<string, UnitTemplate> = {
     baseStats: { hp: 1400, atk: 450, def: 450, rec: 400 },
     growthRate: { hp: 40, atk: 15, def: 15, rec: 12 },
     maxLevel: 60,
-    skill: { id: 's8', name: 'Tidal Wave', type: 'damage', description: 'Water damage to all enemies', power: 1.6, cost: 22 },
+    skill: { id: 's8', name: 'Tidal Wave', type: 'heal', description: 'Heals all allies', power: 1.4, cost: 30 },
+    extraSkill: { id: 'es8', name: 'Aqua Regen', type: 'buff', description: '+15% REC to team when HP < 50%', power: 1.15, cost: 0 },
     spriteUrl: `${BASE_URL}/abbys_sprite_008.png`
   },
   'u9': {
@@ -255,7 +257,8 @@ export const UNIT_DATABASE: Record<string, UnitTemplate> = {
     baseStats: { hp: 1600, atk: 400, def: 500, rec: 200 },
     growthRate: { hp: 50, atk: 12, def: 18, rec: 6 },
     maxLevel: 60,
-    skill: { id: 's9', name: 'Gatling Seed', type: 'damage', description: 'Earth damage to all enemies', power: 1.8, cost: 28 },
+    skill: { id: 's9', name: 'Gatling Seed', type: 'damage', description: 'Earth damage to all enemies + def down', power: 1.6, cost: 26, statusEffect: { type: 'weak', chance: 0.4, power: 0.5, turns: 2 } },
+    extraSkill: { id: 'es9', name: 'Earth Shield', type: 'buff', description: '+20% DEF when HP > 80%', power: 1.2, cost: 0 },
     spriteUrl: `${BASE_URL}/abbys_sprite_009.png`
   },
   'u10': {
@@ -267,6 +270,7 @@ export const UNIT_DATABASE: Record<string, UnitTemplate> = {
     growthRate: { hp: 35, atk: 22, def: 10, rec: 10 },
     maxLevel: 60,
     skill: { id: 's10', name: 'Spark Rush', type: 'damage', description: 'Thunder damage to all enemies', power: 1.9, cost: 26 },
+    extraSkill: { id: 'es10', name: 'Thunder Focus', type: 'buff', description: '+30% ATK when BB ready', power: 1.3, cost: 0 },
     spriteUrl: `${BASE_URL}/abbys_sprite_010.png`
   },
   'u11': {
@@ -278,6 +282,7 @@ export const UNIT_DATABASE: Record<string, UnitTemplate> = {
     growthRate: { hp: 42, atk: 16, def: 16, rec: 11 },
     maxLevel: 60,
     skill: { id: 's11', name: 'Shining Slash', type: 'damage', description: 'Light damage to all enemies', power: 1.7, cost: 24 },
+    extraSkill: { id: 'es11', name: 'Holy Barrier', type: 'buff', description: '-15% damage taken for 3 turns after using BB', power: 0.85, cost: 0, turns: 3 },
     spriteUrl: `${BASE_URL}/abbys_sprite_011.png`
   },
   'u12': {
@@ -288,7 +293,8 @@ export const UNIT_DATABASE: Record<string, UnitTemplate> = {
     baseStats: { hp: 1700, atk: 420, def: 550, rec: 150 },
     growthRate: { hp: 55, atk: 14, def: 20, rec: 5 },
     maxLevel: 60,
-    skill: { id: 's12', name: 'Blood Drain', type: 'damage', description: 'Dark damage to all enemies', power: 1.6, cost: 22 },
+    skill: { id: 's12', name: 'Blood Drain', type: 'damage', description: 'Dark damage + heal from damage', power: 1.5, cost: 22 },
+    extraSkill: { id: 'es12', name: 'Life Steal', type: 'heal', description: 'Heal 10% of damage dealt', power: 0.1, cost: 0 },
     spriteUrl: `${BASE_URL}/abbys_sprite_012.png`
   },
   'u13': {

@@ -27,6 +27,7 @@ export interface BattleUnit {
   defBuff: number; // DEF modifier from buffs/debuffs
   recBuff: number; // REC modifier
   elementalMitigation: number; // Damage reduction from elemental resistance
+  hitCount: number; // Total hits in battle (for OD system)
 }
 
 export interface BattleLeaderBonus {

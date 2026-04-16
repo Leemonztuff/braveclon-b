@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
 
-export type FloatingTextType = 'damage' | 'heal' | 'weak' | 'spark' | 'bb' | 'bc';
+export type FloatingTextType = 'damage' | 'heal' | 'weak' | 'spark' | 'bb' | 'bc' | 'buff' | 'od';
 
 export interface FloatingTextData {
   id: string;
@@ -42,6 +42,16 @@ export function FloatingText({ data }: { data: FloatingTextData }) {
       colorClass = 'text-cyan-400 font-bold';
       scale = 0.9;
       yOffset = -30;
+      break;
+    case 'buff':
+      colorClass = 'text-green-400 font-bold';
+      scale = 1.2;
+      yOffset = -50;
+      break;
+    case 'od':
+      colorClass = 'text-yellow-400 font-black animate-pulse';
+      scale = 1.8;
+      yOffset = -80;
       break;
   }
 
