@@ -25,15 +25,19 @@ const ARENA_ENEMIES: ArenaPracticeEnemy[] = [
   { name: 'Dark Emperor', element: 'Dark', rarity: 5, hp: 10000, atk: 1500, def: 900, level: 80 },
 ];
 
-export default function ArenaScreen({ onStartBattle, onBack }: { onStartBattle: () => void, onBack: () => void }) {
+export default function ArenaScreen({ onStartBattle, onBack }: { onStartBattle?: () => void, onBack: () => void }) {
   const [activeTab, setActiveTab] = useState<ArenaTab>('practice');
   const [selectedEnemy, setSelectedEnemy] = useState<ArenaPracticeEnemy | null>(null);
   const [battleLog, setBattleLog] = useState<string[]>([]);
 
   const handleStartPractice = () => {
     if (selectedEnemy) {
-      setBattleLog(prev => [`⚔️ Starting battle vs ${selectedEnemy.name}...`, ...prev]);
-      onStartBattle();
+      if (onStartBattle) {
+        setBattleLog(prev => [`⚔️ Starting battle vs ${selectedEnemy.name}...`, ...prev]);
+        onStartBattle();
+      } else {
+        setBattleLog(prev => [`⚔️ Arena battles coming soon!`, ...prev]);
+      }
     }
   };
 

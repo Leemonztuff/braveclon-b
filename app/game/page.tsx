@@ -172,6 +172,7 @@ export default function GameApp() {
             state={state}
             stageId={battleStage}
             onEnd={endBattle}
+            onBack={goBack}
           />
         ) : null;
       case 'arena':

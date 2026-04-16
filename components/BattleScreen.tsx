@@ -15,9 +15,10 @@ interface BattleScreenProps {
   state: PlayerState;
   stageId: number;
   onEnd: (victory: boolean) => void;
+  onBack?: () => void;
 }
 
-export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProps) {
+export default function BattleScreen({ state, stageId, onEnd, onBack }: BattleScreenProps) {
   const stage = STAGES.find(s => s.id === stageId);
 
   const handleVictory = useCallback(() => {
