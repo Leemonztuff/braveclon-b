@@ -71,9 +71,8 @@ const Particles = ({ rarity }: { rarity: number }) => {
   );
 };
 
-export default function SummonScreen({ state, spendGems, addUnit, rollGacha, onAlert, onBack }: {
+export default function SummonScreen({ state, addUnit, rollGacha, onAlert, onBack }: {
   state: PlayerState,
-  spendGems: (amount: number) => boolean,
   addUnit: (id: string) => void,
   rollGacha: (bannerId: string, count?: number) => SummonResult[],
   onAlert: (msg: string) => void,
@@ -86,32 +85,30 @@ export default function SummonScreen({ state, spendGems, addUnit, rollGacha, onA
 const handleSummon = () => {
     if (phase !== 'idle') return;
     
-    const summonCost = 5;
-    
-    if (state.gems >= summonCost) {
-      spendGems(summonCost);
-      const results = rollGacha('standard', 1);
-      const randomId = results[0].templateId;
-      const rarity = results[0].rarity;
-      const unit = UNIT_DATABASE[randomId];
-      setSummonResult(unit);
-      
-      setPhase('gate');
-      
-      // Start shaking after the door appears
-      setTimeout(() => setIsShaking(true), 800);
-      
-      // High rarity gets a longer, more dramatic buildup
-      const gateDuration = rarity >= 5 ? 4000 : 2500;
-      
-      setTimeout(() => {
-        setIsShaking(false);
-        setPhase('reveal');
-        addUnit(randomId);
-      }, gateDuration);
-    } else {
-      onAlert(`Not enough gems! You need ${summonCost} 💎 to summon.`);
+    const results = rollGacha('standard', 1);
+    if (results.length === 0) {
+      onAlert("Not enough gems! You need 50 💎 to summon a hero.");
+      return;
     }
+    
+    const randomId = results[0].templateId;
+    const rarity = results[0].rarity;
+    const unit = UNIT_DATABASE[randomId];
+    setSummonResult(unit);
+    
+    setPhase('gate');
+    
+    // Start shaking after the door appears
+    setTimeout(() => setIsShaking(true), 800);
+    
+    // High rarity gets a longer, more dramatic buildup
+    const gateDuration = rarity >= 5 ? 4000 : 2500;
+    
+    setTimeout(() => {
+      setIsShaking(false);
+      setPhase('reveal');
+      addUnit(randomId);
+    }, gateDuration);
   };
 
   const getGateColor = (rarity: number) => {

@@ -115,7 +115,6 @@ export default function GameApp() {
           <SummonScreen
             state={state}
             addUnit={addUnit}
-            spendGems={spendGems}
             rollGacha={rollGacha}
             onAlert={triggerAlert}
             onBack={goBack}
