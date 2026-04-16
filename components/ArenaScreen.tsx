@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { STAGES, ENEMIES } from '@/lib/gameData';
+import { PlayerState } from '@/lib/gameState';
 import { UI } from '@/lib/design-tokens';
 
 type ArenaTab = 'practice' | 'leaderboard';
@@ -25,19 +26,29 @@ const ARENA_ENEMIES: ArenaPracticeEnemy[] = [
   { name: 'Dark Emperor', element: 'Dark', rarity: 5, hp: 10000, atk: 1500, def: 900, level: 80 },
 ];
 
-export default function ArenaScreen({ onStartBattle, onBack }: { onStartBattle?: () => void, onBack: () => void }) {
+export default function ArenaScreen({ state, onStartBattle, onBack }: { 
+  state?: PlayerState,
+  onStartBattle?: (stageId: number) => void, 
+  onBack: () => void 
+}) {
   const [activeTab, setActiveTab] = useState<ArenaTab>('practice');
   const [selectedEnemy, setSelectedEnemy] = useState<ArenaPracticeEnemy | null>(null);
   const [battleLog, setBattleLog] = useState<string[]>([]);
 
+  const arenaStageIds: Record<string, number> = {
+    'Shadow Knight': 100,
+    'Flame Warrior': 101,
+    'Ice Mage': 102,
+    'Thunder Lord': 103,
+    'Light Guardian': 104,
+    'Dark Emperor': 105,
+  };
+
   const handleStartPractice = () => {
-    if (selectedEnemy) {
-      if (onStartBattle) {
-        setBattleLog(prev => [`⚔️ Starting battle vs ${selectedEnemy.name}...`, ...prev]);
-        onStartBattle();
-      } else {
-        setBattleLog(prev => [`⚔️ Arena battles coming soon!`, ...prev]);
-      }
+    if (selectedEnemy && onStartBattle) {
+      const stageId = arenaStageIds[selectedEnemy.name];
+      setBattleLog(prev => [`⚔️ Starting battle vs ${selectedEnemy.name}...`, ...prev]);
+      onStartBattle(stageId);
     }
   };
 

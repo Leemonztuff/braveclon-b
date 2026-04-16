@@ -178,7 +178,8 @@ export default function GameApp() {
       case 'arena':
         return (
           <ArenaScreen
-            onStartBattle={() => {}}
+            state={state}
+            onStartBattle={handleStartBattle}
             onBack={goBack}
           />
         );

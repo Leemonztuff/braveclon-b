@@ -375,6 +375,73 @@ export const ENEMIES: UnitTemplate[] = [
     maxLevel: 1,
     skill: { id: 'es6', name: 'Holy Ray', type: 'damage', description: 'Basic attack', power: 1.3, cost: 100 },
     spriteUrl: `${BASE_URL}/abbys_sprite_021.png`
+  },
+  // Arena Enemies
+  {
+    id: 'arena_shadow_knight',
+    name: 'Shadow Knight',
+    element: 'Dark',
+    rarity: 4,
+    baseStats: { hp: 5000, atk: 800, def: 600, rec: 100 },
+    growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
+    maxLevel: 1,
+    skill: { id: 'arena_s1', name: 'Shadow Strike', type: 'damage', description: 'Dark attack', power: 1.5, cost: 100 },
+    spriteUrl: `${BASE_URL}/abbys_sprite_001.png`
+  },
+  {
+    id: 'arena_flame_warrior',
+    name: 'Flame Warrior',
+    element: 'Fire',
+    rarity: 4,
+    baseStats: { hp: 4500, atk: 900, def: 500, rec: 80 },
+    growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
+    maxLevel: 1,
+    skill: { id: 'arena_s2', name: 'Flame Slash', type: 'damage', description: 'Fire attack', power: 1.6, cost: 100 },
+    spriteUrl: `${BASE_URL}/abbys_sprite_002.png`
+  },
+  {
+    id: 'arena_ice_mage',
+    name: 'Ice Mage',
+    element: 'Water',
+    rarity: 4,
+    baseStats: { hp: 3500, atk: 1000, def: 400, rec: 150 },
+    growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
+    maxLevel: 1,
+    skill: { id: 'arena_s3', name: 'Ice Blast', type: 'damage', description: 'Water attack', power: 1.7, cost: 100 },
+    spriteUrl: `${BASE_URL}/abbys_sprite_003.png`
+  },
+  {
+    id: 'arena_thunder_lord',
+    name: 'Thunder Lord',
+    element: 'Thunder',
+    rarity: 5,
+    baseStats: { hp: 8000, atk: 1200, def: 700, rec: 120 },
+    growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
+    maxLevel: 1,
+    skill: { id: 'arena_s4', name: 'Thunder Storm', type: 'damage', description: 'Thunder attack', power: 2.0, cost: 100 },
+    spriteUrl: `${BASE_URL}/abbys_sprite_004.png`
+  },
+  {
+    id: 'arena_light_guardian',
+    name: 'Light Guardian',
+    element: 'Light',
+    rarity: 5,
+    baseStats: { hp: 7500, atk: 1100, def: 800, rec: 200 },
+    growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
+    maxLevel: 1,
+    skill: { id: 'arena_s5', name: 'Divine Smite', type: 'damage', description: 'Light attack', power: 1.9, cost: 100 },
+    spriteUrl: `${BASE_URL}/abbys_sprite_005.png`
+  },
+  {
+    id: 'arena_dark_emperor',
+    name: 'Dark Emperor',
+    element: 'Dark',
+    rarity: 5,
+    baseStats: { hp: 10000, atk: 1500, def: 900, rec: 180 },
+    growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
+    maxLevel: 1,
+    skill: { id: 'arena_s6', name: 'Doom', type: 'damage', description: 'Ultimate dark attack', power: 2.5, cost: 100 },
+    spriteUrl: `${BASE_URL}/abbys_sprite_006.png`
   }
 ];
 
@@ -396,6 +463,14 @@ export const STAGES: StageTemplate[] = [
   { id: 8, name: "Babel", area: "Tower of Babel - Floor 10", energy: 10, description: "Climb higher!", enemies: ['e8', 'e9', 'e8'], expReward: 700, zelReward: 3500, equipmentDrops: ['eq_ac4'], equipmentDropChance: 0.6 },
   { id: 9, name: "Babel", area: "Tower of Babel - Floor 20", energy: 12, description: "The final challenge nears.", enemies: ['e9', 'e9', 'e8', 'e5'], expReward: 1000, zelReward: 5000, equipmentDrops: [], equipmentDropChance: 0.7 },
   { id: 10, name: "Babel", area: "Tower of Babel - Floor 30", energy: 15, description: "Only the brave survive.", enemies: ['e10', 'e10', 'e9', 'e5', 'e6'], expReward: 1500, zelReward: 8000, equipmentDrops: [], equipmentDropChance: 0.8 },
+
+  // Arena / Practice Mode (IDs 100-199)
+  { id: 100, name: "Arena", area: "Practice - Shadow Knight", energy: 0, description: "Dark elemental challenge", enemies: ['arena_shadow_knight'], expReward: 200, zelReward: 500, equipmentDrops: [], equipmentDropChance: 0 },
+  { id: 101, name: "Arena", area: "Practice - Flame Warrior", energy: 0, description: "Fire elemental challenge", enemies: ['arena_flame_warrior'], expReward: 250, zelReward: 600, equipmentDrops: [], equipmentDropChance: 0 },
+  { id: 102, name: "Arena", area: "Practice - Ice Mage", energy: 0, description: "Water elemental challenge", enemies: ['arena_ice_mage'], expReward: 300, zelReward: 700, equipmentDrops: [], equipmentDropChance: 0 },
+  { id: 103, name: "Arena", area: "Practice - Thunder Lord", energy: 0, description: "Thunder elemental challenge", enemies: ['arena_thunder_lord'], expReward: 500, zelReward: 1000, equipmentDrops: [], equipmentDropChance: 0 },
+  { id: 104, name: "Arena", area: "Practice - Light Guardian", energy: 0, description: "Light elemental challenge", enemies: ['arena_light_guardian'], expReward: 600, zelReward: 1200, equipmentDrops: [], equipmentDropChance: 0 },
+  { id: 105, name: "Arena", area: "Practice - Dark Emperor", energy: 0, description: "Final arena challenge", enemies: ['arena_dark_emperor'], expReward: 1000, zelReward: 2000, equipmentDrops: [], equipmentDropChance: 0 },
 ];
 
 export const GACHA_POOL: GachaRate[] = [
