@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { FloatingText, FloatingTextData } from '../FloatingText';
 import { BattleUnit } from '@/lib/battleTypes';
 import { UnitSprite } from '../UnitSprite';
+import { BF_COLORS } from '@/lib/design-tokens';
 
 export interface BattleStateData {
   playerUnits: BattleUnit[];
@@ -49,20 +50,21 @@ export function BattleArena({ battleState }: { battleState: BattleStateData }) {
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#1a1a2e]/80" />
 
       {/* Ground/Piso */}
-      <div className="absolute bottom-0 left-0 right-0 h-1/4 bg-gradient-to-t from-[#2d1f0f]/90 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-1/4 bg-gradient-to-t from-[#2d1f0f]/90 to-transparent pointer-events-none" />
       
       {/* Decoraciones del fondo */}
-      <div className="absolute bottom-1/4 left-8 w-16 h-32 bg-[#1a1a2e]/40 rounded-t-full blur-sm" />
-      <div className="absolute bottom-1/4 right-8 w-12 h-24 bg-[#1a1a2e]/30 rounded-t-full blur-sm" />
+      <div className="absolute bottom-1/4 left-8 w-16 h-32 bg-[#1a1a2e]/40 rounded-t-full blur-sm pointer-events-none" />
+      <div className="absolute bottom-1/4 right-8 w-12 h-24 bg-[#1a1a2e]/30 rounded-t-full blur-sm pointer-events-none" />
 
       {/* Combat Log */}
       <AnimatePresence>
         <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/60 px-4 py-1 rounded-full z-10"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 10 }}
+          className="absolute top-2 left-1/2 -translate-x-1/2 bg-[#1a1a2e]/80 border border-[#b89947]/30 px-4 py-1 rounded-full z-10"
         >
-          <span className="text-xs text-gray-300 font-mono">
+          <span className="text-xs text-zinc-300 font-mono drop-shadow-md">
             {combatLog[combatLog.length - 1] || 'Battle Start!'}
           </span>
         </motion.div>
@@ -106,7 +108,10 @@ export function BattleArena({ battleState }: { battleState: BattleStateData }) {
       </div>
 
       {/* VS */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl font-black text-[#b89947]/40 select-none">
+      <div 
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl font-black select-none" 
+        style={{ color: BF_COLORS.gold.primary, opacity: 0.4 }}
+      >
         VS
       </div>
     </motion.div>
