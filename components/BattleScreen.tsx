@@ -68,6 +68,7 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
 
   return (
     <div className="flex flex-col w-full h-full bg-[#0a0a14]">
+      {/* Top HUD - minimal ~40px */}
       <BattleTopHud 
         zel={stage?.zelReward || 0}
         gems={0}
@@ -75,16 +76,19 @@ export default function BattleScreen({ state, stageId, onEnd }: BattleScreenProp
         battlePhase={turnState}
       />
 
+      {/* Battle Arena - takes most space */}
       <BattleArena battleState={battleState} />
 
-      <BattleControlsBar battleState={controlsData} />
-
+      {/* Unit Status Row - horizontal compact ~80px */}
       <BattleBottomGrid 
         playerUnits={playerUnits}
         enemyUnits={enemyUnits}
         turnState={turnState}
         onUnitClick={handleUnitClick}
       />
+
+      {/* Control Bar - minimal ~50px */}
+      <BattleControlsBar battleState={controlsData} />
     </div>
   );
 }
