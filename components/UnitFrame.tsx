@@ -32,10 +32,11 @@ const RARITY_STAR_COLORS = {
   1: 'text-zinc-300',
 };
 
+// Minimum 44px touch target for mobile
 const SIZES = {
-  sm: { container: 'w-16 h-16', sprite: '[&]:scale-[2.0]' },
-  md: { container: 'w-20 h-20', sprite: '[&]:scale-[2.5]' },
-  lg: { container: 'w-24 h-24', sprite: '[&]:scale-[3.0]' },
+  sm: { container: 'w-16 h-16 min-w-[44px] min-h-[44px]', sprite: '[&]:scale-[2.0]' },
+  md: { container: 'w-20 h-20 min-w-[44px] min-h-[44px]', sprite: '[&]:scale-[2.5]' },
+  lg: { container: 'w-24 h-24 min-w-[44px] min-h-[44px]', sprite: '[&]:scale-[3.0]' },
 };
 
 export function UnitFrame({ 

@@ -27,16 +27,18 @@ interface UnitDisplayProps {
   showElement?: boolean;
   onClick?: () => void;
   onContextMenu?: (e: React.MouseEvent) => void;
-  onTouchStart?: () => void;
+  onTouchStart?: (e?: React.TouchEvent) => void;
   onTouchEnd?: () => void;
-  onTouchMove?: () => void;
+  onTouchMove?: (e?: React.TouchEvent) => void;
+  onTouchCancel?: () => void;
   interactive?: boolean;
   className?: string;
 }
 
+// Minimum 44px touch target for mobile
 const SIZE_MAP = {
-  xs: { container: 'w-10 h-10', sprite: '[&]:scale-[1.5]' },
-  sm: { container: 'w-12 h-12', sprite: '[&]:scale-[2.0]' },
+  xs: { container: 'w-11 h-11 min-w-[44px] min-h-[44px]', sprite: '[&]:scale-[1.5]' },
+  sm: { container: 'w-12 h-12 min-w-[44px] min-h-[44px]', sprite: '[&]:scale-[2.0]' },
   md: { container: 'w-16 h-16', sprite: '[&]:scale-[2.5]' },
   lg: { container: 'w-20 h-20', sprite: '[&]:scale-[3.0]' },
   xl: { container: 'w-24 h-24', sprite: '[&]:scale-[3.5]' },
@@ -85,6 +87,7 @@ export function UnitDisplay({
   onTouchStart,
   onTouchEnd,
   onTouchMove,
+  onTouchCancel,
   interactive = false,
   className = ''
 }: UnitDisplayProps) {
@@ -93,18 +96,32 @@ export function UnitDisplay({
   const rarityColor = RARITY_COLORS[r as keyof typeof RARITY_COLORS];
   const rarityGlow = RARITY_GLOW[r as keyof typeof RARITY_GLOW];
 
+  // Touch event handlers for long press
+  const handleTouchStartInternal = (e: React.TouchEvent) => {
+    onTouchStart?.(e);
+  };
+  const handleTouchMoveInternal = (e: React.TouchEvent) => {
+    onTouchMove?.(e);
+  };
+
   if (variant === 'compact') {
     return (
-      <div 
+      <motion.button
         onClick={onClick}
+        onTouchStart={handleTouchStartInternal}
+        onTouchEnd={onTouchEnd}
+        onTouchMove={handleTouchMoveInternal}
+        onTouchCancel={onTouchCancel}
+        whileTap={onClick && interactive ? { scale: 0.95 } : undefined}
         className={`
           relative ${sizeClasses.container} ${BORDERS.radius.md} border-2 overflow-hidden flex items-center justify-center
-          ${rarityColor} ${onClick ? 'cursor-pointer hover:brightness-110' : ''}
+          ${rarityColor} ${onClick ? 'cursor-pointer active:brightness-110' : ''}
           ${isDead ? 'opacity-50 grayscale' : ''}
-          bg-zinc-900 transition-all
+          bg-zinc-900 transition-all touch-manipulation select-none
           ${isQueuedBb ? rarityGlow : ''}
           ${className}
         `}
+        disabled={!onClick}
       >
         <img 
           src={spriteUrl} 
@@ -112,22 +129,28 @@ export function UnitDisplay({
           className={`w-full h-full object-contain ${sizeClasses.sprite}`}
           style={{ imageRendering: 'pixelated' }}
         />
-      </div>
+      </motion.button>
     );
   }
 
   if (variant === 'portrait') {
     return (
-      <div 
+      <motion.button
         onClick={onClick}
+        onTouchStart={handleTouchStartInternal}
+        onTouchEnd={onTouchEnd}
+        onTouchMove={handleTouchMoveInternal}
+        onTouchCancel={onTouchCancel}
+        whileTap={onClick && interactive ? { scale: 0.95 } : undefined}
         className={`
           relative ${sizeClasses.container} ${BORDERS.radius.lg} border-2 overflow-hidden flex items-center justify-center
-          ${rarityColor} ${onClick ? 'cursor-pointer hover:brightness-110' : ''}
+          ${rarityColor} ${onClick ? 'cursor-pointer active:brightness-110' : ''}
           ${isDead ? 'opacity-50 grayscale' : ''}
-          bg-zinc-900 transition-all
+          bg-zinc-900 transition-all touch-manipulation select-none
           ${isQueuedBb ? rarityGlow : ''}
           ${className}
         `}
+        disabled={!onClick}
       >
         <img 
           src={spriteUrl} 
@@ -140,13 +163,27 @@ export function UnitDisplay({
             {ELEMENT_ICONS[element as keyof typeof ELEMENT_ICONS]}
           </div>
         )}
-      </div>
+      </motion.button>
     );
   }
 
   if (variant === 'fullbody') {
     return (
-      <div className={`relative ${sizeClasses.container} ${BORDERS.radius.xl} border-2 overflow-hidden ${rarityColor} ${rarityGlow} ${className}`}>
+      <motion.button
+        onClick={onClick}
+        onTouchStart={handleTouchStartInternal}
+        onTouchEnd={onTouchEnd}
+        onTouchMove={handleTouchMoveInternal}
+        onTouchCancel={onTouchCancel}
+        whileTap={onClick && interactive ? { scale: 0.95 } : undefined}
+        disabled={!onClick}
+        className={`
+          relative ${sizeClasses.container} ${BORDERS.radius.xl} border-2 overflow-hidden
+          ${rarityColor} ${rarityGlow} ${onClick ? 'cursor-pointer active:brightness-110' : ''}
+          bg-zinc-900 transition-all touch-manipulation select-none
+          ${className}
+        `}
+      >
         <div className={`absolute inset-0 opacity-15 ${
           r === 5 ? 'bg-gradient-to-br from-yellow-500 via-amber-500 to-orange-500' :
           r === 4 ? 'bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500' :
@@ -170,7 +207,7 @@ export function UnitDisplay({
             Lv.{level}
           </div>
         )}
-      </div>
+      </motion.button>
     );
   }
 
@@ -179,16 +216,17 @@ export function UnitDisplay({
     <motion.button
       onClick={onClick}
       onContextMenu={onContextMenu}
-      onTouchStart={onTouchStart}
+      onTouchStart={handleTouchStartInternal}
       onTouchEnd={onTouchEnd}
-      onTouchMove={onTouchMove}
+      onTouchMove={handleTouchMoveInternal}
+      onTouchCancel={onTouchCancel}
       whileTap={onClick && interactive ? { scale: 0.95 } : undefined}
       className={`
         relative ${sizeClasses.container} ${BORDERS.radius.lg} border-2 overflow-hidden flex flex-col items-center justify-center
         ${rarityColor} ${isQueuedBb ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-zinc-900' : ''}
-        ${onClick && interactive ? 'cursor-pointer hover:brightness-110' : 'cursor-default'}
+        ${onClick && interactive ? 'cursor-pointer active:brightness-110' : 'cursor-default'}
         ${isDead ? 'opacity-50 grayscale' : ''}
-        bg-zinc-900 border-2 transition-all
+        bg-zinc-900 border-2 transition-all touch-manipulation select-none
         ${rarityGlow}
         ${className}
       `}

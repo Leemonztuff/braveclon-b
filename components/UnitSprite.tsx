@@ -7,27 +7,49 @@ export function UnitSprite({ unit, onClick, interactive, hitEffectElement, hideS
   const bbPercent = (unit.bbGauge / unit.maxBb) * 100;
   const isBbReady = unit.bbGauge >= unit.maxBb;
 
+  // Side-scroller: Players on LEFT attack RIGHT (+x), Enemies on RIGHT attack LEFT (-x)
+  // Attack: move toward enemy, strike, return to original position (x: 0)
+  const attackDirection = unit.isPlayer ? 1 : -1;
+  
   const variants: any = {
-    idle: { y: [0, -4, 0], transition: { repeat: Infinity, duration: 2, ease: "easeInOut" } },
-    // Side-scroller: Players on LEFT attack RIGHT (+x), Enemies on RIGHT attack LEFT (-x)
-    attacking: { x: unit.isPlayer ? 60 : -60, scale: 1.1, zIndex: 20, transition: { type: "spring", stiffness: 400, damping: 15 } },
+    idle: { 
+      x: 0, 
+      y: [0, -4, 0], 
+      scale: 1,
+      transition: { repeat: Infinity, duration: 2, ease: "easeInOut" } 
+    },
+    attacking: { 
+      x: [0, 50 * attackDirection, 50 * attackDirection, 0],
+      scale: [1, 1.1, 1.1, 1],
+      transition: { duration: 0.4, times: [0, 0.3, 0.7, 1] }
+    },
     skill: { 
-      x: unit.isPlayer ? [40, 120, 80] : [-40, -120, -80],
-      scale: [1, 1.5, 1.3], 
-      rotate: [0, unit.isPlayer ? 5 : -5, unit.isPlayer ? -5 : 5, 0],
-      filter: ["brightness(1)", "brightness(2) drop-shadow(0 0 25px rgba(250,204,21,1))", "brightness(1.5) drop-shadow(0 0 15px rgba(250,204,21,0.8))"], 
-      zIndex: 30, 
-      transition: { duration: 0.4, times: [0, 0.5, 1] } 
+      x: [0, 30 * attackDirection, 80 * attackDirection, 80 * attackDirection, 0],
+      scale: [1, 1.2, 1.5, 1.4, 1], 
+      rotate: [0, 0, attackDirection * 10, attackDirection * 5, 0],
+      filter: ["brightness(1)", "brightness(1.5)", "brightness(2) drop-shadow(0 0 25px rgba(250,204,21,1))", "brightness(1.5)", "brightness(1)"], 
+      transition: { duration: 0.6, times: [0, 0.2, 0.5, 0.8, 1] } 
     },
-    hurt: { x: [-8, 8, -8, 8, 0], filter: "brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)", transition: { duration: 0.3 } },
+    hurt: { 
+      x: [0, -8, 8, -8, 8, 0], 
+      filter: "brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5)", 
+      transition: { duration: 0.3, times: [0, 0.2, 0.4, 0.6, 0.8, 1] }
+    },
     bb_hurt: { 
-      x: [-15, 15, -15, 15, -10, 10, 0], 
-      y: [-10, 10, -10, 10, 0],
-      scale: [1, 1.3, 0.8, 1.1, 1],
-      filter: ["brightness(1) invert(0)", "brightness(2) invert(1) hue-rotate(90deg)", "brightness(0.5) sepia(1) hue-rotate(300deg) saturate(10)", "brightness(1) invert(0)"], 
-      transition: { duration: 0.5 } 
+      x: [0, -15, 15, -15, 15, -10, 10, 0], 
+      y: [0, -10, 10, -10, 10, 0, 0, 0],
+      scale: [1, 1.3, 0.8, 1.1, 0.9, 1.05, 0.95, 1],
+      filter: ["brightness(1)", "brightness(2) invert(1) hue-rotate(90deg)", "brightness(0.5)", "brightness(2) invert(1)", "brightness(1) invert(0)"], 
+      transition: { duration: 0.5, times: [0, 0.15, 0.3, 0.5, 0.7, 0.85, 0.95, 1] }
     },
-    dead: { opacity: 0.3, filter: "grayscale(100%)", scale: 0.9, transition: { duration: 0.5 } }
+    dead: { 
+      opacity: 0.3, 
+      x: 0,
+      y: 0,
+      filter: "grayscale(100%)", 
+      scale: 0.9, 
+      transition: { duration: 0.5 } 
+    }
   };
 
   return (

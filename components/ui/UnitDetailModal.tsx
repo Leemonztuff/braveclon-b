@@ -85,7 +85,7 @@ export function UnitDetailModal({
         style={{ background: `linear-gradient(to bottom, ${BF_COLORS.goldDark}, #1a1a2e)` }}
       >
         <div className="flex items-center gap-3">
-          <button onClick={onClose} className="text-white/80 hover:text-white">
+          <button onClick={onClose} className="text-white/80 hover:text-white active:text-white p-2 min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation active:scale-90 transition-transform">
             <X size={24} />
           </button>
           <div>
@@ -267,30 +267,30 @@ export function UnitDetailModal({
             />
           </div>
 
-          {/* Action Buttons */}
-          <div className="p-4 flex flex-col gap-2 bg-[#0f0f1a] border-t border-[#333]">
+          {/* Action Buttons - Touch-friendly with 44px minimum */}
+          <div className="p-4 flex flex-col gap-3 bg-[#0f0f1a] border-t border-[#333]">
             {onNavigateToFusion && (
               <button
                 onClick={() => onNavigateToFusion(unitId)}
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg font-bold uppercase flex items-center justify-center gap-2"
+                className="w-full py-3.5 min-h-[52px] bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg font-bold uppercase flex items-center justify-center gap-2 touch-manipulation active:scale-95 transition-transform"
               >
-                <Zap size={18} /> Fuse Unit
+                <Zap size={20} /> Fuse Unit
               </button>
             )}
             {canEvolve && onNavigateToEvolution && (
               <button
                 onClick={() => onNavigateToEvolution(unitId)}
-                className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-bold uppercase flex items-center justify-center gap-2"
+                className="w-full py-3.5 min-h-[52px] bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-bold uppercase flex items-center justify-center gap-2 touch-manipulation active:scale-95 transition-transform"
               >
-                <Sparkles size={18} /> Evolve to {UNIT_DATABASE[template.evolutionTarget!].name}
+                <Sparkles size={20} /> Evolve to {UNIT_DATABASE[template.evolutionTarget!].name}
               </button>
             )}
             {setCompareUnitId && (
               <button
                 onClick={() => setCompareUnitId(null)}
-                className="w-full py-3 bg-zinc-800 text-white rounded-lg font-bold uppercase flex items-center justify-center gap-2"
+                className="w-full py-3.5 min-h-[52px] bg-zinc-800 text-white rounded-lg font-bold uppercase flex items-center justify-center gap-2 touch-manipulation active:scale-95 transition-transform"
               >
-                <ArrowUpCircle size={18} /> Compare
+                <ArrowUpCircle size={20} /> Compare
               </button>
             )}
           </div>

@@ -22,15 +22,19 @@ export const ModalActionButton: React.FC<ModalActionButtonProps> = ({
   variant = 'primary' 
 }) => {
   const variantStyles = {
-    primary: 'bg-amber-400 hover:bg-amber-300 text-black',
-    secondary: 'bg-zinc-700 hover:bg-zinc-600 text-white',
-    danger: 'bg-red-500 hover:bg-red-400 text-white',
+    primary: 'bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-black',
+    secondary: 'bg-zinc-700 hover:bg-zinc-600 active:bg-zinc-800 text-white',
+    danger: 'bg-red-500 hover:bg-red-400 active:bg-red-600 text-white',
   };
 
   return (
     <button
       onClick={onClick}
-      className={`px-6 py-2 rounded-xl font-bold transition-colors ${variantStyles[variant]}`}
+      className={`
+        px-6 py-3 rounded-xl font-bold transition-all
+        min-h-[44px] touch-manipulation select-none
+        active:scale-95 ${variantStyles[variant]}
+      `}
     >
       {label}
     </button>
@@ -70,7 +74,7 @@ export const Modal: React.FC<ModalProps> = ({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-1 hover:bg-zinc-800 rounded-lg transition-colors ml-auto"
+                className="p-2 hover:bg-zinc-800 active:bg-zinc-700 rounded-lg transition-all ml-auto min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation"
                 aria-label="Close modal"
               >
                 <X size={20} />

@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { PlayerState, calculateStats } from '@/lib/gameState';
 import { UNIT_DATABASE, EQUIPMENT_DATABASE, EquipSlot, getExpForLevel, ELEMENT_ICONS, Element } from '@/lib/gameData';
 import { Shield, Sword, Gem, X, Zap, Scale, Search, Filter } from 'lucide-react';
@@ -9,6 +9,9 @@ import { UnitDetailModal } from './ui/UnitDetailModal';
 import { UnitInstance, EquipInstance } from '@/lib/gameTypes';
 
 type Tab = 'inventory' | 'equipment' | 'team';
+
+// Minimum touch target size for mobile accessibility
+const MIN_TOUCH_SIZE = 44;
 
 export default function UnitsScreen({ 
   state, 
@@ -40,33 +43,62 @@ export default function UnitsScreen({
   const [searchQuery, setSearchQuery] = useState('');
   const [contextMenu, setContextMenu] = useState<{ unitId: string; x: number; y: number } | null>(null);
 
+  // Touch position ref for context menu
+  const touchPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   // Context menu handlers
-  const handleContextMenu = (e: React.MouseEvent, unitId: string) => {
+  const handleContextMenu = useCallback((e: React.MouseEvent, unitId: string) => {
     e.preventDefault();
     setContextMenu({ unitId, x: e.clientX, y: e.clientY });
-  };
+  }, []);
 
-  const handleLongPress = (unitId: string) => {
-    setContextMenu({ unitId, x: 0, y: 0 });
-  };
-
-  const closeContextMenu = () => {
-    setContextMenu(null);
-  };
-
-  // Long press detection for mobile
-  const longPressTimerRef = { current: null as NodeJS.Timeout | null };
-  const handleTouchStart = (unitId: string) => {
+  // Touch-friendly long press (500ms) for context menu
+  const handleTouchStart = useCallback((e: React.TouchEvent, unitId: string) => {
+    const touch = e.touches[0];
+    touchPosRef.current = { x: touch.clientX, y: touch.clientY };
+    
+    // Start long press timer
     longPressTimerRef.current = setTimeout(() => {
-      handleLongPress(unitId);
+      const pos = touchPosRef.current;
+      setContextMenu({ unitId, x: pos.x, y: pos.y });
+      longPressTimerRef.current = null;
     }, 500);
-  };
-  const handleTouchEnd = () => {
+  }, []);
+
+  const handleLongPressCallback = useCallback((unitId: string) => {
+    const pos = touchPosRef.current;
+    setContextMenu({ unitId, x: pos.x, y: pos.y });
+  }, []);
+
+  const closeContextMenu = useCallback(() => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
-  };
+    setContextMenu(null);
+  }, []);
+
+  // Long press detection for mobile - cancel on lift
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    // Update position while dragging
+    if (e.touches.length > 0) {
+      const touch = e.touches[0];
+      touchPosRef.current = { x: touch.clientX, y: touch.clientY };
+    }
+    // Cancel long press if finger moved significantly
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
 
   const handleSelectUnit = (instanceId: string) => {
     if (selectedSlot !== null) {
@@ -86,7 +118,8 @@ export default function UnitsScreen({
           {onBack && (
             <button 
               onClick={onBack} 
-              className="text-zinc-400 hover:text-white p-1 bg-zinc-800 rounded-full active:scale-95 transition-transform"
+              className="text-zinc-400 hover:text-white p-2 bg-zinc-800 rounded-full active:scale-95 transition-transform min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation"
+              aria-label="Go back"
             >
               <X size={20} />
             </button>
@@ -94,16 +127,20 @@ export default function UnitsScreen({
           <h2 className="text-xl font-black italic text-zinc-100 uppercase tracking-wider">Manage Squad</h2>
         </div>
         
+        {/* Tab buttons - Touch-friendly with 44px minimum */}
         <div className="flex gap-1">
           {(['inventory', 'equipment', 'team'] as Tab[]).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
-                activeTab === tab 
-                  ? 'bg-yellow-500 text-zinc-900' 
-                  : 'bg-zinc-800 text-zinc-400 hover:text-white'
-              }`}
+              className={`
+                px-4 py-2.5 text-xs font-bold rounded-lg transition-all
+                min-h-[44px] min-w-[70px] touch-manipulation
+                ${activeTab === tab 
+                  ? 'bg-yellow-500 text-zinc-900 active:scale-95' 
+                  : 'bg-zinc-800 text-zinc-400 hover:text-white active:bg-zinc-700 active:scale-95'
+                }
+              `}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
@@ -111,23 +148,23 @@ export default function UnitsScreen({
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters - Touch-friendly */}
       {activeTab === 'inventory' && (
-        <div className="flex gap-2 mb-4">
-          <div className="relative flex-1">
+        <div className="flex flex-wrap gap-2 mb-4">
+          <div className="relative flex-1 min-w-[120px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search units..."
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-500"
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-8 pr-3 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-500 min-h-[44px]"
             />
           </div>
           <select
             value={elementFilter}
             onChange={e => setElementFilter(e.target.value as Element | 'all')}
-            className="bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none"
+            className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none min-h-[44px] touch-manipulation"
           >
             <option value="all">All Elements</option>
             {(['Fire', 'Water', 'Earth', 'Thunder', 'Light', 'Dark'] as Element[]).map(el => (
@@ -137,7 +174,7 @@ export default function UnitsScreen({
           <select
             value={rarityFilter}
             onChange={e => setRarityFilter(Number(e.target.value) as number | 'all')}
-            className="bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none"
+            className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none min-h-[44px] touch-manipulation"
           >
             <option value="all">All Rarities</option>
             {[1,2,3,4,5].map(r => (
@@ -204,9 +241,10 @@ export default function UnitsScreen({
                       interactive
                       onClick={() => setInspectUnitId(unit.instanceId)}
                       onContextMenu={(e) => handleContextMenu(e, unit.instanceId)}
-                      onTouchStart={() => handleTouchStart(unit.instanceId)}
+                      onTouchStart={(e?: React.TouchEvent) => e && handleTouchStart(e, unit.instanceId)}
                       onTouchEnd={handleTouchEnd}
-                      onTouchMove={handleTouchEnd}
+                      onTouchMove={(e?: React.TouchEvent) => e && handleTouchMove(e)}
+                      onTouchCancel={handleTouchEnd}
                       className="w-full"
                     />
                   );
@@ -357,7 +395,7 @@ export default function UnitsScreen({
         </div>
       )}
 
-      {/* Context Menu for Quick Actions */}
+      {/* Context Menu for Quick Actions - Touch-Optimized */}
       {contextMenu && (() => {
         const unit = state.inventory.find(u => u.instanceId === contextMenu.unitId);
         if (!unit) return null;
@@ -365,52 +403,78 @@ export default function UnitsScreen({
         const canFuse = !state.team.includes(unit.instanceId) && unit.level < template.maxLevel;
         const canEvolve = unit.level >= template.maxLevel && !!template.evolutionTarget;
 
+        // Touch-friendly positioning - keep menu fully visible on screen
+        const menuWidth = 180;
+        const menuHeight = canFuse && canEvolve ? 220 : canFuse || canEvolve ? 170 : 120;
+        let menuX = contextMenu.x;
+        let menuY = contextMenu.y;
+
+        // Adjust if menu would go off right edge
+        if (menuX + menuWidth > window.innerWidth - 10) {
+          menuX = window.innerWidth - menuWidth - 10;
+        }
+        // Adjust if menu would go off bottom edge
+        if (menuY + menuHeight > window.innerHeight - 10) {
+          menuY = menuY - menuHeight - 20;
+        }
+        // Also adjust if too close to top
+        if (menuY < 10) {
+          menuY = 10;
+        }
+
         return (
           <div
-            className="fixed z-[100] bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl py-1 min-w-[160px] animate-in fade-in zoom-in-95 duration-150"
+            className="fixed z-[100] bg-zinc-900 border border-zinc-600 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
             style={{
-              top: contextMenu.y > window.innerHeight - 200 ? contextMenu.y - 150 : contextMenu.y,
-              left: contextMenu.x > window.innerWidth - 180 ? contextMenu.x - 160 : contextMenu.x,
+              top: menuY,
+              left: menuX,
+              minWidth: menuWidth,
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-3 py-2 border-b border-zinc-800">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-950/50">
               <div className="font-bold text-sm text-white">{template.name}</div>
               <div className="text-[10px] text-zinc-500">Lv. {unit.level} · {ELEMENT_ICONS[template.element]}</div>
             </div>
+
+            {/* Touch-friendly buttons - minimum 44px height */}
             <button
               onClick={() => {
                 setInspectUnitId(contextMenu.unitId);
                 closeContextMenu();
               }}
-              className="w-full px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white flex items-center gap-2"
+              className="w-full px-4 py-3 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white active:bg-zinc-700 flex items-center gap-3 min-h-[44px] touch-manipulation transition-colors"
             >
-              <span>🔍</span> View Details
+              <span className="text-base">🔍</span> View Details
             </button>
+
             {canFuse && onNavigateToFusion && (
               <button
                 onClick={() => {
                   onNavigateToFusion(contextMenu.unitId);
                   closeContextMenu();
                 }}
-                className="w-full px-3 py-2 text-left text-sm text-blue-400 hover:bg-zinc-800 hover:text-blue-300 flex items-center gap-2"
+                className="w-full px-4 py-3 text-left text-sm text-blue-400 hover:bg-zinc-800 hover:text-blue-300 active:bg-zinc-700 flex items-center gap-3 min-h-[44px] touch-manipulation transition-colors"
               >
-                <span>⚡</span> Fuse Unit
+                <span className="text-base">⚡</span> Fuse Unit
               </button>
             )}
+
             {canEvolve && onNavigateToEvolution && (
               <button
                 onClick={() => {
                   onNavigateToEvolution(contextMenu.unitId);
                   closeContextMenu();
                 }}
-                className="w-full px-3 py-2 text-left text-sm text-purple-400 hover:bg-zinc-800 hover:text-purple-300 flex items-center gap-2"
+                className="w-full px-4 py-3 text-left text-sm text-purple-400 hover:bg-zinc-800 hover:text-purple-300 active:bg-zinc-700 flex items-center gap-3 min-h-[44px] touch-manipulation transition-colors"
               >
-                <span>✨</span> Evolve Unit
+                <span className="text-base">✨</span> Evolve Unit
               </button>
             )}
+
             {!canFuse && !canEvolve && (
-              <div className="px-3 py-2 text-xs text-zinc-600 italic">
+              <div className="px-4 py-3 text-xs text-zinc-600 italic">
                 No actions available
               </div>
             )}
