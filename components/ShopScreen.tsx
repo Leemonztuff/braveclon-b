@@ -169,7 +169,7 @@ export default function ShopScreen({ state, onBack, onPurchase }: ShopScreenProp
       {/* Footer */}
       <div className="p-4 border-t border-zinc-800 bg-zinc-900">
         <p className="text-xs text-zinc-500 text-center">
-          🔒 Some items require account login to purchase
+          💎 Todas las compras funcionan offline • ☁️ Cloud save requiere cuenta
         </p>
       </div>
     </div>
