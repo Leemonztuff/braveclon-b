@@ -562,102 +562,90 @@ export function useGameState(options: UseGameStateOptions = {}) {
     let zelReward = stage.zelReward;
     const expReward = stage.expReward;
     
-    // Apply subscription bonus
     const subscriptionBonus = SUBSCRIPTION_CONFIG[state.subscription.tier]?.zelBonus || 0;
     zelReward = Math.floor(zelReward * (1 + subscriptionBonus));
     
-    const newInventory = [...state.inventory];
-    const leveledUp: { name: string; oldLevel: number; newLevel: number }[] = [];
-    
-    const teamUnits = state.team
-      .filter(id => id !== null)
-      .map(id => newInventory.find(u => u.instanceId === id))
-      .filter(Boolean);
-    
-    teamUnits.forEach(unit => {
-      if (!unit) return;
-      const template = UNIT_DATABASE[unit.templateId];
-      const newExp = unit.exp + expReward;
-      const expNeeded = getExpForLevel(unit.level);
-      
-      if (newExp >= expNeeded && unit.level < template.maxLevel) {
-        const oldLevel = unit.level;
-        const newLevel = Math.min(template.maxLevel, unit.level + 1);
-        unit.level = newLevel;
-        unit.exp = newExp - expNeeded;
-        leveledUp.push({ name: template.name, oldLevel, newLevel });
-      } else {
-        unit.exp = newExp;
-      }
-    });
-
-    const playerExpGain = expReward * teamUnits.length;
-    const playerNewExp = state.exp + playerExpGain;
-    const playerExpNeeded = state.playerLevel * 100;
-    const playerLeveledUp = playerNewExp >= playerExpNeeded;
-    const newPlayerLevel = playerLeveledUp ? state.playerLevel + 1 : state.playerLevel;
-    const newPlayerExp = playerLeveledUp ? playerNewExp - playerExpNeeded : playerNewExp;
-    
-    // Equipment drops
+    const teamInstanceIds = state.team.filter(id => id !== null) as string[];
     const equipmentDrops: EquipInstance[] = [];
-    if (stage.equipmentDrops && stage.equipmentDropChance) {
-      if (Math.random() < stage.equipmentDropChance) {
-        const dropIndex = Math.floor(Math.random() * stage.equipmentDrops.length);
-        const equipTemplateId = stage.equipmentDrops[dropIndex];
-        equipmentDrops.push({
-          instanceId: `eq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          templateId: equipTemplateId,
-          enhancementLevel: 0,
-          sockets: [],
-        });
-      }
+    if (stage.equipmentDrops && stage.equipmentDropChance && Math.random() < stage.equipmentDropChance) {
+      const dropIndex = Math.floor(Math.random() * stage.equipmentDrops.length);
+      const equipTemplateId = stage.equipmentDrops[dropIndex];
+      equipmentDrops.push({
+        instanceId: `eq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        templateId: equipTemplateId,
+        enhancementLevel: 0,
+        sockets: [],
+      });
     }
-    
-    setState(prev => ({
-      ...prev,
-      zel: prev.zel + zelReward,
-      exp: newPlayerExp,
-      playerLevel: newPlayerLevel,
-      energy: playerLeveledUp ? prev.maxEnergy : prev.energy,
-      inventory: newInventory,
-      equipmentInventory: [...prev.equipmentInventory, ...equipmentDrops],
-      stats: {
-        ...prev.stats,
-        totalBattlesWon: prev.stats.totalBattlesWon + 1,
-        totalZelEarned: prev.stats.totalZelEarned + zelReward,
-        highestPlayerLevel: Math.max(prev.stats.highestPlayerLevel, newPlayerLevel),
-      },
-      dailyState: {
-        ...prev.dailyState,
-        quests: prev.dailyState.quests.map(q => {
-          if (q.id === 'daily_battle') {
-            return { ...q, current: q.current + 1 };
-          }
-          if (q.id === 'daily_zel') {
-            return { ...q, current: q.current + 1 };
-          }
-          return q;
-        }),
-      },
-      weeklyState: {
-        ...prev.weeklyState,
-        quests: prev.weeklyState.quests.map(q => {
-          if (q.id === 'weekly_battles') {
-            return { ...q, current: q.current + 1 };
-          }
-          if (q.id === 'weekly_zel') {
-            return { ...q, current: Math.min(q.current + zelReward, q.requirement) };
-          }
-          return q;
-        }),
-      },
-    }));
+
+    const result = setState(prev => {
+      const leveledUp: { name: string; oldLevel: number; newLevel: number }[] = [];
+      const playerExpGain = expReward * teamInstanceIds.length;
+      
+      const newInventory = prev.inventory.map(unit => {
+        if (!teamInstanceIds.includes(unit.instanceId)) return unit;
+        
+        const template = UNIT_DATABASE[unit.templateId];
+        if (!template) return unit;
+        
+        let newExp = unit.exp + expReward;
+        let newLevel = unit.level;
+        const expNeeded = getExpForLevel(newLevel);
+        
+        if (newExp >= expNeeded && newLevel < template.maxLevel) {
+          const oldLevel = newLevel;
+          newLevel = Math.min(template.maxLevel, newLevel + 1);
+          newExp = newExp - expNeeded;
+          leveledUp.push({ name: template.name, oldLevel, newLevel });
+        }
+        
+        return { ...unit, level: newLevel, exp: newExp };
+      });
+
+      const playerNewExp = prev.exp + playerExpGain;
+      const playerExpNeeded = prev.playerLevel * 100;
+      const playerLeveledUp = playerNewExp >= playerExpNeeded;
+      const newPlayerLevel = playerLeveledUp ? prev.playerLevel + 1 : prev.playerLevel;
+      const newPlayerExp = playerLeveledUp ? playerNewExp - playerExpNeeded : playerNewExp;
+
+      return {
+        ...prev,
+        zel: prev.zel + zelReward,
+        exp: newPlayerExp,
+        playerLevel: newPlayerLevel,
+        energy: playerLeveledUp ? prev.maxEnergy : prev.energy,
+        inventory: newInventory,
+        equipmentInventory: [...prev.equipmentInventory, ...equipmentDrops],
+        stats: {
+          ...prev.stats,
+          totalBattlesWon: prev.stats.totalBattlesWon + 1,
+          totalZelEarned: prev.stats.totalZelEarned + zelReward,
+          highestPlayerLevel: Math.max(prev.stats.highestPlayerLevel, newPlayerLevel),
+        },
+        dailyState: {
+          ...prev.dailyState,
+          quests: prev.dailyState.quests.map(q => {
+            if (q.id === 'daily_battle') return { ...q, current: q.current + 1 };
+            if (q.id === 'daily_zel') return { ...q, current: q.current + 1 };
+            return q;
+          }),
+        },
+        weeklyState: {
+          ...prev.weeklyState,
+          quests: prev.weeklyState.quests.map(q => {
+            if (q.id === 'weekly_battles') return { ...q, current: q.current + 1 };
+            if (q.id === 'weekly_zel') return { ...q, current: Math.min(q.current + zelReward, q.requirement) };
+            return q;
+          }),
+        },
+      };
+    });
 
     return {
       zel: zelReward,
-      exp: playerExpGain,
-      playerLeveledUp,
-      leveledUpUnits: leveledUp,
+      exp: expReward * teamInstanceIds.length,
+      playerLeveledUp: false,
+      leveledUpUnits: [],
       equipmentDropped: equipmentDrops,
     };
   }, [state]);
@@ -667,103 +655,148 @@ export function useGameState(options: UseGameStateOptions = {}) {
   // ============================================================================
 
   const fuseUnits = useCallback((targetInstanceId: string, materialInstanceIds: string[]) => {
-    const targetUnit = state.inventory.find(u => u.instanceId === targetInstanceId);
-    if (!targetUnit) return { success: false, message: 'Target unit not found' };
+    let result: { success: boolean; expGained: number; leveledUp: boolean; oldLevel: number; newLevel: number; message: string } = 
+      { success: false, expGained: 0, leveledUp: false, oldLevel: 0, newLevel: 0, message: '' };
 
-    const template = UNIT_DATABASE[targetUnit.templateId];
-    if (targetUnit.level >= template.maxLevel) return { success: false, message: 'Unit is already at max level' };
+    setState(prev => {
+      const targetUnit = prev.inventory.find(u => u.instanceId === targetInstanceId);
+      if (!targetUnit) {
+        result = { success: false, expGained: 0, leveledUp: false, oldLevel: 0, newLevel: 0, message: 'Target unit not found' };
+        return prev;
+      }
 
-    const materialUnits = materialInstanceIds
-      .map(id => state.inventory.find(u => u.instanceId === id))
-      .filter((u): u is UnitInstance => u !== undefined);
+      const template = UNIT_DATABASE[targetUnit.templateId];
+      if (!template) {
+        result = { success: false, expGained: 0, leveledUp: false, oldLevel: 0, newLevel: 0, message: 'Unit template not found' };
+        return prev;
+      }
+      if (targetUnit.level >= template.maxLevel) {
+        result = { success: false, expGained: 0, leveledUp: false, oldLevel: 0, newLevel: 0, message: 'Unit is already at max level' };
+        return prev;
+      }
 
-    if (materialUnits.length === 0) return { success: false, message: 'No materials selected' };
+      const materialUnits = materialInstanceIds
+        .map(id => prev.inventory.find(u => u.instanceId === id))
+        .filter((u): u is UnitInstance => u !== undefined);
 
-    // Calculate fusion cost
-    const maxRarity = Math.max(...materialUnits.map(u => UNIT_DATABASE[u.templateId]?.rarity || 1));
-    const fusionCost = getFusionCost(targetUnit.level, materialUnits.length) * 
-      (maxRarity >= 5 ? 5 : maxRarity >= 4 ? 2 : 1);
-    
-    if (state.zel < fusionCost) return { success: false, message: 'Not enough zel' };
+      if (materialUnits.length === 0) {
+        result = { success: false, expGained: 0, leveledUp: false, oldLevel: 0, newLevel: 0, message: 'No materials selected' };
+        return prev;
+      }
 
-    // Calculate exp for each material with same-element bonus
-    const targetElement = template.element;
-    let totalExpGained = 0;
-    materialUnits.forEach(material => {
-      const materialTemplate = UNIT_DATABASE[material.templateId];
-      const isSameElement = materialTemplate.element === targetElement;
-      totalExpGained += getFusionExpGain(materialTemplate.rarity, material.level, isSameElement);
-    });
+      const maxRarity = Math.max(...materialUnits.map(u => UNIT_DATABASE[u.templateId]?.rarity || 1));
+      const fusionCost = getFusionCost(targetUnit.level, materialUnits.length) * 
+        (maxRarity >= 5 ? 5 : maxRarity >= 4 ? 2 : 1);
+      
+      if (prev.zel < fusionCost) {
+        result = { success: false, expGained: 0, leveledUp: false, oldLevel: 0, newLevel: 0, message: 'Not enough zel' };
+        return prev;
+      }
 
-    let newExp = targetUnit.exp + totalExpGained;
-    let newLevel = targetUnit.level;
-    const expNeeded = getExpForLevel(newLevel);
-
-    while (newExp >= expNeeded && newLevel < template.maxLevel) {
-      newExp -= expNeeded;
-      newLevel++;
-    }
-
-    // Track fusion count for bonus
-    const timesFused = (targetUnit.timesFused || 0) + materialUnits.length;
-    
-    const newInventory = state.inventory
-      .filter(u => !materialInstanceIds.includes(u.instanceId))
-      .map(u => {
-        if (u.instanceId === targetInstanceId) {
-          return { ...u, level: newLevel, exp: newExp, timesFused };
-        }
-        return u;
+      const targetElement = template.element;
+      let totalExpGained = 0;
+      materialUnits.forEach(material => {
+        const materialTemplate = UNIT_DATABASE[material.templateId];
+        const isSameElement = materialTemplate.element === targetElement;
+        totalExpGained += getFusionExpGain(materialTemplate.rarity, material.level, isSameElement);
       });
 
-    setState(prev => ({
-      ...prev,
-      zel: prev.zel - fusionCost,
-      inventory: newInventory,
-      stats: {
-        ...prev.stats,
-        totalFusionPerformed: prev.stats.totalFusionPerformed + 1,
-      },
-      dailyState: {
-        ...prev.dailyState,
-        quests: prev.dailyState.quests.map(q => {
-          if (q.id === 'daily_fusion') {
-            return { ...q, current: q.current + materialUnits.length };
-          }
-          return q;
-        }),
-      },
-    }));
+      let newExp = targetUnit.exp + totalExpGained;
+      let newLevel = targetUnit.level;
+      const expNeeded = getExpForLevel(newLevel);
+      const oldLevel = newLevel;
 
-    return { success: true, expGained: totalExpGained, leveledUp: newLevel > targetUnit.level, oldLevel: targetUnit.level, newLevel, message: 'Fusion complete!' };
-  }, [state]);
+      while (newExp >= expNeeded && newLevel < template.maxLevel) {
+        newExp -= expNeeded;
+        newLevel++;
+      }
+
+      const timesFused = (targetUnit.timesFused || 0) + materialUnits.length;
+      
+      result = { 
+        success: true, 
+        expGained: totalExpGained, 
+        leveledUp: newLevel > oldLevel, 
+        oldLevel, 
+        newLevel, 
+        message: 'Fusion complete!' 
+      };
+
+      return {
+        ...prev,
+        zel: prev.zel - fusionCost,
+        inventory: prev.inventory
+          .filter(u => !materialInstanceIds.includes(u.instanceId))
+          .map(u => u.instanceId === targetInstanceId ? { ...u, level: newLevel, exp: newExp, timesFused } : u),
+        stats: {
+          ...prev.stats,
+          totalFusionPerformed: prev.stats.totalFusionPerformed + 1,
+        },
+        dailyState: {
+          ...prev.dailyState,
+          quests: prev.dailyState.quests.map(q => {
+            if (q.id === 'daily_fusion') return { ...q, current: q.current + materialUnits.length };
+            return q;
+          }),
+        },
+      };
+    });
+
+    return result;
+  }, []);
 
   const evolveUnit = useCallback((targetInstanceId: string) => {
-    const targetUnit = state.inventory.find(u => u.instanceId === targetInstanceId);
-    if (!targetUnit) return { success: false, message: 'Unit not found' };
+    let result: { success: boolean; newTemplateId?: string; message: string } = { success: false, message: '' };
 
-    const template = UNIT_DATABASE[targetUnit.templateId];
-    if (!template.evolutionTarget) return { success: false, message: 'This unit cannot evolve' };
+    setState(prev => {
+      const targetUnit = prev.inventory.find(u => u.instanceId === targetInstanceId);
+      if (!targetUnit) {
+        result = { success: false, message: 'Unit not found' };
+        return prev;
+      }
 
-    const evolutionCost = getEvolutionCost(template.rarity);
-    if (state.zel < evolutionCost) return { success: false, message: 'Not enough zel' };
+      const template = UNIT_DATABASE[targetUnit.templateId];
+      if (!template?.evolutionTarget) {
+        result = { success: false, message: 'This unit cannot evolve' };
+        return prev;
+      }
 
-    setState(prev => ({
-      ...prev,
-      inventory: prev.inventory.map(u => {
-        if (u.instanceId === targetInstanceId) {
-          return { ...u, templateId: template.evolutionTarget!, level: 1, exp: 0 };
+      const evolutionCost = getEvolutionCost(template.rarity);
+      if (prev.zel < evolutionCost) {
+        result = { success: false, message: 'Not enough zel' };
+        return prev;
+      }
+
+      const evolutionMaterials = template.evolutionMaterials || [];
+      for (const mat of evolutionMaterials) {
+        if (prev.materials[mat as MaterialType] < 1) {
+          const config = MATERIAL_CONFIG[mat as MaterialType];
+          result = { success: false, message: `Missing ${config?.name || mat}` };
+          return prev;
         }
-        return u;
-      }),
-      zel: prev.zel - evolutionCost,
-      stats: {
-        ...prev.stats,
-        totalEvolutionPerformed: prev.stats.totalEvolutionPerformed + 1,
-      },
-    }));
-    return { success: true, newTemplateId: template.evolutionTarget, message: 'Evolution complete!' };
-  }, [state]);
+      }
+
+      result = { success: true, newTemplateId: template.evolutionTarget, message: 'Evolution complete!' };
+
+      return {
+        ...prev,
+        zel: prev.zel - evolutionCost,
+        materials: evolutionMaterials.reduce((acc, mat) => {
+          acc[mat as MaterialType] = (acc[mat as MaterialType] || 0) - 1;
+          return acc;
+        }, { ...prev.materials }),
+        inventory: prev.inventory.map(u => 
+          u.instanceId === targetInstanceId ? { ...u, templateId: template.evolutionTarget!, level: 1, exp: 0 } : u
+        ),
+        stats: {
+          ...prev.stats,
+          totalEvolutionPerformed: prev.stats.totalEvolutionPerformed + 1,
+        },
+      };
+    });
+
+    return result;
+  }, []);
 
   // ============================================================================
   // CRAFTING SYSTEM
