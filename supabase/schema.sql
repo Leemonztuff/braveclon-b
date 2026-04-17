@@ -110,13 +110,13 @@ CREATE TABLE equipment_sets (
     special_value INTEGER DEFAULT 0
 );
 
-INSERT INTO equipment_sets (id, name, description, pieces_required, atk_multiplier, def_multiplier, special_effect, special_value) VALUES
-('set_dragon', 'Dragon Slayer', '2 pieces: +15% ATK & DEF', 2, 1.15, 1.15, NULL, NULL),
-('set_dragon_bonus', 'Dragon Slayer Full', '3 pieces: +30% Fire damage, +20% crit', 3, 1.15, 1.15, 'element_fire', 30),
-('set_holy', 'Holy Knight', '2 pieces: +10% HP & DEF', 2, 1.0, 1.10, 1.10, NULL),
-('set_holy_bonus', 'Holy Knight Full', '3 pieces: +20% healing', 3, 1.0, 1.10, 1.20, 'healing', 20),
-('set_ninja', 'Shadow Ninja', '2 pieces: +15% ATK', 2, 1.15, 1.0, NULL, NULL),
-('set_ninja_bonus', 'Shadow Ninja Full', '3 pieces: +30% crit damage', 3, 1.15, 1.10, NULL, 'crit_damage', 30);
+INSERT INTO equipment_sets (id, name, description, pieces_required, atk_multiplier, def_multiplier, rec_multiplier, hp_multiplier, special_effect, special_value) VALUES
+('set_dragon', 'Dragon Slayer', '2 pieces: +15% ATK & DEF', 2, 1.15, 1.15, 1.0, 1.0, NULL, 0),
+('set_dragon_bonus', 'Dragon Slayer Full', '3 pieces: +30% Fire damage, +20% crit', 3, 1.15, 1.15, 1.0, 1.0, 'element_fire', 30),
+('set_holy', 'Holy Knight', '2 pieces: +10% HP & DEF', 2, 1.0, 1.10, 1.10, 1.10, NULL, 0),
+('set_holy_bonus', 'Holy Knight Full', '3 pieces: +20% healing', 3, 1.0, 1.10, 1.20, 1.20, 'healing', 20),
+('set_ninja', 'Shadow Ninja', '2 pieces: +15% ATK', 2, 1.15, 1.0, 1.0, 1.0, NULL, 0),
+('set_ninja_bonus', 'Shadow Ninja Full', '3 pieces: +30% crit damage', 3, 1.15, 1.10, 1.0, 1.0, 'crit_damage', 30);
 
 -- ============================================================================
 -- MATERIALS
