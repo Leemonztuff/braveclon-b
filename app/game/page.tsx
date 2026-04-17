@@ -21,7 +21,8 @@ import ShopScreen from '@/components/ShopScreen';
 import CraftScreen from '@/components/CraftScreen';
 import GuildScreen from '@/components/GuildScreen';
 import { BottomNav } from '@/components/BottomNav';
-import { CurrencyDisplay } from '@/components/ui/DesignSystem';
+import { CurrencyDisplay, EFFECTS } from '@/components/ui/DesignSystem';
+import { User } from 'lucide-react';
 
 export default function GameApp() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -295,21 +296,34 @@ export default function GameApp() {
       <div className="flex flex-col h-full w-full bg-zinc-950 text-zinc-100">
         <div className="relative flex flex-col h-full w-full overflow-hidden bg-zinc-950 safe-area">
           {showTopBar && (
-            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-sm">
-              <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Lv. {state.level}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-emerald-400">
-                    ⚡ {state.energy}/{state.maxEnergy}
-                  </span>
-                  {state.energy < state.maxEnergy && (
-                    <span className="text-xs text-emerald-500/70 font-mono">
-                      {formatTime(timeToNextEnergy)}
-                    </span>
-                  )}
+            <div className={`flex items-center justify-between px-4 py-2 border-b ${EFFECTS.glass} transition-all duration-300`}>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-zinc-900 shadow-lg shadow-amber-500/20 active:scale-95 transition-transform overflow-hidden">
+                    <User size={20} strokeWidth={2.5} />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center text-[10px] font-bold text-amber-400">
+                    {state.level}
+                  </div>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-zinc-100 tracking-tight leading-none mb-1">{state.playerName}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-amber-500/80 uppercase tracking-tighter">Rank {state.rank}</span>
+                    <div className="flex items-center gap-1 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                      <span className="text-[10px] font-bold text-emerald-400">⚡ {state.energy}/{state.maxEnergy}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <CurrencyDisplay gems={state.gems} zel={state.zel} />
+              <div className="flex flex-col items-end gap-1">
+                <CurrencyDisplay gems={state.gems} zel={state.zel} />
+                {state.energy < state.maxEnergy && (
+                  <span className="text-[9px] text-zinc-500 font-mono">
+                    Next: {formatTime(timeToNextEnergy)}
+                  </span>
+                )}
+              </div>
             </div>
           )}
 

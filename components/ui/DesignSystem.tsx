@@ -4,7 +4,7 @@ export const COLORS = {
   primary: 'bg-amber-400',
   primaryHover: 'hover:bg-amber-300',
   primaryText: 'text-zinc-900',
-  secondary: 'bg-cyan-500',
+  secondary: 'bg-zinc-800',
   success: 'bg-emerald-500',
   danger: 'bg-red-500',
   warning: 'bg-yellow-500',
@@ -15,37 +15,44 @@ export const COLORS = {
     hover: 'bg-zinc-700',
   },
   border: {
-    base: 'border-zinc-700',
-    light: 'border-zinc-600',
-    accent: 'border-amber-500',
+    base: 'border-zinc-800',
+    light: 'border-zinc-700',
+    accent: 'border-amber-500/50',
   },
   text: {
-    primary: 'text-white',
-    secondary: 'text-zinc-300',
+    primary: 'text-zinc-100',
+    secondary: 'text-zinc-400',
     muted: 'text-zinc-500',
     accent: 'text-amber-400',
   },
   gold: {
-    bg: 'bg-amber-500/20',
-    border: 'border-amber-500/50',
+    bg: 'bg-amber-400/10',
+    border: 'border-amber-400/30',
     text: 'text-amber-400',
   },
   gem: {
-    bg: 'bg-blue-500/20',
-    border: 'border-blue-500/50',
-    text: 'text-blue-400',
+    bg: 'bg-sky-400/10',
+    border: 'border-sky-400/30',
+    text: 'text-sky-400',
   },
   energy: {
-    bg: 'bg-red-500/20',
-    border: 'border-red-500/50',
-    text: 'text-red-400',
+    bg: 'bg-emerald-400/10',
+    border: 'border-emerald-400/30',
+    text: 'text-emerald-400',
   },
   zel: {
-    bg: 'bg-yellow-500/20',
-    border: 'border-yellow-500/50',
-    text: 'text-yellow-400',
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    text: 'text-amber-400',
   },
 } as const;
+
+export const EFFECTS = {
+  glass: 'backdrop-blur-md bg-zinc-900/60 border-zinc-800/50',
+  glassElevated: 'backdrop-blur-lg bg-zinc-800/40 border-zinc-700/30',
+  glowAmber: 'shadow-[0_0_15px_rgba(251,191,36,0.15)]',
+  glowEmerald: 'shadow-[0_0_15px_rgba(52,211,153,0.15)]',
+};
 
 export const RARITY = {
   1: { bg: 'bg-zinc-600', border: 'border-zinc-500', text: 'text-zinc-400', stars: 1 },
@@ -112,7 +119,12 @@ export function Card({ children, className = '', onClick, variant = 'default' }:
 
   return (
     <div 
-      className={`rounded-xl border p-4 ${variantClasses[variant]} ${onClick ? 'cursor-pointer hover:border-amber-500/50 active:scale-[0.98] transition-all' : ''} ${className}`}
+      className={`
+        rounded-xl border p-4 transition-all duration-200
+        ${variantClasses[variant]} 
+        ${onClick ? 'cursor-pointer hover:border-amber-500/50 hover:bg-zinc-800/80 active:scale-[0.98] active:bg-zinc-800' : ''} 
+        ${className}
+      `}
       onClick={onClick}
     >
       {children}
@@ -158,22 +170,25 @@ interface HeaderProps {
 
 export function Header({ title, icon, onBack, rightContent }: HeaderProps) {
   return (
-    <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-sm">
+    <div className={`flex items-center justify-between px-4 py-4 border-b ${EFFECTS.glass} sticky top-0 z-20`}>
       <div className="flex items-center gap-3">
         {onBack && (
           <button 
             onClick={onBack} 
-            className="text-zinc-400 hover:text-white p-2 bg-zinc-800 rounded-full active:scale-95 transition-transform min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="text-zinc-400 hover:text-white p-2.5 bg-zinc-800/80 rounded-xl active:scale-95 transition-transform min-w-[44px] min-h-[44px] flex items-center justify-center border border-zinc-700/50"
           >
             ←
           </button>
         )}
-        <h2 className="text-lg font-black italic text-amber-400 uppercase tracking-wider">
-          {icon && <span className="mr-2">{icon}</span>}
-          {title}
-        </h2>
+        <div>
+          <h2 className="text-xl font-black italic text-amber-400 uppercase tracking-widest flex items-center gap-2">
+            {icon && <span className="opacity-80 grayscale-[0.5]">{icon}</span>}
+            {title}
+          </h2>
+          <div className="h-0.5 w-1/2 bg-gradient-to-r from-amber-400 to-transparent mt-0.5" />
+        </div>
       </div>
-      {rightContent && <div>{rightContent}</div>}
+      {rightContent && <div className="animate-fadeIn">{rightContent}</div>}
     </div>
   );
 }

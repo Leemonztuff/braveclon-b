@@ -76,32 +76,24 @@ export default function HomeScreen({ state, onNavigate, onStartBattle, setTeamMe
 
   return (
     <div className="flex flex-col h-full bg-zinc-950">
-      {/* HEADER */}
-      <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-900/80">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-lg font-bold text-zinc-900 shadow-lg">
-            {state.playerName.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <div className="text-sm font-bold text-white">{state.playerName}</div>
-            <div className="text-[10px] text-amber-400">Rank {state.rank} · Lv.{state.playerLevel}</div>
-          </div>
+      {/* HERO BANNER / WELCOME */}
+      <div className="relative px-4 pt-6 pb-2 overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/5 blur-3xl rounded-full -mr-16 -mt-16" />
+        <div className="relative">
+          <h1 className="text-2xl font-black text-white italic tracking-tighter uppercase">
+            Brave <span className="text-amber-400">Frontier</span>
+          </h1>
+          <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em] mt-0.5">Grand Gaia Chronicles</p>
         </div>
-        
-        <CurrencyDisplay 
-          gems={state.gems}
-          zel={state.zel}
-          energy={{ current: state.energy, max: state.maxEnergy }}
-        />
       </div>
 
       {/* TEAM PREVIEW */}
-      <div className="p-4 border-b border-zinc-800/50">
-        <div className="text-xs text-zinc-500 mb-2 uppercase tracking-wider flex justify-between items-center">
-          <span>Your Party</span>
-          <span className="text-amber-400">{state.team.filter(id => id !== null).length}/6</span>
+      <div className="p-4 mx-4 mt-2 rounded-2xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-sm">
+        <div className="text-[10px] text-zinc-500 mb-3 uppercase font-bold tracking-[0.15em] flex justify-between items-center px-1">
+          <span>Current Party</span>
+          <span className="bg-amber-400/10 text-amber-400 px-2 py-0.5 rounded-full border border-amber-400/20">{state.team.filter(id => id !== null).length} / 6</span>
         </div>
-        <div className="flex gap-2 justify-center">
+        <div className="grid grid-cols-6 gap-2">
           {[0,1,2,3,4,5].map(idx => {
             const unitId = state.team[idx];
             const unit = unitId ? state.inventory.find(u => u.instanceId === unitId) : null;
@@ -116,23 +108,25 @@ export default function HomeScreen({ state, onNavigate, onStartBattle, setTeamMe
                 onDragEnd={handleDragEnd}
                 onClick={() => handleSlotClick(idx)}
                 className={`
-                  w-14 h-14 rounded-lg border-2 flex items-center justify-center overflow-hidden cursor-pointer transition-all
+                  aspect-square rounded-xl border-2 flex items-center justify-center overflow-hidden cursor-pointer transition-all duration-300 relative group
                   ${template 
-                    ? 'border-amber-500/50 bg-zinc-900 hover:border-amber-400 hover:scale-105' 
-                    : 'border-zinc-800 bg-zinc-900/30 hover:border-amber-500/30 hover:bg-zinc-900/50'}
-                  ${draggedSlot === idx ? 'opacity-50 scale-95' : ''}
-                  ${template && template.rarity >= 5 ? 'ring-2 ring-purple-500/50' : ''}
+                    ? 'border-amber-500/30 bg-zinc-800/80 hover:border-amber-400 hover:scale-105 hover:shadow-[0_0_15px_rgba(251,191,36,0.1)]' 
+                    : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.05] border-dashed hover:border-amber-500/20'}
+                  ${draggedSlot === idx ? 'opacity-50 scale-95 blur-[1px]' : ''}
                 `}
               >
                 {template ? (
-                  <img 
-                    src={template.spriteUrl} 
-                    alt={template.name}
-                    className="w-full h-full object-contain"
-                    style={{ imageRendering: 'pixelated' }}
-                  />
+                  <>
+                    <img 
+                      src={template.spriteUrl} 
+                      alt={template.name}
+                      className="w-10 h-10 object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]"
+                      style={{ imageRendering: 'pixelated' }}
+                    />
+                    <div className={`absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+                  </>
                 ) : (
-                  <span className="text-zinc-600 text-lg">+</span>
+                  <span className="text-zinc-700 text-lg font-light">+</span>
                 )}
               </div>
             );
@@ -144,21 +138,34 @@ export default function HomeScreen({ state, onNavigate, onStartBattle, setTeamMe
       <div className="flex-1 p-4 overflow-y-auto space-y-4">
         {/* Quick Battle */}
         <section>
-          <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">⚔️ Quick Battle</h2>
-          <div className="space-y-2">
-            {STAGES.slice(0, 4).map(stage => (
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">⚔️ Active Campaign</h2>
+            <button onClick={() => onNavigate('quest')} className="text-[10px] text-amber-400 font-bold uppercase hover:underline">View All</button>
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            {STAGES.slice(0, 3).map(stage => (
               <Card 
                 key={stage.id}
                 onClick={() => onStartBattle(stage.id)}
-                className="flex items-center justify-between"
+                className="group relative overflow-hidden"
               >
-                <div>
-                  <div className="font-bold text-white">{stage.area}</div>
-                  <div className="text-xs text-zinc-500">{stage.name}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-amber-400 font-bold">⚡{stage.energy}</div>
-                  <div className="text-[10px] text-zinc-500">EXP {stage.expReward}</div>
+                <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-amber-400/[0.03] to-transparent pointer-events-none" />
+                <div className="flex items-center justify-between relative z-10">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xl group-hover:scale-110 transition-transform shadow-inner">
+                      💀
+                    </div>
+                    <div>
+                      <div className="font-black text-white italic uppercase tracking-tight">{stage.area}</div>
+                      <div className="text-xs text-zinc-500 font-medium">Stage {stage.id}: {stage.name}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-400/10 rounded-full border border-amber-400/20 mb-1">
+                      <span className="text-xs font-black text-amber-400 leading-none">⚡ {stage.energy}</span>
+                    </div>
+                    <div className="text-[10px] font-bold text-zinc-600 tabular-nums">+{stage.expReward} EXP</div>
+                  </div>
                 </div>
               </Card>
             ))}
@@ -168,11 +175,16 @@ export default function HomeScreen({ state, onNavigate, onStartBattle, setTeamMe
         {/* Quick Actions */}
         <section>
           <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3">📋 Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <Card onClick={() => onNavigate('summon')} className="flex flex-col items-center justify-center py-4">
               <span className="text-2xl mb-1">✨</span>
               <span className="text-xs font-bold text-white">Summon</span>
               <span className="text-[10px] text-zinc-500">{GACHA_CONFIG.BANNERS.standard.cost}💎</span>
+            </Card>
+            <Card onClick={() => onNavigate('qrhunt')} className="flex flex-col items-center justify-center py-4">
+              <span className="text-2xl mb-1">📱</span>
+              <span className="text-xs font-bold text-white">QR Hunt</span>
+              <span className="text-[10px] text-zinc-500">{5 - (state.qrState?.scansToday || 0)} left</span>
             </Card>
             <Card onClick={() => onNavigate('arena')} className="flex flex-col items-center justify-center py-4">
               <span className="text-2xl mb-1">⚔️</span>
