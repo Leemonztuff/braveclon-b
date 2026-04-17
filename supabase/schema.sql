@@ -35,32 +35,30 @@ CREATE TABLE unit_templates (
     growth_def REAL DEFAULT 3,
     growth_rec REAL DEFAULT 3,
     max_level INTEGER DEFAULT 60,
-    evolution_target TEXT REFERENCES unit_templates(id),
     sprite_url TEXT,
     description TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Insert unit templates
 INSERT INTO unit_templates (id, name, element, rarity, base_hp, base_atk, base_def, base_rec, growth_hp, growth_atk, growth_def, growth_rec, max_level, sprite_url) VALUES
-('u1', 'Elexir', 'Light', 1, 1200, 150, 120, 80, 30, 15, 10, 60, 'https://picsum.photos/seed/u1/64'),
-('u2', 'Rashil', 'Dark', 1, 1150, 160, 115, 85, 32, 14, 10, 60, 'https://picsum.photos/seed/u2/64'),
-('u3', 'Faylen', 'Water', 1, 1100, 140, 130, 90, 28, 16, 12, 60, 'https://picsum.photos/seed/u3/64'),
-('u4', 'Gravos', 'Earth', 1, 1300, 145, 110, 75, 30, 14, 8, 60, 'https://picsum.photos/seed/u4/64'),
-('u5', 'Zelea', 'Fire', 1, 1050, 165, 105, 80, 35, 12, 10, 60, 'https://picsum.photos/seed/u5/64'),
-('u6', 'Thundax', 'Thunder', 1, 1000, 170, 100, 75, 38, 10, 8, 60, 'https://picsum.photos/seed/u6/64'),
-('u7', 'Lumina', 'Light', 2, 2500, 280, 250, 220, 50, 30, 25, 80, 'https://picsum.photos/seed/u7/64'),
-('u8', 'Shadow', 'Dark', 2, 2400, 300, 230, 210, 55, 28, 22, 80, 'https://picsum.photos/seed/u8/64'),
-('u9', 'Aquaron', 'Water', 2, 2300, 260, 270, 230, 45, 32, 28, 80, 'https://picsum.photos/seed/u9/64'),
-('u10', 'Terra', 'Earth', 2, 2800, 250, 200, 200, 48, 25, 20, 18, 80, 'https://picsum.photos/seed/u10/64'),
-('u11', 'Inferno', 'Fire', 2, 2200, 320, 190, 190, 60, 22, 18, 80, 'https://picsum.photos/seed/u11/64'),
-('u12', 'Voltair', 'Thunder', 2, 2100, 340, 180, 180, 65, 20, 15, 80, 'https://picsum.photos/seed/u12/64'),
-('mat_fire', 'Fire Essence', 'Fire', 3, 500, 80, 80, 80, 10, 10, 10, 40, 'https://picsum.photos/seed/matf/32'),
-('mat_water', 'Water Essence', 'Water', 3, 500, 80, 80, 80, 10, 10, 10, 40, 'https://picsum.photos/seed/matw/32'),
-('mat_earth', 'Earth Essence', 'Earth', 3, 500, 80, 80, 80, 10, 10, 10, 40, 'https://picsum.photos/seed/mate/32'),
-('mat_thunder', 'Thunder Essence', 'Thunder', 3, 500, 80, 80, 80, 10, 10, 10, 40, 'https://picsum.photos/seed/matt/32'),
-('mat_light', 'Light Essence', 'Light', 3, 500, 80, 80, 80, 10, 10, 10, 40, 'https://picsum.photos/seed/matl/32'),
-('mat_dark', 'Dark Essence', 'Dark', 3, 500, 80, 80, 80, 10, 10, 10, 40, 'https://picsum.photos/seed/matd/32');
+('u1', 'Elexir', 'Light', 1, 1200, 150, 120, 80, 30, 15, 10, 8, 60, 'https://picsum.photos/seed/u1/64'),
+('u2', 'Rashil', 'Dark', 1, 1150, 160, 115, 85, 32, 14, 10, 8, 60, 'https://picsum.photos/seed/u2/64'),
+('u3', 'Faylen', 'Water', 1, 1100, 140, 130, 90, 28, 16, 12, 8, 60, 'https://picsum.photos/seed/u3/64'),
+('u4', 'Gravos', 'Earth', 1, 1300, 145, 110, 75, 30, 14, 8, 8, 60, 'https://picsum.photos/seed/u4/64'),
+('u5', 'Zelea', 'Fire', 1, 1050, 165, 105, 80, 35, 12, 10, 8, 60, 'https://picsum.photos/seed/u5/64'),
+('u6', 'Thundax', 'Thunder', 1, 1000, 170, 100, 75, 38, 10, 8, 8, 60, 'https://picsum.photos/seed/u6/64'),
+('u7', 'Lumina', 'Light', 2, 2500, 280, 250, 220, 50, 30, 25, 20, 80, 'https://picsum.photos/seed/u7/64'),
+('u8', 'Shadow', 'Dark', 2, 2400, 300, 230, 210, 55, 28, 22, 20, 80, 'https://picsum.photos/seed/u8/64'),
+('u9', 'Aquaron', 'Water', 2, 2300, 260, 270, 230, 45, 32, 28, 20, 80, 'https://picsum.photos/seed/u9/64'),
+('u10', 'Terra', 'Earth', 2, 2800, 250, 200, 200, 48, 25, 20, 20, 80, 'https://picsum.photos/seed/u10/64'),
+('u11', 'Inferno', 'Fire', 2, 2200, 320, 190, 190, 60, 22, 20, 20, 80, 'https://picsum.photos/seed/u11/64'),
+('u12', 'Voltair', 'Thunder', 2, 2100, 340, 180, 180, 65, 20, 20, 20, 80, 'https://picsum.photos/seed/u12/64'),
+('mat_fire', 'Fire Essence', 'Fire', 3, 500, 80, 80, 80, 10, 10, 10, 10, 40, 'https://picsum.photos/seed/matf/32'),
+('mat_water', 'Water Essence', 'Water', 3, 500, 80, 80, 80, 10, 10, 10, 10, 40, 'https://picsum.photos/seed/matw/32'),
+('mat_earth', 'Earth Essence', 'Earth', 3, 500, 80, 80, 80, 10, 10, 10, 10, 40, 'https://picsum.photos/seed/mate/32'),
+('mat_thunder', 'Thunder Essence', 'Thunder', 3, 500, 80, 80, 80, 10, 10, 10, 10, 40, 'https://picsum.photos/seed/matt/32'),
+('mat_light', 'Light Essence', 'Light', 3, 500, 80, 80, 80, 10, 10, 10, 10, 40, 'https://picsum.photos/seed/matl/32'),
+('mat_dark', 'Dark Essence', 'Dark', 3, 500, 80, 80, 80, 10, 10, 10, 10, 40, 'https://picsum.photos/seed/matd/32');
 
 -- ============================================================================
 -- EQUIPMENT TEMPLATES
