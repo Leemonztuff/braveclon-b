@@ -334,9 +334,21 @@ export function useGameState(options: UseGameStateOptions = {}) {
     return success;
   }, []);
 
+  const refundCurrency = useCallback((type: CurrencyType, amount: number): void => {
+    setState(prev => ({
+      ...prev,
+      [type]: prev[type as keyof PlayerState] as number + amount,
+    }));
+  }, []);
+
   const hasCurrency = useCallback((type: CurrencyType, amount: number): boolean => {
-    return state[type as keyof PlayerState] as number >= amount;
-  }, [state]);
+    let result = false;
+    setState(prev => {
+      result = (prev[type as keyof PlayerState] as number) >= amount;
+      return prev;
+    });
+    return result;
+  }, []);
 
   // ============================================================================
   // ENERGY OPERATIONS
@@ -1443,24 +1455,6 @@ export function useGameState(options: UseGameStateOptions = {}) {
   };
 
   // ============================================================================
-  // LEGACY WIN BATTLE (Calls new system)
-  // ============================================================================
-
-  const legacyWinBattle = useCallback((stageId: number) => {
-    const result = winBattle(stageId);
-    if (!result) return null;
-    
-    // Return legacy format for backward compatibility
-    return {
-      zel: result.zel,
-      exp: result.exp,
-      playerLeveledUp: result.playerLeveledUp,
-      leveledUpUnits: result.leveledUpUnits,
-      equipmentDropped: result.equipmentDropped,
-    };
-  }, [winBattle]);
-
-  // ============================================================================
   // RETURN
   // ============================================================================
 
@@ -1481,6 +1475,7 @@ export function useGameState(options: UseGameStateOptions = {}) {
     // Currency operations
     addCurrency,
     spendCurrency,
+    refundCurrency,
     hasCurrency,
     
     // Energy operations
@@ -1500,7 +1495,7 @@ export function useGameState(options: UseGameStateOptions = {}) {
     spendMaterials,
     
     // Battle results
-    winBattle: legacyWinBattle,
+    winBattle,
     
     // Fusion & Evolution
     fuseUnits,
