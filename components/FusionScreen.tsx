@@ -4,9 +4,9 @@ import { PlayerState } from '@/lib/gameState';
 import { UNIT_DATABASE, getExpForLevel, getFusionCost, getFusionExpGain } from '@/lib/gameData';
 import { X, Zap, ArrowRight, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Header } from './ui/DesignSystem';
 
 import { ELEMENT_ICONS, Element } from '@/lib/gameData';
-import { UnitFrame } from './UnitFrame';
 import { UnitDisplay } from './ui/UnitDisplay';
 
 export default function FusionScreen({ 
@@ -100,19 +100,11 @@ export default function FusionScreen({
 
   return (
     <div className="flex flex-col h-full bg-zinc-950 relative">
-      {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b border-zinc-800 bg-zinc-900 shadow-md z-10">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white p-1 bg-zinc-800 rounded-full">
-          <X size={20} />
-        </button>
-        <h3 className="font-black italic text-lg text-zinc-100 uppercase tracking-wider">Unit Fusion</h3>
-        <div className="w-7" /> {/* Spacer */}
-      </div>
+      <Header title="Fusion" icon="⚡" onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto pb-24">
-        {/* Target Unit Area */}
         <div className="p-4 bg-zinc-900 border-b border-zinc-800 flex items-center gap-4 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl" />
           
           <UnitDisplay
             spriteUrl={targetTemplate.spriteUrl}
@@ -153,7 +145,7 @@ export default function FusionScreen({
               </div>
               <div className="w-full bg-zinc-950 h-1.5 rounded-full overflow-hidden relative">
                 <div 
-                  className="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-300" 
+                  className="absolute top-0 left-0 h-full bg-amber-500 transition-all duration-300" 
                   style={{ width: `${isMaxLevel ? 100 : (targetUnit.exp / getExpForLevel(targetUnit.level)) * 100}%` }}
                 />
                 {selectedMaterials.length > 0 && !isMaxLevel && (
@@ -250,10 +242,10 @@ export default function FusionScreen({
         <button
           onClick={handleFuse}
           disabled={selectedMaterials.length === 0 || isMaxLevel || isFusing}
-          className={`w-full py-4 rounded-xl font-black tracking-widest uppercase flex items-center justify-center gap-2 transition-all ${
+          className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
             selectedMaterials.length === 0 || isMaxLevel
-              ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-              : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)] active:scale-95'
+              ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+              : 'bg-amber-400 text-zinc-900 hover:bg-amber-300 active:scale-95'
           }`}
         >
           {isFusing ? (
@@ -282,12 +274,12 @@ export default function FusionScreen({
               <motion.div 
                 animate={{ rotate: 360, scale: [1, 1.2, 1] }}
                 transition={{ duration: 1.5, ease: "easeInOut" }}
-                className="absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent border-b-transparent"
+                className="absolute inset-0 border-4 border-amber-500 rounded-full border-t-transparent border-b-transparent"
               />
               <motion.div 
                 animate={{ rotate: -360, scale: [1, 1.5, 1] }}
                 transition={{ duration: 1.5, ease: "easeInOut" }}
-                className="absolute inset-4 border-4 border-indigo-500 rounded-full border-l-transparent border-r-transparent"
+                className="absolute inset-4 border-4 border-amber-600 rounded-full border-l-transparent border-r-transparent"
               />
               <UnitDisplay
                   spriteUrl={targetTemplate.spriteUrl}
@@ -310,30 +302,30 @@ export default function FusionScreen({
             exit={{ opacity: 0, scale: 0.9 }}
             className="absolute inset-0 z-50 bg-black/90 flex items-center justify-center p-6 backdrop-blur-sm"
           >
-            <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 w-full max-w-sm flex flex-col items-center text-center shadow-2xl">
-              <h2 className="text-2xl font-black text-blue-400 mb-6 uppercase tracking-wider">Fusion Success!</h2>
+            <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-sm flex flex-col items-center text-center">
+              <h2 className="text-xl font-bold text-amber-400 mb-4">Fusion Complete!</h2>
               
-              <div className="w-24 h-24 bg-zinc-800 rounded-2xl border-2 border-blue-500/50 flex items-center justify-center mb-4">
+              <div className="w-20 h-20 bg-zinc-800 rounded-xl border border-amber-500/30 flex items-center justify-center mb-4">
                 <img src={targetTemplate.spriteUrl} alt="Target" className="w-16 h-16 object-contain" style={{ imageRendering: 'pixelated' }} />
               </div>
 
-              <div className="text-xl font-bold text-white mb-2">{targetTemplate.name}</div>
+              <div className="text-lg font-bold text-white mb-2">{targetTemplate.name}</div>
               
-              <div className="flex items-center gap-3 mb-6 text-lg font-bold">
+              <div className="flex items-center gap-3 mb-4 text-base font-bold">
                 <span className="text-zinc-400">Lv. {fusionResult.oldLevel}</span>
-                <ArrowRight className="text-zinc-600" size={20} />
+                <ArrowRight className="text-zinc-600" size={18} />
                 <span className="text-emerald-400">Lv. {fusionResult.newLevel}</span>
               </div>
 
-              <div className="text-sm font-mono text-blue-400 bg-blue-500/10 px-4 py-2 rounded-lg mb-8">
+              <div className="text-sm font-mono text-amber-400 bg-amber-500/10 px-4 py-2 rounded-lg mb-6">
                 +{fusionResult.expGained} EXP
               </div>
 
               <button 
                 onClick={() => setFusionResult(null)}
-                className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black tracking-wider transition-colors"
+                className="w-full py-3 bg-amber-400 hover:bg-amber-300 text-zinc-900 rounded-lg font-bold"
               >
-                AWESOME
+                Continue
               </button>
             </div>
           </motion.div>

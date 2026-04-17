@@ -2,9 +2,9 @@
 import { useState } from 'react';
 import { PlayerState } from '@/lib/gameState';
 import { UNIT_DATABASE, getEvolutionCost } from '@/lib/gameData';
-import { X, ArrowRight, Check, Sparkles } from 'lucide-react';
+import { ArrowRight, Check, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { UnitFrame } from './UnitFrame';
+import { Header } from './ui/DesignSystem';
 import { UnitDisplay } from './ui/UnitDisplay';
 
 export default function EvolutionScreen({ 
@@ -95,19 +95,11 @@ export default function EvolutionScreen({
 
   return (
     <div className="flex flex-col h-full bg-zinc-950 relative">
-      {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b border-zinc-800 bg-zinc-900 shadow-md z-10">
-        <button onClick={onBack} className="text-zinc-400 hover:text-white p-1 bg-zinc-800 rounded-full">
-          <X size={20} />
-        </button>
-        <h3 className="font-black italic text-lg text-zinc-100 uppercase tracking-wider">Evolution</h3>
-        <div className="w-7" /> {/* Spacer */}
-      </div>
+      <Header title="Evolution" icon="✨" onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto pb-24">
-        {/* Target Unit Area */}
         <div className="p-4 bg-zinc-900 border-b border-zinc-800 flex items-center justify-center gap-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl" />
           
           <div className="flex flex-col items-center">
             <UnitDisplay
@@ -243,10 +235,10 @@ export default function EvolutionScreen({
         <button
           onClick={handleEvolve}
           disabled={!isReadyToEvolve || isEvolving || !canEvolve}
-          className={`w-full py-4 rounded-xl font-black tracking-widest uppercase flex items-center justify-center gap-2 transition-all ${
+          className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
             !isReadyToEvolve || !canEvolve
-              ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-              : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)] active:scale-95'
+              ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+              : 'bg-amber-400 text-zinc-900 hover:bg-amber-300 active:scale-95'
           }`}
         >
           {isEvolving ? (
@@ -297,8 +289,8 @@ export default function EvolutionScreen({
             exit={{ opacity: 0, scale: 0.9 }}
             className="absolute inset-0 z-50 bg-black/90 flex items-center justify-center p-6 backdrop-blur-sm"
           >
-            <div className="bg-zinc-900 border border-purple-500/50 rounded-3xl p-8 w-full max-w-sm flex flex-col items-center text-center shadow-[0_0_50px_rgba(168,85,247,0.2)]">
-              <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-6 uppercase tracking-wider">Evolution Complete!</h2>
+            <div className="bg-zinc-900 border border-amber-500/30 rounded-2xl p-6 w-full max-w-sm flex flex-col items-center text-center">
+              <h2 className="text-xl font-bold text-amber-400 mb-4">Evolution Complete!</h2>
               
               <div className="mb-4">
                 <UnitDisplay
@@ -310,13 +302,13 @@ export default function EvolutionScreen({
                 />
               </div>
 
-              <div className="flex text-yellow-400 text-sm mb-2">
+              <div className="flex text-amber-400 text-sm mb-2">
                 {Array.from({ length: evolutionTargetTemplate.rarity }).map((_, i) => <span key={i}>★</span>)}
               </div>
 
-              <div className="text-2xl font-black text-white mb-2">{evolutionTargetTemplate.name}</div>
+              <div className="text-xl font-bold text-white mb-2">{evolutionTargetTemplate.name}</div>
               
-              <div className="text-sm font-mono text-purple-400 bg-purple-500/10 px-4 py-2 rounded-lg mb-8">
+              <div className="text-sm font-mono text-amber-400 bg-amber-500/10 px-4 py-2 rounded-lg mb-6">
                 New Skill: {evolutionTargetTemplate.skill.name}
               </div>
 
@@ -325,9 +317,9 @@ export default function EvolutionScreen({
                   setEvolutionResult(null);
                   onBack();
                 }}
-                className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl font-black tracking-wider transition-all shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+                className="w-full py-3 bg-amber-400 hover:bg-amber-300 text-zinc-900 rounded-lg font-bold"
               >
-                CONTINUE
+                Continue
               </button>
             </div>
           </motion.div>

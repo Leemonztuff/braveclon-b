@@ -147,19 +147,18 @@ const handleSummon = () => {
       
       <div className="absolute top-4 right-4 flex flex-col items-end gap-2 z-50">
         <div className="flex items-center gap-2">
-          <div className="bg-zinc-800/80 px-3 py-1 rounded-full text-sm font-bold text-pink-400 border border-pink-500/30 shadow-[0_0_10px_rgba(236,72,153,0.2)]">
+          <div className="bg-zinc-800/80 px-3 py-1 rounded-full text-sm font-bold text-blue-400 border border-blue-500/30">
             💎 {state.gems}
           </div>
           <div className="bg-zinc-900/80 px-2 py-1 rounded-full text-xs font-bold text-zinc-400 border border-zinc-700">
             {GACHA_CONFIG.BANNERS.standard.cost} 💎
           </div>
         </div>
-        {/* Pity Counter */}
         <div className="flex items-center gap-2">
-          <div className="bg-yellow-900/30 px-2 py-1 rounded-full text-xs font-bold text-yellow-400 border border-yellow-500/30">
+          <div className="bg-amber-500/20 px-2 py-1 rounded-full text-xs font-bold text-amber-400 border border-amber-500/30">
             ★5: {state.summonPity?.star5Pulls || 0}/50
           </div>
-          <div className="bg-purple-900/30 px-2 py-1 rounded-full text-xs font-bold text-purple-400 border border-purple-500/30">
+          <div className="bg-purple-500/20 px-2 py-1 rounded-full text-xs font-bold text-purple-400 border border-purple-500/30">
             ★4: {state.summonPity?.star4Pulls || 0}/20
           </div>
         </div>

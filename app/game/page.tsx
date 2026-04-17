@@ -18,6 +18,8 @@ import EvolutionScreen from '@/components/EvolutionScreen';
 import ArenaScreen from '@/components/ArenaScreen';
 import ShopScreen from '@/components/ShopScreen';
 import CraftScreen from '@/components/CraftScreen';
+import { BottomNav } from '@/components/BottomNav';
+import { CurrencyDisplay } from '@/components/ui/DesignSystem';
 
 export default function GameApp() {
   const [user] = useState<{ id: string; email: string } | null>({ id: 'guest', email: '' });
@@ -231,105 +233,96 @@ export default function GameApp() {
     }
   };
 
+  const showTopBar = currentScreen !== 'battle' && state;
+
   return (
     <ViewportWrapper>
       <div className="flex flex-col h-full w-full bg-zinc-950 text-zinc-100">
-        <div className="relative flex flex-col h-full w-full flex-col overflow-hidden bg-gradient-to-b from-zinc-900 to-zinc-950 safe-area">
-        {currentScreen !== 'battle' && state && (
-          <div className="flex items-center justify-between bg-zinc-950/80 backdrop-blur-sm px-4 py-3 border-b border-zinc-800/50 z-40">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Lv. {state.level}</span>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-lg">⚡</span>
+        <div className="relative flex flex-col h-full w-full overflow-hidden bg-zinc-950 safe-area">
+          {showTopBar && (
+            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-sm">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Lv. {state.level}</span>
+                <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-emerald-400">
-                    {state.energy}/{state.maxEnergy}
+                    ⚡ {state.energy}/{state.maxEnergy}
                   </span>
+                  {state.energy < state.maxEnergy && (
+                    <span className="text-xs text-emerald-500/70 font-mono">
+                      {formatTime(timeToNextEnergy)}
+                    </span>
+                  )}
                 </div>
-                {state.energy < state.maxEnergy && (
-                  <span className="text-xs text-emerald-500/70 font-mono">
-                    {formatTime(timeToNextEnergy)}
-                  </span>
-                )}
               </div>
+              <CurrencyDisplay gems={state.gems} zel={state.zel} />
             </div>
+          )}
 
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <div className="flex items-center gap-1 text-xs text-zinc-500 uppercase tracking-wider">💎</div>
-                <div className="text-sm font-bold text-yellow-400">{state.gems}</div>
-              </div>
-              <div className="text-right">
-                <div className="flex items-center gap-1 text-xs text-zinc-500 uppercase tracking-wider">🪙</div>
-                <div className="text-sm font-bold text-amber-500">{state.zel}</div>
-              </div>
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="w-full h-full animate-fadeIn">
+              {renderScreen()}
             </div>
           </div>
-        )}
 
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="w-full h-full animate-fadeIn">
-            {renderScreen()}
-          </div>
-        </div>
+          {currentScreen !== 'battle' && (
+            <BottomNav currentScreen={currentScreen} setCurrentScreen={navigate} />
+          )}
 
-        {showAlert && alertMessage && (
-          <div className="fixed top-20 left-4 right-4 bg-red-950/90 backdrop-blur border border-red-800/50 rounded-lg p-3 shadow-lg animate-slideDown z-50">
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">⚠️</span>
-              <div>
-                <p className="text-sm font-medium text-red-100">{alertMessage}</p>
+          {showAlert && alertMessage && (
+            <div className="fixed top-20 left-4 right-4 bg-red-950/90 backdrop-blur border border-red-800/50 rounded-lg p-3 shadow-lg animate-slideDown z-50">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">⚠️</span>
+                <div>
+                  <p className="text-sm font-medium text-red-100">{alertMessage}</p>
+                </div>
+                <button onClick={() => setShowAlert?.(false)} className="ml-auto text-red-200 hover:text-red-100">
+                  <X size={18} />
+                </button>
               </div>
-              <button onClick={() => setShowAlert?.(false)} className="ml-auto text-red-200 hover:text-red-100">
-                <X size={18} />
-              </button>
             </div>
-          </div>
-        )}
+          )}
 
-        {battleRewards && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-            <div className="max-w-lg w-full rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
-              <h2 className="text-xl font-black text-amber-300 mb-4">Battle Results</h2>
-              <div className="space-y-3 mb-6">
-                <div className="rounded-2xl bg-zinc-900/90 border border-zinc-800 p-4">
-                  <p className="text-sm text-zinc-400">Zel earned</p>
-                  <p className="text-3xl font-black text-emerald-400">+{battleRewards.zel}</p>
-                </div>
-                <div className="rounded-2xl bg-zinc-900/90 border border-zinc-800 p-4">
-                  <p className="text-sm text-zinc-400">EXP gained</p>
-                  <p className="text-3xl font-black text-sky-400">+{battleRewards.exp}</p>
-                </div>
-                {battleRewards.playerLeveledUp && (
-                  <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/25 p-4 text-emerald-200">
-                    Player leveled up! Energy refilled.
+          {battleRewards && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+              <div className="max-w-lg w-full rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
+                <h2 className="text-xl font-bold text-amber-400 mb-4">Battle Results</h2>
+                <div className="space-y-3 mb-6">
+                  <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4">
+                    <p className="text-sm text-zinc-400">Zel earned</p>
+                    <p className="text-2xl font-bold text-amber-400">+{battleRewards.zel.toLocaleString()}</p>
                   </div>
-                )}
-                {battleRewards.leveledUpUnits && battleRewards.leveledUpUnits.length > 0 && (
-                  <div className="rounded-2xl bg-zinc-900/90 border border-zinc-800 p-4">
-                    <h3 className="text-sm font-bold text-zinc-300 uppercase mb-3">Units Leveled Up</h3>
-                    <div className="space-y-2">
+                  <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4">
+                    <p className="text-sm text-zinc-400">EXP gained</p>
+                    <p className="text-2xl font-bold text-sky-400">+{battleRewards.exp}</p>
+                  </div>
+                  {battleRewards.playerLeveledUp && (
+                    <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/25 p-4 text-emerald-200">
+                      Level up! Energy refilled.
+                    </div>
+                  )}
+                  {battleRewards.leveledUpUnits && battleRewards.leveledUpUnits.length > 0 && (
+                    <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-4">
+                      <h3 className="text-sm font-bold text-zinc-300 uppercase mb-2">Units Leveled Up</h3>
                       {battleRewards.leveledUpUnits.map((u: any, i: number) => (
-                        <div key={i} className="flex items-center justify-between text-sm text-zinc-200">
+                        <div key={i} className="flex items-center justify-between text-sm text-zinc-200 py-1">
                           <span>{u.name}</span>
                           <span className="text-emerald-400">Lv.{u.oldLevel} → Lv.{u.newLevel}</span>
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+                <button
+                  onClick={dismissBattleRewards}
+                  className="w-full rounded-xl bg-amber-400 py-3 text-zinc-900 font-bold hover:bg-amber-300 transition-colors"
+                >
+                  Continue
+                </button>
               </div>
-              <button
-                onClick={dismissBattleRewards}
-                className="w-full rounded-2xl bg-amber-400 py-3 text-black font-black hover:bg-amber-300 transition-colors"
-              >
-                CONTINUE
-              </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
     </ViewportWrapper>
   );
 }
