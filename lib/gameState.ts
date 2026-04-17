@@ -367,10 +367,13 @@ export function useGameState(options: UseGameStateOptions = {}) {
   const spendEnergy = useCallback((amount: number): boolean => {
     let hadEnough = false;
     setState(prev => {
+      console.log(`[spendEnergy] Checking: have=${prev.energy}, need=${amount}`);
       if (prev.energy >= amount) {
         hadEnough = true;
+        console.log(`[spendEnergy] SUCCESS: deducting ${amount}, new energy=${prev.energy - amount}`);
         return { ...prev, energy: prev.energy - amount };
       }
+      console.log(`[spendEnergy] FAILED: not enough energy`);
       return prev;
     });
     return hadEnough;
@@ -1058,10 +1061,12 @@ export function useGameState(options: UseGameStateOptions = {}) {
           }
         }
         
+        // Determine rarity based on weight
         let rarity = 1;
         if (selected.weight >= 100) rarity = 3;
         else if (selected.weight >= 20) rarity = 4;
-        else if (selected.weight >= 2) rarity = 5;
+        else if (selected.weight >= 5) rarity = 5;
+        else rarity = 1;
         
         // Check if unit is new
         const isNew = !prev.ownedUnitIds.has(selected.unitId);

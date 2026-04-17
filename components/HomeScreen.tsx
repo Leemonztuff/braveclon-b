@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { PlayerState, UnitInstance } from '@/lib/gameState';
 import { UNIT_DATABASE, STAGES, UnitTemplate } from '@/lib/gameData';
 import { GACHA_CONFIG } from '@/lib/economyData';
-import { CurrencyDisplay, Card, EmptyState } from './ui/DesignSystem';
+import { CurrencyDisplay, Card, EmptyState, formatTime } from './ui/DesignSystem';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface HomeScreenProps {
@@ -20,13 +20,6 @@ export default function HomeScreen({ state, onNavigate, onStartBattle, setTeamMe
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [showUnitDetails, setShowUnitDetails] = useState<UnitInstance | null>(null);
   const [draggedSlot, setDraggedSlot] = useState<number | null>(null);
-
-  const formatTime = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
 
   const teamUnits = state.team.filter(id => id !== null).map(id => {
     const inst = state.inventory.find(u => u.instanceId === id);
