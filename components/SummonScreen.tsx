@@ -72,9 +72,8 @@ const Particles = ({ rarity }: { rarity: number }) => {
   );
 };
 
-export default function SummonScreen({ state, addUnit, rollGacha, onAlert, onBack }: {
+export default function SummonScreen({ state, rollGacha, onAlert, onBack }: {
   state: PlayerState,
-  addUnit: (id: string) => void,
   rollGacha: (bannerId: string, count?: number) => SummonResult[],
   onAlert: (msg: string) => void,
   onBack?: () => void
@@ -92,10 +91,15 @@ const handleSummon = () => {
       return;
     }
     
-    const randomId = results[0].templateId;
-    const rarity = results[0].rarity;
-    const unit = UNIT_DATABASE[randomId];
+    const result = results[0];
+    const unit = UNIT_DATABASE[result.templateId];
+    if (!unit) {
+      onAlert('Error: Unit not found in database');
+      return;
+    }
+    
     setSummonResult(unit);
+    const rarity = result.rarity;
     
     setPhase('gate');
     
@@ -108,7 +112,6 @@ const handleSummon = () => {
     setTimeout(() => {
       setIsShaking(false);
       setPhase('reveal');
-      addUnit(randomId);
     }, gateDuration);
   };
 

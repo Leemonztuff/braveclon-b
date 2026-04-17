@@ -41,7 +41,6 @@ export default function GameApp() {
     navigate,
     goBack,
     triggerAlert,
-    addUnit,
     setTeamMember,
     spendGems,
     rollGacha,
@@ -106,7 +105,8 @@ export default function GameApp() {
           <HomeScreen 
             state={state} 
             onNavigate={navigate} 
-            onStartBattle={handleStartBattle} 
+            onStartBattle={handleStartBattle}
+            setTeamMember={setTeamMember}
             timeToNextEnergy={timeToNextEnergy}
           />
         );
@@ -133,7 +133,6 @@ export default function GameApp() {
         return (
           <SummonScreen
             state={state}
-            addUnit={addUnit}
             rollGacha={rollGacha}
             onAlert={triggerAlert}
             onBack={goBack}
