@@ -60,24 +60,32 @@ export const ZEL_ACQUISITION = {
 } as const;
 
 export const GEM_ACQUISITION = {
-  // Free sources
-  DAILY_LOGIN: 5,
+  // Free sources - MORE GENEROUS!
+  DAILY_LOGIN: 10,  // Increased from 5!
   FIRST_CLEAR: {
-    easy: 5,
-    medium: 15,
-    hard: 30,
-    boss: 50,
+    easy: 10,    // Increased from 5
+    medium: 25,   // Increased from 15
+    hard: 50,    // Increased from 30
+    boss: 100,   // Increased from 50
+  },
+  AREA_COMPLETE_BONUS: {
+    1: 5,   // Clear an area = 5 gems bonus
+    2: 10,
+    3: 15,
+    4: 25,
+    5: 50,
+    6: 100,
   },
   DAILY_QUESTS: {
-    'Battle On': 5,
-    'Equipment Expert': 3,
+    'Battle On': 10,   // Increased from 5!
+    'Equipment Expert': 5,
   },
   WEEKLY_QUESTS: {
-    'Battle Hardened': 50,
-    'Summoner': 30,
+    'Battle Hardened': 100,   // Increased from 50!
+    'Summoner': 50,
   },
   ACHIEVEMENTS: {
-    level10: 50,
+    level10: 100,
     level25: 100,
     level50: 250,
     collect10: 50,
@@ -224,41 +232,41 @@ export const GACHA_CONFIG = {
     STAR5_FEATURED: 0.05,   // 5% on featured banners
   },
   PITY: {
-    STAR5_PULLS: 100,
-    STAR4_PULLS: 25,
+    STAR5_PULLS: 50,  // Reduced from 100 - faster pity!
+    STAR4_PULLS: 15,  // Reduced from 25
   },
-  BANNERS: {
+BANNERS: {
     standard: {
       id: 'standard',
       name: 'Standard Summon',
       type: 'standard' as const,
-      cost: 50,
+      cost: 5,  // Reduced from 50 - now affordable!
       pullCount: 1,
       featuredUnits: [],
       featuredRate: 0,
-      pityPulls: 100,
+      pityPulls: 50,  // Faster pity
       pityRarity: 5,
     } satisfies GachaBanner,
     featured: {
       id: 'featured',
       name: 'Featured Summon',
       type: 'featured' as const,
-      cost: 50,
+      cost: 5,
       pullCount: 1,
-      featuredUnits: ['u1_4'], // Featured unit
-      featuredRate: 0.03,     // +3% featured rate
-      pityPulls: 80,
+      featuredUnits: ['u1_4'],
+      featuredRate: 0.10,  // 10% featured rate!
+      pityPulls: 30,  // Faster pity
       pityRarity: 5,
     } satisfies GachaBanner,
     multi: {
       id: 'multi',
       name: 'Multi Summon',
       type: 'multi' as const,
-      cost: 450,
+      cost: 50,  // 10 pulls for price of 10
       pullCount: 10,
       featuredUnits: [],
       featuredRate: 0,
-      pityPulls: 100,
+      pityPulls: 50,
       pityRarity: 5,
     } satisfies GachaBanner,
   },

@@ -487,6 +487,14 @@ export const STAGES: StageTemplate[] = [
   { id: 9, name: "Babel", area: "Tower of Babel - Floor 20", energy: 12, description: "The final challenge nears.", enemies: ['e9', 'e9', 'e8', 'e5'], expReward: 1000, zelReward: 5000, equipmentDrops: [], equipmentDropChance: 0.7 },
   { id: 10, name: "Babel", area: "Tower of Babel - Floor 30", energy: 15, description: "Only the brave survive.", enemies: ['e10', 'e10', 'e9', 'e5', 'e6'], expReward: 1500, zelReward: 8000, equipmentDrops: [], equipmentDropChance: 0.8 },
 
+  // Region 5: Vortex Gates (Special dungeons)
+  { id: 11, name: "Vortex", area: "Fire Gate - Trial 1", energy: 5, description: "Endless fire trials", enemies: ['e3', 'e3', 'e3'], expReward: 800, zelReward: 3000, equipmentDrops: ['eq_w2'], equipmentDropChance: 0.5 },
+  { id: 12, name: "Vortex", area: "Water Gate - Trial 1", energy: 5, description: "Endless water trials", enemies: ['e1', 'e1', 'e2'], expReward: 800, zelReward: 3000, equipmentDrops: ['eq_a2'], equipmentDropChance: 0.5 },
+  { id: 13, name: "Vortex", area: "Earth Gate - Trial 1", energy: 5, description: "Endless earth trials", enemies: ['e2', 'e2', 'e2'], expReward: 800, zelReward: 3000, equipmentDrops: ['eq_ac2'], equipmentDropChance: 0.5 },
+  { id: 14, name: "Vortex", area: "Thunder Gate - Trial 1", energy: 6, description: "Endless thunder trials", enemies: ['e4', 'e4', 'e4'], expReward: 1000, zelReward: 4000, equipmentDrops: ['eq_w3'], equipmentDropChance: 0.6 },
+  { id: 15, name: "Vortex", area: "Light Gate - Trial 1", energy: 8, description: "Endless light trials", enemies: ['e6', 'e6', 'e6'], expReward: 1500, zelReward: 6000, equipmentDrops: ['eq_a3'], equipmentDropChance: 0.7 },
+  { id: 16, name: "Vortex", area: "Dark Gate - Trial 1", energy: 10, description: "Endless dark trials", enemies: ['e5', 'e5', 'e5'], expReward: 2000, zelReward: 8000, equipmentDrops: ['eq_w4'], equipmentDropChance: 0.8 },
+
   // Arena / Practice Mode (IDs 100-199)
   { id: 100, name: "Arena", area: "Practice - Shadow Knight", energy: 0, description: "Dark elemental challenge", enemies: ['arena_shadow_knight'], expReward: 200, zelReward: 500, equipmentDrops: [], equipmentDropChance: 0 },
   { id: 101, name: "Arena", area: "Practice - Flame Warrior", energy: 0, description: "Fire elemental challenge", enemies: ['arena_flame_warrior'], expReward: 250, zelReward: 600, equipmentDrops: [], equipmentDropChance: 0 },
