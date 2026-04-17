@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PlayerState } from '@/lib/gameState';
 import { UNIT_DATABASE, UnitTemplate } from '@/lib/gameData';
+import { GACHA_CONFIG } from '@/lib/economyData';
 import { motion, AnimatePresence } from 'motion/react';
 import { UnitFrame } from './UnitFrame';
 
@@ -87,7 +88,7 @@ const handleSummon = () => {
     
     const results = rollGacha('standard', 1);
     if (results.length === 0) {
-      onAlert("Not enough gems! You need 50 💎 to summon a hero.");
+      onAlert(`Not enough gems! You need ${GACHA_CONFIG.BANNERS.standard.cost} 💎 to summon a hero.`);
       return;
     }
     
@@ -150,7 +151,7 @@ const handleSummon = () => {
             💎 {state.gems}
           </div>
           <div className="bg-zinc-900/80 px-2 py-1 rounded-full text-xs font-bold text-zinc-400 border border-zinc-700">
-            5 💎
+            {GACHA_CONFIG.BANNERS.standard.cost} 💎
           </div>
         </div>
         {/* Pity Counter */}
@@ -183,7 +184,7 @@ const handleSummon = () => {
                 className="relative overflow-hidden rounded-full bg-gradient-to-r from-pink-500 to-purple-600 px-8 py-4 font-black text-white shadow-[0_0_20px_rgba(236,72,153,0.4)] transition-transform active:scale-95 hover:scale-105"
               >
                 <span className="relative z-10 flex items-center gap-2 text-lg">
-                  SUMMON (5 💎)
+                  SUMMON ({GACHA_CONFIG.BANNERS.standard.cost} 💎)
                 </span>
               </button>
             </motion.div>

@@ -51,7 +51,7 @@ export interface MaterialConfig {
 }
 
 export const MATERIAL_CONFIG: Record<MaterialType, MaterialConfig> = {
-  ironOre: { name: 'Iron Ore', rarity: 'common', icon: '�ite', color: 'text-slate-400', enhanceValue: 1, sources: ['stage_drop', 'shop'] },
+  ironOre: { name: 'Iron Ore', rarity: 'common', icon: '🪨', color: 'text-slate-400', enhanceValue: 1, sources: ['stage_drop', 'shop'] },
   steelIngot: { name: 'Steel Ingot', rarity: 'uncommon', icon: '🔩', color: 'text-blue-400', enhanceValue: 5, sources: ['stage_drop', 'craft'] },
   mythril: { name: 'Mythril', rarity: 'rare', icon: '💠', color: 'text-purple-400', enhanceValue: 15, sources: ['boss_drop', 'craft'] },
   orichalcum: { name: 'Orichalcum', rarity: 'epic', icon: '🔮', color: 'text-pink-400', enhanceValue: 30, sources: ['raid_drop'] },

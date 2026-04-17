@@ -1,84 +1,125 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { PlayerState, calculateStats } from '@/lib/gameState';
 import { UNIT_DATABASE, ENEMIES, STAGES, getElementMultiplier } from '@/lib/gameData';
 import { playSound } from '@/lib/audio';
-import { BattleUnit } from '@/lib/battleTypes';
+import { BattleUnit, StatusEffect } from '@/lib/battleTypes';
 import { FloatingTextData } from '@/components/FloatingText';
 
+export const OD_GAUGE_THRESHOLD = 8;
+
+export const BATTLE_ITEMS = [
+  { id: 'cure', name: 'Cure', count: 10, icon: '🧪', type: 'heal' as const, value: 1000 },
+  { id: 'high_cure', name: 'High Cure', count: 5, icon: '🧪', type: 'heal' as const, value: 2500 },
+  { id: 'divine_light', name: 'Divine Light', count: 3, icon: '✨', type: 'heal_all' as const, value: 2000 },
+  { id: 'fujin', name: 'Fujin Potion', count: 2, icon: '⚡', type: 'bb_fill' as const, value: 100 },
+  { id: 'revive', name: 'Revive', count: 1, icon: '👼', type: 'revive' as const, value: 0.5 },
+];
+
+function createBattleUnit(
+  id: string,
+  template: typeof ENEMIES[0],
+  isPlayer: boolean,
+  hp: number,
+  maxHp: number,
+  atk: number,
+  def: number,
+  maxBb: number
+): BattleUnit {
+  return {
+    id,
+    template,
+    isPlayer,
+    hp,
+    maxHp,
+    atk,
+    def,
+    bbGauge: 0,
+    maxBb,
+    isDead: false,
+    queuedBb: false,
+    actionState: 'idle',
+    statusEffects: [] as StatusEffect[],
+    atkBuff: 1.0,
+    defBuff: 1.0,
+    recBuff: 1.0,
+    elementalMitigation: 0,
+    hitCount: 0
+  };
+}
+
 export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: boolean) => void) {
+  const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
+  const addTimeout = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(fn, ms);
+    timeoutRefs.current.push(id);
+    return id;
+  }, []);
+
+  const clearAllTimeouts = useCallback(() => {
+    timeoutRefs.current.forEach(id => clearTimeout(id));
+    timeoutRefs.current = [];
+  }, []);
+
   const [playerUnits, setPlayerUnits] = useState<BattleUnit[]>(() => {
-    return state.team
-      .filter(id => id !== null)
-      .map((instanceId, idx) => {
-        const inst = state.inventory.find(u => u.instanceId === instanceId)!;
-        const template = UNIT_DATABASE[inst.templateId];
-        const stats = calculateStats(template, inst.level, inst.equipment, state.equipmentInventory);
-        
-        // Apply leader skill bonus (from index 0 - leader position)
-        let atkBonus = 1.0;
-        let damageReduction = 0;
-        
-        if (idx === 0 && template.leaderSkill) {
-          if (template.leaderSkill.statBoost?.atk) {
-            atkBonus += template.leaderSkill.statBoost.atk;
-          }
-          if (template.leaderSkill.damageReduction) {
-            damageReduction = template.leaderSkill.damageReduction;
-          }
+    const units: BattleUnit[] = [];
+    for (let idx = 0; idx < state.team.length; idx++) {
+      const instanceId = state.team[idx];
+      if (!instanceId) continue;
+      
+      const inst = state.inventory.find(u => u.instanceId === instanceId);
+      if (!inst) continue;
+      
+      const template = UNIT_DATABASE[inst.templateId];
+      if (!template) continue;
+      
+      const stats = calculateStats(template, inst.level, inst.equipment, state.equipmentInventory);
+      let atkBonus = 1.0;
+      
+      if (idx === 0 && template.leaderSkill) {
+        if (template.leaderSkill.statBoost?.atk) {
+          atkBonus += template.leaderSkill.statBoost.atk;
         }
-        
-        return {
-          id: `p_${idx}`,
-          template,
-          isPlayer: true,
-          hp: stats.hp,
-          maxHp: stats.hp,
-          atk: Math.floor(stats.atk * atkBonus),
-          def: stats.def,
-          bbGauge: 0,
-          maxBb: template.skill.cost,
-          isDead: false,
-          queuedBb: false,
-          actionState: 'idle',
-          statusEffects: [],
-          atkBuff: 1.0,
-          defBuff: 1.0,
-          recBuff: 1.0,
-          elementalMitigation: 0,
-          hitCount: 0
-        };
-      });
+      }
+      
+      units.push(createBattleUnit(
+        `p_${idx}`,
+        template,
+        true,
+        stats.hp,
+        stats.hp,
+        Math.floor(stats.atk * atkBonus),
+        stats.def,
+        template.skill.cost
+      ));
+    }
+    return units;
   });
 
   const [enemyUnits, setEnemyUnits] = useState<BattleUnit[]>(() => {
-    const stageData = STAGES.find(s => s.id === stageId) || STAGES[0];
-    // HP Pool scaling by stage (10% increase per stage)
-    const hpMultiplier = 1 + (stageId * 0.1);
+    const stageData = STAGES.find(s => s.id === stageId);
+    if (!stageData) return [];
     
-    return stageData.enemies.map((enemyId, idx) => {
-      const template = ENEMIES.find(e => e.id === enemyId) || ENEMIES[0];
+    const hpMultiplier = 1 + (stageId * 0.1);
+    const units: BattleUnit[] = [];
+    
+    for (let idx = 0; idx < stageData.enemies.length; idx++) {
+      const enemyId = stageData.enemies[idx];
+      const template = ENEMIES.find(e => e.id === enemyId);
+      if (!template) continue;
+      
       const scaledHp = Math.floor(template.baseStats.hp * hpMultiplier);
-      return {
-        id: `e_${idx}`,
+      units.push(createBattleUnit(
+        `e_${idx}`,
         template,
-        isPlayer: false,
-        hp: scaledHp,
-        maxHp: scaledHp,
-        atk: template.baseStats.atk,
-        def: template.baseStats.def,
-        bbGauge: 0,
-        maxBb: 100,
-        isDead: false,
-        queuedBb: false,
-        actionState: 'idle',
-        statusEffects: [],
-        atkBuff: 1.0,
-        defBuff: 1.0,
-        recBuff: 1.0,
-        elementalMitigation: 0,
-        hitCount: 0
-      };
-    });
+        false,
+        scaledHp,
+        scaledHp,
+        template.baseStats.atk,
+        template.baseStats.def,
+        template.skill.cost
+      ));
+    }
+    return units;
   });
 
   const [turnState, setTurnState] = useState<'player_input' | 'player_executing' | 'enemy_executing' | 'victory' | 'defeat'>('player_input');
@@ -90,13 +131,7 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
   const [screenShake, setScreenShake] = useState(false);
   const [floatingTexts, setFloatingTexts] = useState<FloatingTextData[]>([]);
 
-  const [inventoryItems, setInventoryItems] = useState([
-    { id: 'cure', name: 'Cure', count: 10, icon: '🧪', type: 'heal', value: 1000 },
-    { id: 'high_cure', name: 'High Cure', count: 5, icon: '🧪', type: 'heal', value: 2500 },
-    { id: 'divine_light', name: 'Divine Light', count: 3, icon: '✨', type: 'heal_all', value: 2000 },
-    { id: 'fujin', name: 'Fujin Potion', count: 2, icon: '⚡', type: 'bb_fill', value: 100 },
-    { id: 'revive', name: 'Revive', count: 1, icon: '👼', type: 'revive', value: 0.5 },
-  ]);
+  const [inventoryItems, setInventoryItems] = useState([...BATTLE_ITEMS]);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
   const addLog = (msg: string) => {
@@ -259,7 +294,7 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
 
       // Increment hit count for OD system
       const newHitCount = attacker.hitCount + 1;
-      const isOD = newHitCount >= 8; // 8th hit triggers Overdrive
+      const isOD = newHitCount >= OD_GAUGE_THRESHOLD;
       
       // ANIMATION: Attacker moves
       currentPlayer[i] = { ...attacker, hitCount: newHitCount, actionState: isBb ? 'skill' : 'attacking' };

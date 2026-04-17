@@ -27,13 +27,15 @@ export const ELEMENT_BG_GRADIENTS: Record<Element, string> = {
   Dark: 'from-purple-700 to-black',
 };
 
-// Elemental Resistance Matrix: attacker -> target -> multiplier
-// 2.0 = double damage (weakness), 0.5 = half damage (resistance), 0 = immune
-export const ELEMENT_RESISTANCE: Record<Element, Partial<Record<Element, number>>> = {
-  Fire:    { Fire: 0.5, Water: 2.0, Earth: 1.0, Thunder: 1.0, Light: 1.0, Dark: 1.0 },
-  Water:   { Fire: 2.0, Water: 0.5, Earth: 1.0, Thunder: 1.0, Light: 1.0, Dark: 1.0 },
+// Elemental Weakness Matrix: attacker element -> defender element -> damage multiplier
+// Used for attack damage calculation in battle
+// 2.0 = double damage (weakness), 1.0 = normal, 0.5 = resistant
+// Pattern: Fire>Earth>Thunder>Water>Fire (cycle), Light>Dark (mutual)
+export const ELEMENT_WEAKNESS: Record<Element, Partial<Record<Element, number>>> = {
+  Fire:    { Fire: 0.5, Water: 0.5, Earth: 2.0, Thunder: 1.0, Light: 1.0, Dark: 1.0 },
+  Water:   { Fire: 2.0, Water: 0.5, Earth: 1.0, Thunder: 0.5, Light: 1.0, Dark: 1.0 },
   Earth:   { Fire: 1.0, Water: 1.0, Earth: 0.5, Thunder: 2.0, Light: 1.0, Dark: 1.0 },
-  Thunder: { Fire: 1.0, Water: 1.0, Earth: 2.0, Thunder: 0.5, Light: 1.0, Dark: 1.0 },
+  Thunder: { Fire: 1.0, Water: 2.0, Earth: 0.5, Thunder: 0.5, Light: 1.0, Dark: 1.0 },
   Light:   { Fire: 1.0, Water: 1.0, Earth: 1.0, Thunder: 1.0, Dark: 2.0, Light: 1.0 },
   Dark:    { Fire: 1.0, Water: 1.0, Earth: 1.0, Thunder: 1.0, Light: 2.0, Dark: 0.5 },
 };
@@ -399,6 +401,50 @@ export const ENEMIES: UnitTemplate[] = [
     skill: { id: 'es6', name: 'Holy Ray', type: 'damage', description: 'Basic attack', power: 1.3, cost: 100 },
     spriteUrl: `${BASE_URL}/abbys_sprite_021.png`
   },
+  {
+    id: 'e7',
+    name: 'Ice Elemental',
+    element: 'Water',
+    rarity: 2,
+    baseStats: { hp: 1500, atk: 220, def: 150, rec: 0 },
+    growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
+    maxLevel: 1,
+    skill: { id: 'es7', name: 'Ice Shard', type: 'damage', description: 'Water attack', power: 1.4, cost: 100 },
+    spriteUrl: `${BASE_URL}/abbys_sprite_016.png`
+  },
+  {
+    id: 'e8',
+    name: 'Golem',
+    element: 'Earth',
+    rarity: 3,
+    baseStats: { hp: 2000, atk: 280, def: 200, rec: 0 },
+    growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
+    maxLevel: 1,
+    skill: { id: 'es8', name: 'Boulder Toss', type: 'damage', description: 'Earth attack', power: 1.5, cost: 100 },
+    spriteUrl: `${BASE_URL}/abbys_sprite_017.png`
+  },
+  {
+    id: 'e9',
+    name: 'Demon',
+    element: 'Dark',
+    rarity: 3,
+    baseStats: { hp: 1800, atk: 350, def: 180, rec: 0 },
+    growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
+    maxLevel: 1,
+    skill: { id: 'es9', name: 'Shadow Slash', type: 'damage', description: 'Dark attack', power: 1.6, cost: 100 },
+    spriteUrl: `${BASE_URL}/abbys_sprite_006.png`
+  },
+  {
+    id: 'e10',
+    name: 'Dragon',
+    element: 'Fire',
+    rarity: 4,
+    baseStats: { hp: 3500, atk: 450, def: 300, rec: 0 },
+    growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
+    maxLevel: 1,
+    skill: { id: 'es10', name: 'Dragon Fire', type: 'damage', description: 'Massive fire attack', power: 2.0, cost: 100 },
+    spriteUrl: `${BASE_URL}/abbys_sprite_018.png`
+  },
   // Arena Enemies
   {
     id: 'arena_shadow_knight',
@@ -547,17 +593,7 @@ export function getExpForLevel(level: number): number {
 }
 
 export function getElementMultiplier(attacker: Element, defender: Element): number {
-  // Full elemental matrix (6 elements)
-  const matrix: Record<Element, Partial<Record<Element, number>>> = {
-    Fire:    { Fire: 0.5, Water: 0.5, Earth: 2.0, Thunder: 1.0, Light: 1.0, Dark: 1.0 },
-    Water:   { Fire: 2.0, Water: 0.5, Earth: 1.0, Thunder: 2.0, Light: 1.0, Dark: 1.0 },
-    Earth:  { Fire: 1.0, Water: 1.0, Earth: 0.5, Thunder: 2.0, Light: 1.0, Dark: 1.0 },
-    Thunder:{ Fire: 1.0, Water: 0.5, Earth: 0.5, Thunder: 0.5, Light: 1.0, Dark: 1.0 },
-    Light:  { Fire: 1.0, Water: 1.0, Earth: 1.0, Thunder: 1.0, Light: 0.5, Dark: 2.0 },
-    Dark:   { Fire: 1.0, Water: 1.0, Earth: 1.0, Thunder: 1.0, Light: 2.0, Dark: 0.5 },
-  };
-  
-  return matrix[attacker]?.[defender] ?? 1.0;
+  return ELEMENT_WEAKNESS[attacker]?.[defender] ?? 1.0;
 }
 
 export function getFusionCost(targetLevel: number, materialCount: number): number {

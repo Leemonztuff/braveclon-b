@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { PlayerState } from '@/lib/gameState';
 import { UNIT_DATABASE } from '@/lib/gameData';
+import { GACHA_CONFIG } from '@/lib/economyData';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface HomeScreenProps {
@@ -226,7 +227,7 @@ export default function HomeScreen({ state, onNavigate, onStartBattle, timeToNex
                 onClick={() => onNavigate('summon')}
                 className="w-full py-4 rounded-xl bg-gradient-to-b from-[#c9a227] to-[#8b7235] text-zinc-900 font-bold text-lg shadow-lg shadow-[#c9a227]/20"
               >
-                💎 Summon (50 gems)
+                💎 Summon ({GACHA_CONFIG.BANNERS.standard.cost} gems)
               </button>
             </motion.div>
           )}

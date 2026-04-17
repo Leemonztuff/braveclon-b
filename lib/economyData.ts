@@ -2,7 +2,7 @@
 // ECONOMY CONFIGURATION CONSTANTS
 // ============================================================================
 
-import { GachaBanner, BattlePassTier, SubscriptionBenefits, CurrencyType } from './economyTypes';
+import { GachaBanner, BattlePassTier, SubscriptionBenefits, CurrencyType, SubscriptionTier } from './economyTypes';
 
 // ============================================================================
 // ENERGY SYSTEM
@@ -346,7 +346,7 @@ function generateBattlePassTiers(): BattlePassTier[] {
 // SUBSCRIPTION BENEFITS
 // ============================================================================
 
-export const SUBSCRIPTION_CONFIG: Record<string, SubscriptionBenefits> = {
+export const SUBSCRIPTION_CONFIG: Record<SubscriptionTier, SubscriptionBenefits> = {
   none: {
     weeklyGems: 0,
     dailyEnergyBonus: 0,

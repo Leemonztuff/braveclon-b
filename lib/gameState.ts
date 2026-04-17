@@ -336,18 +336,16 @@ export function useGameState(options: UseGameStateOptions = {}) {
   // ============================================================================
 
   const spendEnergy = useCallback((amount: number): boolean => {
-    let currentEnergy = 0;
+    let hadEnough = false;
     setState(prev => {
       if (prev.energy >= amount) {
-        currentEnergy = prev.energy - amount;
-        return { ...prev, energy: currentEnergy };
+        hadEnough = true;
+        return { ...prev, energy: prev.energy - amount };
       }
       return prev;
     });
-    // Check if we had enough energy BEFORE the setState
-    const hadEnough = state.energy >= amount;
     return hadEnough;
-  }, [state.energy]);
+  }, []);
 
   const refillEnergy = useCallback((amount: number, useGems: boolean = false): boolean => {
     let success = false;
@@ -681,8 +679,16 @@ export function useGameState(options: UseGameStateOptions = {}) {
     
     if (state.zel < fusionCost) return { success: false, message: 'Not enough zel' };
 
-    const expGained = getFusionExpGain(3, targetUnit.level, false);
-    let newExp = targetUnit.exp + expGained;
+    // Calculate exp for each material with same-element bonus
+    const targetElement = template.element;
+    let totalExpGained = 0;
+    materialUnits.forEach(material => {
+      const materialTemplate = UNIT_DATABASE[material.templateId];
+      const isSameElement = materialTemplate.element === targetElement;
+      totalExpGained += getFusionExpGain(materialTemplate.rarity, material.level, isSameElement);
+    });
+
+    let newExp = targetUnit.exp + totalExpGained;
     let newLevel = targetUnit.level;
     const expNeeded = getExpForLevel(newLevel);
 
@@ -722,7 +728,7 @@ export function useGameState(options: UseGameStateOptions = {}) {
       },
     }));
 
-    return { success: true, expGained, leveledUp: newLevel > targetUnit.level, oldLevel: targetUnit.level, newLevel, message: 'Fusion complete!' };
+    return { success: true, expGained: totalExpGained, leveledUp: newLevel > targetUnit.level, oldLevel: targetUnit.level, newLevel, message: 'Fusion complete!' };
   }, [state]);
 
   const evolveUnit = useCallback((targetInstanceId: string) => {
@@ -1048,7 +1054,7 @@ export function useGameState(options: UseGameStateOptions = {}) {
         return prev;
       }
       
-      const tierData = GACHA_CONFIG.BANNERS; // Placeholder - would use BATTLE_PASS_CONFIG.TIERS[tier]
+      const tierData = BATTLE_PASS_CONFIG.TIERS[tier - 1]; // Battle Pass tiers are 0-indexed
       const reward = isPremium 
         ? { type: 'gems' as CurrencyType, amount: 10 + tier * 2 }
         : { type: 'zel' as CurrencyType, amount: 500 * tier };

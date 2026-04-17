@@ -8,73 +8,47 @@ cp .env.example .env.local
 npm run dev
 ```
 
-## Braveclon Game Architecture
+## Developer Commands
+
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Start dev server (http://localhost:3000) |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint check |
+| `npm run vercel-build` | Vercel production build |
+
+## Architecture
 
 ### Tech Stack
-- **Framework**: Next.js 15 (App Router)
-- **UI**: React 19 + TailwindCSS 4 + Motion
-- **State**: Local storage persistido (no backend)
-- **Audio**: Web Audio API
+- Next.js 15 (App Router) + React 19
+- TailwindCSS 4 + Motion (animations)
+- State: localStorage persistence (no backend required)
+- Audio: Web Audio API
 
-### Project Structure
-```
-app/           # Next.js pages (page.tsx = main game)
-components/    # UI screens y componentes
-  ├── battle/  # Componentes de batalla
-hooks/         # useGameApp, useBattle, useMobile
-lib/           # gameTypes, gameData, gameState, utils
-```
+### Entry Points
+- `/app/landing/` - Main game UI (page.tsx redirects here)
+- `hooks/useGameApp.ts` - Global state + actions
+- `hooks/useBattle.ts` - Battle system logic
+- `lib/gameState.ts` - State persistence
+- `lib/gameData.ts` - Game data definitions
 
-### Core Systems (lib/gameData.ts)
-- **6 Elements**: Fire, Water, Earth, Thunder, Light, Dark
-- **Unit System**: templates → instances → equip/fuse/evolve
-- **Battle**: turn-based con BB gauge, elemental weakness
-- **Equipment**: weapon, armor, accessory (slots)
+### Key Systems
+- **Elements**: Fire, Water, Earth, Thunder, Light, Dark
+- **Units**: templates → instances → equip/fuse/evolve
+- **Battle**: turn-based with BB gauge, OD gauge, elemental weakness
+- **Equipment**: weapon, armor, accessory slots
 
-### Key Entry Points
-- `app/page.tsx`: Main game router (currentScreen state)
-- `hooks/useGameApp.ts`: Global game state + actions
-- `hooks/useBattle.ts`: Battle logic
-- `lib/gameState.ts`: State persistence
+### Path Aliases
+`@/*` maps to project root (used in imports)
 
-## OpenCode Game Studio
+### Mobile Support
+- Custom safe-area utilities in tailwind.config.ts
+- `use-mobile.ts` hook for mobile detection
+- Mobile breakpoints: `mobile: 390px`, `mobile-landscape` (<500px height)
 
-Configuración global instalada en `~/.config/opencode/`.
+## Style Conventions
 
-### Directorios
-- `agents/`: 48 agentes especializados
-- `skills/`: 37 workflows (slash commands)
-- `docs/`: Documentación y templates
-
-### Usage
-
-```bash
-# Iniciar sesión
-opencode
-
-# Usar agentes
-@game-designer "Diseña un nuevo sistema de batalla"
-@lead-programmer "Revisa la arquitectura del código"
-@creative-director "Define la visión del juego"
-
-# Usar skills
-/code-review
-/balance-check
-/prototype
-/playtest-report
-/start
-/sprint-plan
-```
-
-### Agents Útiles para Braveclon
-
-| Task | Agent |
-|------|-------|
-| Diseño de mecánicas | @game-designer |
-| Sistema de batalla | @gameplay-programmer |
-| UI/UX | @ui-programmer, @ux-designer |
-| Performance | @performance-analyst |
-| Code review | @lead-programmer |
-| Audio | @sound-designer |
-| QA | @qa-tester |
-| Balance economy | @economy-designer |
+- Custom color tokens: `primary` (#fbbf24), `secondary` (#06b6d4), etc.
+- Font size `micro`: 0.6875rem
+- Animations: `fadeIn`, `slideUp`, `slideDown`, `pulse-glow`, `shimmer`
+- Touch-friendly: `.native-tap`, `.user-select-none` classes available
