@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
-import { PlayerState, INITIAL_STATE } from './gameTypes';
-import { UnitInstance, EquipInstance, QRState } from './gameTypes';
+import { PlayerState, INITIAL_STATE, UnitInstance, EquipInstance } from './gameTypes';
+import { QRState } from './economyTypes';
 
 export interface AuthUser {
   id: string;
@@ -208,10 +208,12 @@ export async function loadGameState(userId: string): Promise<PlayerState | null>
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', userId)
-      .single();
+      .eq('id', userId);
 
-    if (profileError || !profile) return null;
+    if (profileError || !profile || !profile[0]) {
+      console.warn('Profile not found or error:', profileError);
+      return null;
+    }
 
     const { data: units } = await supabase
       .from('units')
@@ -232,8 +234,7 @@ export async function loadGameState(userId: string): Promise<PlayerState | null>
     const { data: qrState } = await supabase
       .from('qr_state')
       .select('*')
-      .eq('profile_id', userId)
-      .single();
+      .eq('profile_id', userId);
 
     const { data: pity } = await supabase
       .from('summon_pity')
@@ -251,7 +252,9 @@ export async function loadGameState(userId: string): Promise<PlayerState | null>
 
     const equipmentInventory: EquipInstance[] = (equipment || []).map(e => ({
       instanceId: e.instance_id,
-      templateId: e.template_id
+      templateId: e.template_id,
+      enhancementLevel: 0,
+      sockets: e.template_id?.includes('ac') ? [] : [null, null]
     }));
 
     const team: (string | null)[] = Array(7).fill(null);
@@ -259,29 +262,38 @@ export async function loadGameState(userId: string): Promise<PlayerState | null>
       team[t.slot_position] = t.unit_instance_id;
     });
 
+    const p = profile[0];
+    const qr = qrState?.[0];
+    const pi = pity?.[0];
+
     return {
-      playerName: profile.username,
-      rank: profile.rank,
-      playerLevel: profile.level,
-      exp: profile.exp,
-      arenaScore: profile.arena_score || 0,
-      energy: profile.energy,
-      maxEnergy: profile.max_energy,
-      lastEnergyUpdateTime: new Date(profile.last_energy_update).getTime(),
-      gems: profile.gems,
-      zel: profile.zel,
+      ...INITIAL_STATE,
+      playerName: p.username,
+      rank: p.rank,
+      playerLevel: p.level,
+      exp: p.exp,
+      arenaScore: p.arena_score || 0,
+      energy: p.energy,
+      maxEnergy: p.max_energy,
+      lastEnergyUpdateTime: new Date(p.last_energy_update).getTime(),
+      gems: p.gems,
+      zel: p.zel,
       inventory,
       equipmentInventory,
       team,
-      qrState: qrState ? {
-        scansToday: qrState.scans_today,
-        lastScanDate: qrState.last_scan_date,
-        scannedHashes: qrState.scanned_hashes || []
+      qrState: qr ? {
+        scansToday: qr.scans_today,
+        lastScanDate: qr.last_scan_date,
+        scannedHashes: qr.scanned_hashes || [],
+        lifetimeScans: qr.scanned_hashes?.length || 0
       } : INITIAL_STATE.qrState,
-      summonPity: pity ? {
-        star5Pulls: pity.star5_pulls,
-        star4Pulls: pity.star4_pulls,
-        lastStar5Pull: pity.last_star5_pull
+      summonPity: pi ? {
+        star5Pulls: pi.star5_pulls,
+        star4Pulls: pi.star4_pulls,
+        lastStar5Pull: pi.last_star5_pull,
+        lastStar4Pull: pi.star4_pulls || 0,
+        totalPulls: (pi.star5_pulls || 0) + (pi.star4_pulls || 0),
+        bannerPulls: {}
       } : INITIAL_STATE.summonPity
     };
   } catch (error) {
