@@ -8,6 +8,7 @@ export interface BattleRewards {
   playerLeveledUp: boolean;
   leveledUpUnits: { name: string; oldLevel: number; newLevel: number }[];
   equipmentDropped: string[] | { templateId: string }[];
+  arenaScoreGain?: number;
 }
 
 export function BattleRewardsModal({ rewards, onClose }: { rewards: BattleRewards, onClose: () => void }) {

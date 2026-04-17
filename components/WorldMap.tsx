@@ -21,25 +21,48 @@ interface WorldMapProps {
   onSelectStage: (stageId: number) => void;
 }
 
-const MAP_NODES: MapNode[] = [
-  { id: 1, name: 'Mistral', area: "Adventurer's Prairie", x: 25, y: 70, region: 'Mistral', color: 'from-green-500 to-emerald-600', isUnlocked: true, isCompleted: false, energy: 3 },
-  { id: 2, name: 'Mistral', area: 'Cave of Flames', x: 45, y: 55, region: 'Mistral', color: 'from-red-500 to-orange-600', isUnlocked: true, isCompleted: false, energy: 4 },
-  { id: 3, name: 'Morgan', area: 'Destroyed Cathedral', x: 70, y: 40, region: 'Morgan', color: 'from-purple-500 to-pink-600', isUnlocked: true, isCompleted: false, energy: 5 },
-  { id: 4, name: 'St. Lamia', area: 'Blood Forest', x: 85, y: 65, region: 'St. Lamia', color: 'from-red-700 to-red-900', isUnlocked: false, isCompleted: false, energy: 6 },
+// Layout coordinates for 16 stages (zigzagging upwards)
+const LAYOUT = [
+  { x: 15, y: 85 }, { x: 35, y: 80 }, // Prontera
+  { x: 55, y: 75 }, // Geffen
+  { x: 75, y: 65 }, // Payon
+  { x: 80, y: 50 }, { x: 60, y: 45 }, // Glast Heim
+  { x: 40, y: 50 }, { x: 25, y: 40 }, { x: 15, y: 25 }, { x: 30, y: 15 }, // Tower
+  { x: 50, y: 20 }, { x: 70, y: 25 }, { x: 85, y: 15 }, { x: 80, y: 5 }, { x: 60, y: 8 }, { x: 40, y: 5 } // Niflheim
 ];
 
-// Connection paths between nodes
-const MAP_PATHS = [
-  { from: 1, to: 2 },
-  { from: 2, to: 3 },
-  { from: 3, to: 4 },
-];
+const COLORS: Record<string, string> = {
+  'Prontera': 'from-green-500 to-emerald-600',
+  'Geffen': 'from-purple-500 to-fuchsia-600',
+  'Payon': 'from-lime-500 to-green-600',
+  'Glast Heim': 'from-slate-500 to-purple-800',
+  'Tower': 'from-amber-500 to-yellow-600',
+  'Niflheim': 'from-red-700 to-rose-900',
+};
 
-// Region backgrounds
+const MAP_NODES: MapNode[] = STAGES.filter(s => s.id <= 16).map((stage, idx) => ({
+  id: stage.id,
+  name: stage.name,
+  area: stage.area,
+  x: LAYOUT[idx]?.x || 50,
+  y: LAYOUT[idx]?.y || 50,
+  region: stage.name,
+  color: COLORS[stage.name] || 'from-zinc-500 to-zinc-700',
+  isUnlocked: idx === 0,
+  isCompleted: false,
+  energy: stage.energy
+}));
+
+const MAP_PATHS = Array.from({length: 15}, (_, i) => ({ from: i + 1, to: i + 2 }));
+
+// Generic background styles based on region
 const REGIONS = {
-  Mistral: { name: 'Mistral Region', gradient: 'from-green-900/30 to-emerald-900/10' },
-  Morgan: { name: 'Morgan Region', gradient: 'from-purple-900/30 to-pink-900/10' },
-  'St. Lamia': { name: 'St. Lamia Region', gradient: 'from-red-900/30 to-rose-900/10' },
+  'Prontera': { name: 'Prontera Region', gradient: 'from-green-900/30 to-emerald-900/10' },
+  'Geffen': { name: 'Geffen Region', gradient: 'from-purple-900/30 to-fuchsia-900/10' },
+  'Payon': { name: 'Payon Region', gradient: 'from-lime-900/30 to-green-900/10' },
+  'Glast Heim': { name: 'Glast Heim Region', gradient: 'from-slate-900/30 to-purple-900/10' },
+  'Tower': { name: 'Tower Region', gradient: 'from-amber-900/30 to-yellow-900/10' },
+  'Niflheim': { name: 'Niflheim Region', gradient: 'from-red-900/30 to-rose-900/10' },
 };
 
 export default function WorldMap({ completedStages, onSelectStage }: WorldMapProps) {
@@ -49,7 +72,7 @@ export default function WorldMap({ completedStages, onSelectStage }: WorldMapPro
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-800/20 via-zinc-900 to-zinc-950" />
       
       {/* Region backgrounds */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${REGIONS.Mistral.gradient}`} />
+      <div className={`absolute inset-0 bg-gradient-to-br ${REGIONS['Prontera'].gradient}`} />
       
       {/* Decorative terrain lines */}
       <svg className="absolute inset-0 w-full h-full opacity-10">

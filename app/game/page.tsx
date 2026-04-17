@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useGameApp, Screen } from '@/hooks/useGameApp';
+import { getCurrentUser, onAuthChange, AuthUser } from '@/lib/auth';
 import { BattleRewards } from '@/components/BattleRewardsModal';
 import { X } from 'lucide-react';
 import ViewportWrapper from '@/components/ViewportWrapper';
@@ -22,7 +23,30 @@ import { BottomNav } from '@/components/BottomNav';
 import { CurrencyDisplay } from '@/components/ui/DesignSystem';
 
 export default function GameApp() {
-  const [user] = useState<{ id: string; email: string } | null>({ id: 'guest', email: '' });
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [skippedAuth, setSkippedAuth] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser as AuthUser | null);
+      setAuthChecked(true);
+    };
+    checkAuth();
+
+    const authListener = onAuthChange((user) => {
+      setUser(user);
+    });
+
+    return () => {
+      if (authListener?.data?.subscription) {
+        authListener.data.subscription.unsubscribe();
+      }
+    };
+  }, []);
+
+  const effectiveUserId = user ? user.id : (skippedAuth ? 'guest' : undefined);
   
   const {
     gameState,
@@ -56,7 +80,7 @@ export default function GameApp() {
     purchaseShopUnit,
     purchaseShopEquipment,
     purchaseConsumable,
-  } = useGameApp(user?.id);
+  } = useGameApp(effectiveUserId);
 
   const state = gameState?.state;
   const isGameLoaded = gameState?.isLoaded ?? isLoaded;
@@ -84,6 +108,28 @@ export default function GameApp() {
     const seconds = totalSeconds % 60;
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
+
+  if (!authChecked) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-zinc-950 text-white">
+        <div className="text-center">
+          <div className="animate-spin mb-4 text-amber-400 text-4xl">⚔️</div>
+          <p>Verifying Identity...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user && !skippedAuth) {
+    return (
+      <AuthScreen 
+        onLogin={(id) => {
+          // Auth listener will handle state update automatically
+        }} 
+        onSkip={() => setSkippedAuth(true)}
+      />
+    );
+  }
 
   if (!isGameLoaded) {
     return (

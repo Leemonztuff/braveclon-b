@@ -331,6 +331,7 @@ export interface PlayerState {
   playerLevel: number;
   exp: number;
   rank: number;
+  arenaScore: number;
   
   // Core Resources
   energy: number;
@@ -484,6 +485,7 @@ export const INITIAL_STATE: PlayerState = {
   playerLevel: 1,
   exp: 0,
   rank: 1,
+  arenaScore: 0,
   energy: 30,
   maxEnergy: 30,
   lastEnergyUpdateTime: Date.now(),

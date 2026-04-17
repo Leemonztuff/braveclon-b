@@ -14,8 +14,9 @@ npm run dev
 |---------|---------|
 | `npm run dev` | Start dev server (http://localhost:3000) |
 | `npm run build` | Production build |
-| `npm run lint` | ESLint check |
-| `npm run vercel-build` | Vercel production build |
+| `npm run lint` | ESLint check (only validation) |
+| `npm run clean` | Clear Next.js cache |
+| `npm run vercel-build` | Vercel production build (same as build) |
 
 ## Architecture
 
@@ -45,6 +46,15 @@ npm run dev
 - Custom safe-area utilities in tailwind.config.ts
 - `use-mobile.ts` hook for mobile detection
 - Mobile breakpoints: `mobile: 390px`, `mobile-landscape` (<500px height)
+
+## Build Quirks
+- TypeScript `ignoreBuildErrors: true` in next.config.ts (builds pass despite TS errors)
+- `transpilePackages: ['motion']` enabled for Framer Motion
+
+## Touch/Input Utilities
+- `.native-tap` - touch-friendly press effect (opacity on active)
+- `.user-select-none` - disables text selection
+- `.touch-none` / `.touch-auto` - touch action control
 
 ## Style Conventions
 

@@ -80,17 +80,20 @@ async function createProfile(userId: string, username: string) {
 export async function saveGameState(userId: string, state: PlayerState): Promise<boolean> {
   if (!supabase) return false;
   try {
-    await supabase.from('profiles').update({
+    await supabase.from('profiles').upsert({
+      id: userId,
+      username: state.playerName,
       rank: state.rank,
-      level: state.level,
+      level: state.playerLevel,
       exp: state.exp,
+      arena_score: state.arenaScore || 0,
       energy: state.energy,
       max_energy: state.maxEnergy,
       last_energy_update: new Date(state.lastEnergyUpdateTime).toISOString(),
       gems: state.gems,
       zel: state.zel,
       updated_at: new Date().toISOString()
-    }).eq('id', userId);
+    }, { onConflict: 'id' });
 
     await saveInventory(userId, state.inventory);
     await saveEquipment(userId, state.equipmentInventory);
@@ -259,8 +262,9 @@ export async function loadGameState(userId: string): Promise<PlayerState | null>
     return {
       playerName: profile.username,
       rank: profile.rank,
-      level: profile.level,
+      playerLevel: profile.level,
       exp: profile.exp,
+      arenaScore: profile.arena_score || 0,
       energy: profile.energy,
       maxEnergy: profile.max_energy,
       lastEnergyUpdateTime: new Date(profile.last_energy_update).getTime(),
@@ -285,3 +289,30 @@ export async function loadGameState(userId: string): Promise<PlayerState | null>
     return null;
   }
 }
+
+export async function getArenaLeaderboard(limit: number = 50) {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, username, level, arena_score')
+      .order('arena_score', { ascending: false })
+      .limit(limit);
+      
+    if (error) {
+      console.error('Error fetching arena leaderboard:', error);
+      return [];
+    }
+    
+    return data.map((profile, idx) => ({
+      rank: idx + 1,
+      id: profile.id,
+      name: profile.username,
+      level: profile.level,
+      score: profile.arena_score || 0
+    }));
+  } catch (err) {
+    console.error('Failed to get arena leaderboard:', err);
+    return [];
+  }
+}

@@ -1,9 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { STAGES, ENEMIES } from '@/lib/gameData';
 import { PlayerState } from '@/lib/gameState';
 import { Header, Tabs, Card } from './ui/DesignSystem';
+import { getArenaLeaderboard } from '@/lib/auth';
 
 type ArenaTab = 'practice' | 'leaderboard';
 
@@ -24,6 +25,16 @@ export default function ArenaScreen({ state, onStartBattle, onBack }: {
   const [activeTab, setActiveTab] = useState<ArenaTab>('practice');
   const [selectedEnemy, setSelectedEnemy] = useState<typeof ARENA_ENEMIES[0] | null>(null);
   const [battleLog, setBattleLog] = useState<string[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'leaderboard') {
+      getArenaLeaderboard().then(data => {
+        setLeaderboard(data);
+      });
+    }
+  }, [activeTab]);
 
   const arenaStageIds: Record<string, number> = {
     'Shadow Knight': 100,
@@ -126,37 +137,42 @@ export default function ArenaScreen({ state, onStartBattle, onBack }: {
               <Card className="bg-zinc-900 border-zinc-800">
                 <h3 className="text-lg font-bold text-white mb-2">🏆 Leaderboard</h3>
                 <p className="text-sm text-zinc-400">
-                  Coming soon! Compete with other players.
+                  Compete with other players worldwide in the global rankings!
                 </p>
               </Card>
 
               <div className="space-y-2">
-                {[
-                  { rank: 1, name: 'TopPlayer1', score: 99999 },
-                  { rank: 2, name: 'BF_Veteran', score: 87500 },
-                  { rank: 3, name: 'ArenaMaster', score: 74200 },
-                  { rank: 4, name: 'ThunderLord', score: 61000 },
-                  { rank: 5, name: 'DarkKnight', score: 55000 },
-                ].map((entry) => (
-                  <Card key={entry.rank} className={entry.rank <= 3 ? 'border-amber-500/30' : ''}>
-                    <div className="flex items-center gap-3">
-                      <span className={`w-8 font-bold ${
-                        entry.rank === 1 ? 'text-amber-400' : 
-                        entry.rank === 2 ? 'text-zinc-300' : 
-                        entry.rank === 3 ? 'text-amber-600' : 'text-zinc-500'
-                      }`}>
-                        #{entry.rank}
-                      </span>
-                      <span className="flex-1 font-bold text-white text-sm">{entry.name}</span>
-                      <span className="text-amber-400 font-mono text-sm">{entry.score.toLocaleString()}</span>
-                    </div>
-                  </Card>
-                ))}
+                {loading ? (
+                  <div className="text-center py-8 text-amber-500 animate-pulse">Loading Leaderboard...</div>
+                ) : leaderboard.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-500">No scores yet! Be the first to fight in the Arena.</div>
+                ) : (
+                  leaderboard.map((entry) => (
+                    <Card key={entry.rank} className={entry.rank <= 3 ? 'border-amber-500/30' : ''}>
+                      <div className="flex items-center gap-3">
+                        <span className={`w-8 font-bold ${
+                          entry.rank === 1 ? 'text-amber-400' : 
+                          entry.rank === 2 ? 'text-zinc-300' : 
+                          entry.rank === 3 ? 'text-amber-600' : 'text-zinc-500'
+                        }`}>
+                          #{entry.rank}
+                        </span>
+                        <div className="flex-1 flex flex-col">
+                          <span className="font-bold text-white text-sm">{entry.name}</span>
+                          <span className="text-xs text-zinc-500">Lv. {entry.level}</span>
+                        </div>
+                        <span className="text-amber-400 font-mono text-sm">{entry.score.toLocaleString()}</span>
+                      </div>
+                    </Card>
+                  ))
+                )}
               </div>
 
-              <div className="text-center p-4 text-zinc-500 text-sm">
-                🔒 Log in to save your score!
-              </div>
+              {state && (
+                <div className="text-center mt-4 p-4 text-zinc-400 text-sm bg-zinc-900 rounded-xl border border-zinc-800">
+                  Your Current Score: <span className="text-amber-400 font-bold ml-1">{state.arenaScore || 0}</span>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

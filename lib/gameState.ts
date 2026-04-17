@@ -66,6 +66,7 @@ export function useGameState(options: UseGameStateOptions = {}) {
   // STATE LOADING
   // ============================================================================
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const loadState = async () => {
       const saved = localStorage.getItem('rpg_game_state');
@@ -102,9 +103,13 @@ export function useGameState(options: UseGameStateOptions = {}) {
   function migrateState(oldState: any): PlayerState {
     let migrated = { ...INITIAL_STATE, ...oldState };
     
-    // Ensure required fields exist
-    if (!migrated.ownedUnitIds) {
-      migrated.ownedUnitIds = new Set(migrated.inventory?.map((u: any) => u.templateId) || []);
+    // Ensure required fields exist and are iterables (Set doesn't stringify well)
+    if (!migrated.ownedUnitIds || !(migrated.ownedUnitIds instanceof Set)) {
+      const parsedIds = oldState?.ownedUnitIds ? (Array.isArray(oldState.ownedUnitIds) ? oldState.ownedUnitIds : Object.keys(oldState.ownedUnitIds)) : [];
+      migrated.ownedUnitIds = new Set([
+        ...parsedIds,
+        ...(migrated.inventory?.map((u: any) => u.templateId) || [])
+      ]);
     }
     
     if (!migrated.materials) {
@@ -626,6 +631,11 @@ export function useGameState(options: UseGameStateOptions = {}) {
       const newPlayerLevel = playerLeveledUp ? prev.playerLevel + 1 : prev.playerLevel;
       const newPlayerExp = playerLeveledUp ? playerNewExp - playerExpNeeded : playerNewExp;
 
+      let arenaScoreGain = 0;
+      if (stage.id >= 100 && stage.id < 200) {
+        arenaScoreGain = 50 + Math.floor(Math.random() * 20); // random gain between 50-70
+      }
+
       const equipmentDrops: EquipInstance[] = [];
       if (stage.equipmentDrops?.length && stage.equipmentDropChance && Math.random() < stage.equipmentDropChance) {
         const dropIndex = Math.floor(Math.random() * stage.equipmentDrops.length);
@@ -646,6 +656,7 @@ export function useGameState(options: UseGameStateOptions = {}) {
         playerLeveledUp,
         leveledUpUnits: leveledUp,
         equipmentDropped: equipmentDrops,
+        arenaScoreGain, // Can be consumed by UI if needed
       };
 
       return {
@@ -653,6 +664,7 @@ export function useGameState(options: UseGameStateOptions = {}) {
         zel: prev.zel + zelReward,
         exp: newPlayerExp,
         playerLevel: newPlayerLevel,
+        arenaScore: (prev.arenaScore || 0) + arenaScoreGain,
         energy: playerLeveledUp ? prev.maxEnergy : prev.energy,
         inventory: newInventory,
         equipmentInventory: [...prev.equipmentInventory, ...equipmentDrops],
