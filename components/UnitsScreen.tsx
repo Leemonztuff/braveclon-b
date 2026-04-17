@@ -2,10 +2,11 @@
 import { useState, useRef, useCallback } from 'react';
 import { PlayerState, calculateStats } from '@/lib/gameState';
 import { UNIT_DATABASE, EQUIPMENT_DATABASE, EquipSlot, getExpForLevel, ELEMENT_ICONS, Element } from '@/lib/gameData';
-import { Shield, Sword, Gem, X, Zap, Scale, Search, Filter } from 'lucide-react';
+import { X, Search } from 'lucide-react';
 import { UnitFrame } from './UnitFrame';
 import { UnitDisplay } from './ui/UnitDisplay';
 import { UnitDetailModal } from './ui/UnitDetailModal';
+import { Header, Tabs, EmptyState } from './ui/DesignSystem';
 import { UnitInstance, EquipInstance } from '@/lib/gameTypes';
 
 type Tab = 'inventory' | 'equipment' | 'team';
@@ -111,62 +112,47 @@ export default function UnitsScreen({
     }
   };
 
+  const TABS = [
+    { id: 'inventory', label: 'Inventory' },
+    { id: 'equipment', label: 'Equipment' },
+    { id: 'team', label: 'Team' },
+  ];
+
   return (
-    <div className="flex flex-col h-full p-4" onClick={closeContextMenu}>
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-3">
-          {onBack && (
-            <button 
-              onClick={onBack} 
-              className="text-zinc-400 hover:text-white p-2 bg-zinc-800 rounded-full active:scale-95 transition-transform min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation"
-              aria-label="Go back"
-            >
-              <X size={20} />
-            </button>
-          )}
-          <h2 className="text-xl font-black italic text-zinc-100 uppercase tracking-wider">Manage Squad</h2>
-        </div>
-        
-        {/* Tab buttons - Touch-friendly with 44px minimum */}
-        <div className="flex gap-1">
-          {(['inventory', 'equipment', 'team'] as Tab[]).map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`
-                px-4 py-2.5 text-xs font-bold rounded-lg transition-all
-                min-h-[44px] min-w-[70px] touch-manipulation
-                ${activeTab === tab 
-                  ? 'bg-yellow-500 text-zinc-900 active:scale-95' 
-                  : 'bg-zinc-800 text-zinc-400 hover:text-white active:bg-zinc-700 active:scale-95'
-                }
-              `}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
+    <div className="flex flex-col h-full" onClick={closeContextMenu}>
+      <Header 
+        title="Units" 
+        icon="👤"
+        onBack={onBack}
+      />
+
+      <div className="px-4 py-3">
+        <Tabs 
+          tabs={TABS} 
+          activeTab={activeTab} 
+          onTabChange={(id) => setActiveTab(id as Tab)} 
+        />
       </div>
 
       {/* Filters - Touch-friendly */}
       {activeTab === 'inventory' && (
-        <div className="flex flex-wrap gap-2 mb-4">
-          <div className="relative flex-1 min-w-[120px]">
+        <div className="flex gap-2 mb-4 px-4">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search units..."
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-8 pr-3 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-500 min-h-[44px]"
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-8 pr-3 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500 min-h-[44px]"
             />
           </div>
           <select
             value={elementFilter}
             onChange={e => setElementFilter(e.target.value as Element | 'all')}
-            className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none min-h-[44px] touch-manipulation"
+            className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none min-h-[44px]"
           >
-            <option value="all">All Elements</option>
+            <option value="all">All</option>
             {(['Fire', 'Water', 'Earth', 'Thunder', 'Light', 'Dark'] as Element[]).map(el => (
               <option key={el} value={el}>{el}</option>
             ))}
@@ -174,10 +160,10 @@ export default function UnitsScreen({
           <select
             value={rarityFilter}
             onChange={e => setRarityFilter(Number(e.target.value) as number | 'all')}
-            className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none min-h-[44px] touch-manipulation"
+            className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none min-h-[44px]"
           >
-            <option value="all">All Rarities</option>
-            {[1,2,3,4,5].map(r => (
+            <option value="all">All ★</option>
+            {[3, 4, 5].map(r => (
               <option key={r} value={r}>{'★'.repeat(r)}</option>
             ))}
           </select>
@@ -214,10 +200,10 @@ export default function UnitsScreen({
       )}
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-4">
         {activeTab === 'inventory' && (
           <>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {state.inventory
                 .filter(u => {
                   const template = UNIT_DATABASE[u.templateId];
@@ -251,7 +237,11 @@ export default function UnitsScreen({
                 })}
             </div>
             {state.inventory.length === 0 && (
-              <div className="text-center text-zinc-500 mt-10">No units in inventory. Summon some first!</div>
+              <EmptyState 
+                icon="👤"
+                title="No units yet"
+                description="Use Summon to get your first units"
+              />
             )}
           </>
         )}
@@ -270,18 +260,28 @@ export default function UnitsScreen({
                       {Object.entries(template.statsBonus).map(([k, v]) => `+${v} ${k.toUpperCase()}`).join(' ')}
                     </div>
                   </div>
-                  <div className="text-[10px] text-zinc-500 bg-zinc-800 px-2 py-1 rounded">{template.type}</div>
+                  <div className="text-[10px] text-zinc-500 bg-zinc-800 px-2 py-1 rounded capitalize">{template.type}</div>
                 </div>
               );
             })}
             {state.equipmentInventory.length === 0 && (
-              <div className="text-center text-zinc-500 mt-10 col-span-2">No equipment found.</div>
+              <div className="col-span-2">
+                <EmptyState 
+                  icon="🛡️"
+                  title="No equipment"
+                  description="Battle stages to find equipment"
+                />
+              </div>
             )}
           </div>
         )}
 
         {activeTab === 'team' && (
-          <div className="text-center text-zinc-500 mt-10">Select a slot in Your Squad above to add units.</div>
+          <EmptyState 
+            icon="👥"
+            title="Build your team"
+            description="Select a slot above to add units"
+          />
         )}
       </div>
 
