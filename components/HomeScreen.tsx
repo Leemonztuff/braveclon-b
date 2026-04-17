@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 interface HomeScreenProps {
   state: PlayerState;
-  onNavigate: (screen: 'home' | 'quest' | 'units' | 'battle' | 'qrhunt' | 'summon' | 'arena' | 'shop' | 'randall' | 'friends') => void;
+  onNavigate: (screen: 'home' | 'quest' | 'units' | 'battle' | 'qrhunt' | 'summon' | 'arena' | 'shop' | 'craft' | 'randall' | 'friends') => void;
   onStartBattle: (stageId: number) => void;
   timeToNextEnergy: number;
 }
@@ -235,18 +235,37 @@ export default function HomeScreen({ state, onNavigate, onStartBattle, timeToNex
       </div>
 
       {/* BOTTOM MENU - Always visible actions */}
-      <div className="grid grid-cols-4 gap-1 p-3 bg-[#0d0d1a]/80 border-t border-[#b89947]/20">
-        <button onClick={() => onNavigate('shop')} className="py-3 rounded-lg bg-[#1a1a2e] text-zinc-400 text-xs font-bold hover:text-white transition-colors">
+      <div className="grid grid-cols-5 gap-1 p-3 bg-[#0d0d1a]/80 border-t border-[#b89947]/20">
+        <button 
+          onClick={() => onNavigate('shop')} 
+          className="py-3 rounded-lg bg-[#1a1a2e] text-zinc-400 text-xs font-bold hover:text-white hover:bg-[#252535] active:scale-95 active:bg-[#1a1a2e] transition-all duration-100"
+        >
           🏪 Shop
         </button>
-        <button onClick={() => onNavigate('randall')} className="py-3 rounded-lg bg-[#1a1a2e] text-zinc-400 text-xs font-bold hover:text-white transition-colors">
+        <button 
+          onClick={() => onNavigate('craft')} 
+          className="py-3 rounded-lg bg-[#1a1a2e] text-zinc-400 text-xs font-bold hover:text-white hover:bg-[#252535] active:scale-95 active:bg-[#1a1a2e] transition-all duration-100 flex flex-col items-center gap-1"
+        >
+          <span>🔨</span>
+          <span>Craft</span>
+        </button>
+        <button 
+          onClick={() => onNavigate('randall')} 
+          className="py-3 rounded-lg bg-[#1a1a2e] text-zinc-400 text-xs font-bold hover:text-white hover:bg-[#252535] active:scale-95 active:bg-[#1a1a2e] transition-all duration-100"
+        >
           🎁 Randall
         </button>
-        <button onClick={() => onNavigate('arena')} className="py-3 rounded-lg bg-[#1a1a2e] text-zinc-400 text-xs font-bold hover:text-white transition-colors">
+        <button 
+          onClick={() => onNavigate('arena')} 
+          className="py-3 rounded-lg bg-[#1a1a2e] text-zinc-400 text-xs font-bold hover:text-white hover:bg-[#252535] active:scale-95 active:bg-[#1a1a2e] transition-all duration-100"
+        >
           ⚔️ Arena
         </button>
-        <button onClick={() => onNavigate('qrhunt')} className="py-3 rounded-lg bg-[#1a1a2e] text-zinc-400 text-xs font-bold hover:text-white transition-colors">
-          📱 QR Hunt
+        <button 
+          onClick={() => onNavigate('qrhunt')} 
+          className="py-3 rounded-lg bg-[#1a1a2e] text-zinc-400 text-xs font-bold hover:text-white hover:bg-[#252535] active:scale-95 active:bg-[#1a1a2e] transition-all duration-100"
+        >
+          📱 QR
         </button>
       </div>
     </div>

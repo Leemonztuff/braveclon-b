@@ -20,11 +20,15 @@ export function BattleControlsBar({ battleState }: { battleState: BattleControls
         return (
           <button 
             onClick={executeTurn}
-            className="w-full h-9 rounded font-black text-xs text-white transition-all active:scale-95"
+            className={`w-full h-9 rounded font-black text-xs text-white transition-all active:scale-95 ${
+              readyUnits > 0 ? 'animate-pulse' : ''
+            }`}
             style={{ 
               background: `linear-gradient(to bottom, #3b82f6, #1d4ed8)`,
               border: '2px solid #60a5fa',
-              boxShadow: '0 0 10px rgba(59,130,246,0.4)'
+              boxShadow: readyUnits > 0 
+                ? '0 0 20px rgba(59,130,246,0.8), 0 0 40px rgba(59,130,246,0.4)' 
+                : '0 0 10px rgba(59,130,246,0.4)'
             }}
           >
             ATTACK
@@ -33,11 +37,12 @@ export function BattleControlsBar({ battleState }: { battleState: BattleControls
       case 'victory':
         return (
           <div 
-            className="w-full h-9 rounded flex items-center justify-center font-black text-xs"
+            className="w-full h-9 rounded flex items-center justify-center font-black text-xs animate-pulse"
             style={{ 
               background: `linear-gradient(to bottom, ${BF_COLORS.gold.bright}, ${BF_COLORS.gold.dim})`,
               border: '2px solid #fde047',
-              color: '#1a1a2e'
+              color: '#1a1a2e',
+              boxShadow: '0 0 30px rgba(250,204,21,0.6)'
             }}
           >
             CLEARED
@@ -95,17 +100,20 @@ export function BattleControlsBar({ battleState }: { battleState: BattleControls
                 }
               }}
               className={`
-                w-10 h-9 rounded flex flex-col items-center justify-center transition-all
-                ${isDisabled ? 'opacity-30 grayscale cursor-not-allowed' : 'cursor-pointer hover:brightness-110 active:scale-95'}
-                ${isSelected ? 'ring-2 ring-yellow-400' : ''}
+                w-10 h-9 rounded flex flex-col items-center justify-center transition-all duration-100
+                ${isDisabled ? 'opacity-30 grayscale cursor-not-allowed' : 'cursor-pointer hover:brightness-125 active:brightness-75 active:scale-90'}
+                ${isSelected ? 'ring-2 ring-yellow-400 animate-pulse' : ''}
               `}
               style={{ 
                 background: 'linear-gradient(to bottom, #27272a, #18181b)',
-                border: `1px solid ${isSelected ? '#facc15' : '#3f3f46'}`
+                border: `2px solid ${isSelected ? '#facc15' : '#3f3f46'}`,
+                boxShadow: isSelected ? '0 0 15px rgba(250,204,21,0.5)' : 'none'
               }}
             >
               <div className="text-xs font-bold text-white self-start leading-none">{item.icon}</div>
-              <div className="text-[8px] font-bold text-zinc-400">{item.count}</div>
+              <div className={`text-[8px] font-bold ${item.count > 0 ? 'text-cyan-400' : 'text-zinc-500'}`}>
+                {item.count}
+              </div>
             </button>
           );
         })}
@@ -113,16 +121,16 @@ export function BattleControlsBar({ battleState }: { battleState: BattleControls
 
       {/* BB Ready Indicator */}
       {turnState === 'player_input' && (
-        <div className="flex items-center gap-0.5 text-[9px] font-bold">
+        <div className={`flex items-center gap-0.5 text-[9px] font-bold transition-all ${readyUnits > 0 ? 'animate-pulse' : ''}`}>
           <span className={readyUnits > 0 ? 'text-cyan-400' : 'text-zinc-500'}>
             {readyUnits}
           </span>
-          <span className="text-zinc-500">BB</span>
+          <span className={readyUnits > 0 ? 'text-cyan-300' : 'text-zinc-500'}>BB</span>
         </div>
       )}
 
       {/* Attack Button */}
-      <div className="w-20 shrink-0">
+      <div className={`w-20 shrink-0 ${readyUnits > 0 ? 'animate-pulse' : ''}`}>
         {getButtonContent()}
       </div>
     </div>

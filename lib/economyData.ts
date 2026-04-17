@@ -2,7 +2,7 @@
 // ECONOMY CONFIGURATION CONSTANTS
 // ============================================================================
 
-import { GachaBanner, BattlePassTier, SubscriptionBenefits, CurrencyType, SubscriptionTier } from './economyTypes';
+import { GachaBanner, BattlePassTier, SubscriptionBenefits, CurrencyType, SubscriptionTier, ConsumableItem, CraftRecipe, ShopUnitListing, ShopEquipmentListing, ShopItemListing, ShopMaterialListing } from './economyTypes';
 
 // ============================================================================
 // ENERGY SYSTEM
@@ -513,3 +513,196 @@ export const BALANCE_TARGETS = {
     toSummon: 50,      // 1 summon = 50 gems
   },
 };
+
+// ============================================================================
+// CONSUMABLE ITEMS
+// ============================================================================
+
+export const CONSUMABLE_ITEMS: Record<string, ConsumableItem> = {
+  energy_small: { id: 'energy_small', name: 'Energy Crystal', description: '+5 Energy', type: 'energy', value: 5, icon: '⚡' },
+  energy_medium: { id: 'energy_medium', name: 'Energy Pack', description: '+15 Energy', type: 'energy', value: 15, icon: '🔋' },
+  energy_large: { id: 'energy_large', name: 'Energy Tank', description: '+30 Energy', type: 'energy', value: 30, icon: '🛢️' },
+  bb_fill: { id: 'bb_fill', name: 'Fujin Pill', description: 'Fill BB gauge', type: 'battle', value: 100, icon: '💊' },
+  reviver: { id: 'reviver', name: 'Phoenix Feather', description: 'Revive fallen unit', type: 'battle', value: 50, icon: '🪶' },
+  exp_small: { id: 'exp_small', name: 'EXP Capsule', description: '+50% EXP for 1 battle', type: 'buff', value: 50, duration: 1, icon: '💫' },
+  exp_medium: { id: 'exp_medium', name: 'EXP Elixir', description: '+100% EXP for 1 battle', type: 'buff', value: 100, duration: 1, icon: '✨' },
+  zel_small: { id: 'zel_small', name: 'Zel Pouch', description: '+20% Zel for 1 battle', type: 'buff', value: 20, duration: 1, icon: '💰' },
+};
+
+// ============================================================================
+// CRAFTING RECIPES
+// ============================================================================
+
+export const CRAFT_RECIPES: CraftRecipe[] = [
+  // Basic Weapons
+  {
+    id: 'craft_brave_sword',
+    name: 'Brave Sword',
+    description: 'A reliable blade for any warrior.',
+    outputType: 'equipment',
+    outputId: 'eq_w1',
+    outputQuantity: 1,
+    materials: { ironOre: 10, steelIngot: 0, mythril: 0, orichalcum: 0, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0 },
+    zelCost: 5000,
+    requiredLevel: 1,
+    category: 'weapon',
+  },
+  {
+    id: 'craft_flame_blade',
+    name: 'Flame Blade',
+    description: 'A sword imbued with fire.',
+    outputType: 'equipment',
+    outputId: 'eq_w2',
+    outputQuantity: 1,
+    materials: { ironOre: 15, steelIngot: 5, mythril: 0, orichalcum: 0, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0 },
+    zelCost: 12000,
+    requiredLevel: 10,
+    category: 'weapon',
+  },
+  {
+    id: 'craft_muramasa',
+    name: 'Muramasa',
+    description: 'A cursed blade of immense power.',
+    outputType: 'equipment',
+    outputId: 'eq_w3',
+    outputQuantity: 1,
+    materials: { ironOre: 20, steelIngot: 10, mythril: 3, orichalcum: 0, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0 },
+    zelCost: 35000,
+    requiredLevel: 25,
+    category: 'weapon',
+  },
+  // Basic Armor
+  {
+    id: 'craft_leather_armor',
+    name: 'Leather Armor',
+    description: 'Basic protection.',
+    outputType: 'equipment',
+    outputId: 'eq_a1',
+    outputQuantity: 1,
+    materials: { ironOre: 8, steelIngot: 0, mythril: 0, orichalcum: 0, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0 },
+    zelCost: 4000,
+    requiredLevel: 1,
+    category: 'armor',
+  },
+  {
+    id: 'craft_knight_shield',
+    name: 'Knight Shield',
+    description: 'Heavy protection for knights.',
+    outputType: 'equipment',
+    outputId: 'eq_a2',
+    outputQuantity: 1,
+    materials: { ironOre: 15, steelIngot: 8, mythril: 0, orichalcum: 0, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0 },
+    zelCost: 15000,
+    requiredLevel: 15,
+    category: 'armor',
+  },
+  // Accessories
+  {
+    id: 'craft_health_ring',
+    name: 'Health Ring',
+    description: 'Boosts vitality.',
+    outputType: 'equipment',
+    outputId: 'eq_ac1',
+    outputQuantity: 1,
+    materials: { ironOre: 5, steelIngot: 3, mythril: 0, orichalcum: 0, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0 },
+    zelCost: 8000,
+    requiredLevel: 5,
+    category: 'accessory',
+  },
+  {
+    id: 'craft_power_amulet',
+    name: 'Power Amulet',
+    description: 'Increases overall power.',
+    outputType: 'equipment',
+    outputId: 'eq_ac2',
+    outputQuantity: 1,
+    materials: { ironOre: 5, steelIngot: 5, mythril: 2, orichalcum: 0, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0 },
+    zelCost: 12000,
+    requiredLevel: 15,
+    category: 'accessory',
+  },
+  // Enhancement Materials
+  {
+    id: 'craft_steel_ingot',
+    name: 'Steel Ingot',
+    description: 'Uncommon crafting material.',
+    outputType: 'material',
+    outputId: 'steelIngot',
+    outputQuantity: 1,
+    materials: { ironOre: 5, steelIngot: 0, mythril: 0, orichalcum: 0, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0 },
+    zelCost: 1000,
+    requiredLevel: 1,
+    category: 'enhancement',
+  },
+  {
+    id: 'craft_mythril',
+    name: 'Mythril Bar',
+    description: 'Rare crafting material.',
+    outputType: 'material',
+    outputId: 'mythril',
+    outputQuantity: 1,
+    materials: { ironOre: 10, steelIngot: 5, mythril: 0, orichalcum: 0, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0 },
+    zelCost: 5000,
+    requiredLevel: 20,
+    category: 'enhancement',
+  },
+  {
+    id: 'craft_orichalcum',
+    name: 'Orichalcum Ingot',
+    description: 'Epic crafting material.',
+    outputType: 'material',
+    outputId: 'orichalcum',
+    outputQuantity: 1,
+    materials: { ironOre: 20, steelIngot: 10, mythril: 5, orichalcum: 0, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0 },
+    zelCost: 20000,
+    requiredLevel: 35,
+    category: 'enhancement',
+  },
+];
+
+// ============================================================================
+// SHOP UNIT LISTINGS (Zel Shop)
+// ============================================================================
+
+export const SHOP_UNITS: ShopUnitListing[] = [
+  { id: 'shop_u7', templateId: 'u7', price: 50000, currency: 'zel', requiredLevel: 1 },
+  { id: 'shop_u8', templateId: 'u8', price: 50000, currency: 'zel', requiredLevel: 1 },
+  { id: 'shop_u9', templateId: 'u9', price: 50000, currency: 'zel', requiredLevel: 1 },
+  { id: 'shop_u10', templateId: 'u10', price: 75000, currency: 'zel', requiredLevel: 10 },
+  { id: 'shop_u11', templateId: 'u11', price: 100000, currency: 'zel', requiredLevel: 10 },
+  { id: 'shop_u12', templateId: 'u12', price: 100000, currency: 'zel', requiredLevel: 10 },
+];
+
+// ============================================================================
+// SHOP EQUIPMENT LISTINGS
+// ============================================================================
+
+export const SHOP_EQUIPMENT: ShopEquipmentListing[] = [
+  { id: 'shop_eq_w1', templateId: 'eq_w1', price: 15000, currency: 'zel', stock: 99, maxStock: 99 },
+  { id: 'shop_eq_w2', templateId: 'eq_w2', price: 40000, currency: 'zel', stock: 10, maxStock: 10 },
+  { id: 'shop_eq_a1', templateId: 'eq_a1', price: 12000, currency: 'zel', stock: 20, maxStock: 20 },
+  { id: 'shop_eq_ac1', templateId: 'eq_ac1', price: 20000, currency: 'zel', stock: 15, maxStock: 15 },
+];
+
+// ============================================================================
+// SHOP CONSUMABLE LISTINGS
+// ============================================================================
+
+export const SHOP_CONSUMABLES: ShopItemListing[] = [
+  { id: 'shop_energy_small', consumableId: 'energy_small', price: 50, currency: 'gems', stock: 999, maxStock: 999 },
+  { id: 'shop_energy_medium', consumableId: 'energy_medium', price: 120, currency: 'gems', stock: 999, maxStock: 999 },
+  { id: 'shop_bb_fill', consumableId: 'bb_fill', price: 30, currency: 'gems', stock: 99, maxStock: 99 },
+  { id: 'shop_reviver', consumableId: 'reviver', price: 50, currency: 'gems', stock: 50, maxStock: 50 },
+  { id: 'shop_exp_small', consumableId: 'exp_small', price: 25, currency: 'gems', stock: 99, maxStock: 99 },
+  { id: 'shop_exp_medium', consumableId: 'exp_medium', price: 60, currency: 'gems', stock: 50, maxStock: 50 },
+];
+
+// ============================================================================
+// SHOP MATERIALS LISTINGS
+// ============================================================================
+
+export const SHOP_MATERIALS: ShopMaterialListing[] = [
+  { id: 'shop_mat_iron', materialType: 'ironOre', quantity: 10, price: 1000, currency: 'zel', stock: 999, maxStock: 999 },
+  { id: 'shop_mat_steel', materialType: 'steelIngot', quantity: 3, price: 3000, currency: 'zel', stock: 50, maxStock: 50 },
+  { id: 'shop_mat_mythril', materialType: 'mythril', quantity: 1, price: 10000, currency: 'zel', stock: 10, maxStock: 10 },
+];

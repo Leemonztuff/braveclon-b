@@ -13,6 +13,8 @@ import {
   SubscriptionTier,
   SummonPity,
   GachaBanner,
+  CraftRecipe,
+  MATERIAL_CONFIG,
 } from './economyTypes';
 import {
   ENERGY_CONFIG,
@@ -25,6 +27,11 @@ import {
   IAP_TIERS,
   SUBSCRIPTION_CONFIG,
   BATTLE_PASS_CONFIG,
+  CONSUMABLE_ITEMS,
+  CRAFT_RECIPES,
+  SHOP_UNITS,
+  SHOP_EQUIPMENT,
+  SHOP_CONSUMABLES,
 } from './economyData';
 import { saveGameState, loadGameState } from './auth';
 
@@ -759,6 +766,157 @@ export function useGameState(options: UseGameStateOptions = {}) {
   }, [state]);
 
   // ============================================================================
+  // CRAFTING SYSTEM
+  // ============================================================================
+
+  const craftItem = useCallback((recipeId: string): { success: boolean; message: string } => {
+    const recipe = CRAFT_RECIPES.find(r => r.id === recipeId);
+    if (!recipe) return { success: false, message: 'Recipe not found' };
+    
+    if (state.playerLevel < recipe.requiredLevel) {
+      return { success: false, message: `Requires level ${recipe.requiredLevel}` };
+    }
+    
+    // Check zel cost
+    if (state.zel < recipe.zelCost) {
+      return { success: false, message: 'Not enough Zel' };
+    }
+    
+    // Check materials
+    for (const [material, amount] of Object.entries(recipe.materials)) {
+      if (amount > 0 && state.materials[material as MaterialType] < amount) {
+        const config = MATERIAL_CONFIG[material as MaterialType];
+        return { success: false, message: `Need more ${config?.name || material}` };
+      }
+    }
+    
+    // All checks passed - execute craft
+    setState(prev => {
+      const newMaterials = { ...prev.materials };
+      for (const [material, amount] of Object.entries(recipe.materials)) {
+        if (amount > 0) {
+          newMaterials[material as MaterialType] -= amount;
+        }
+      }
+      
+      let newInventory = [...prev.inventory];
+      let newEquipmentInventory = [...prev.equipmentInventory];
+      
+      if (recipe.outputType === 'equipment') {
+        newEquipmentInventory.push({
+          instanceId: `eq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          templateId: recipe.outputId,
+          enhancementLevel: 0,
+          sockets: recipe.outputId.includes('ac') ? [] : [null, null],
+        });
+      } else if (recipe.outputType === 'material') {
+        newMaterials[recipe.outputId as MaterialType] = (newMaterials[recipe.outputId as MaterialType] || 0) + recipe.outputQuantity;
+      }
+      
+      return {
+        ...prev,
+        zel: prev.zel - recipe.zelCost,
+        materials: newMaterials,
+        inventory: newInventory,
+        equipmentInventory: newEquipmentInventory,
+      };
+    });
+    
+    return { success: true, message: `Crafted ${recipe.name}!` };
+  }, [state]);
+
+  // ============================================================================
+  // SHOP PURCHASE SYSTEM
+  // ============================================================================
+
+  const purchaseShopUnit = useCallback((listingId: string): { success: boolean; message: string } => {
+    const listing = SHOP_UNITS.find(l => l.id === listingId);
+    if (!listing) return { success: false, message: 'Item not found' };
+    
+    if (state.playerLevel < listing.requiredLevel) {
+      return { success: false, message: `Requires level ${listing.requiredLevel}` };
+    }
+    
+    const currencyKey = listing.currency;
+    const currentCurrency = state[currencyKey as keyof PlayerState] as number;
+    if (currentCurrency < listing.price) {
+      return { success: false, message: `Not enough ${listing.currency}` };
+    }
+    
+    setState(prev => ({
+      ...prev,
+      [currencyKey]: (prev[currencyKey as keyof PlayerState] as number) - listing.price,
+      inventory: [...prev.inventory, {
+        instanceId: `inst_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        templateId: listing.templateId,
+        level: 1,
+        exp: 0,
+        equipment: { weapon: null, armor: null, accessory: null },
+        timesFused: 0,
+      }],
+    }));
+    
+    return { success: true, message: 'Unit acquired!' };
+  }, [state]);
+
+  const purchaseShopEquipment = useCallback((listingId: string): { success: boolean; message: string } => {
+    const listing = SHOP_EQUIPMENT.find(l => l.id === listingId);
+    if (!listing) return { success: false, message: 'Item not found' };
+    
+    if (listing.stock <= 0) return { success: false, message: 'Out of stock' };
+    
+    const currencyKey = listing.currency;
+    const currentCurrency = state[currencyKey as keyof PlayerState] as number;
+    if (currentCurrency < listing.price) {
+      return { success: false, message: `Not enough ${listing.currency}` };
+    }
+    
+    setState(prev => ({
+      ...prev,
+      [currencyKey]: (prev[currencyKey as keyof PlayerState] as number) - listing.price,
+      equipmentInventory: [...prev.equipmentInventory, {
+        instanceId: `eq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        templateId: listing.templateId,
+        enhancementLevel: 0,
+        sockets: listing.templateId.includes('ac') ? [] : [null, null],
+      }],
+    }));
+    
+    return { success: true, message: 'Equipment acquired!' };
+  }, [state]);
+
+  const purchaseConsumable = useCallback((listingId: string): { success: boolean; message: string } => {
+    const listing = SHOP_CONSUMABLES.find(l => l.id === listingId);
+    if (!listing) return { success: false, message: 'Item not found' };
+    
+    if (listing.stock <= 0) return { success: false, message: 'Out of stock' };
+    
+    const currencyKey = listing.currency;
+    const currentCurrency = state[currencyKey as keyof PlayerState] as number;
+    if (currentCurrency < listing.price) {
+      return { success: false, message: `Not enough ${listing.currency}` };
+    }
+    
+    const item = CONSUMABLE_ITEMS[listing.consumableId];
+    if (!item) return { success: false, message: 'Item not found' };
+    
+    setState(prev => {
+      const newState: Partial<PlayerState> = {
+        [currencyKey]: (prev[currencyKey as keyof PlayerState] as number) - listing.price,
+      };
+      
+      // Apply immediate effects
+      if (item.type === 'energy') {
+        newState.energy = Math.min(prev.energy + item.value, prev.maxEnergy);
+      }
+      
+      return { ...prev, ...newState };
+    });
+    
+    return { success: true, message: `Used ${item.name}!` };
+  }, [state]);
+
+  // ============================================================================
   // GACHA / SUMMON SYSTEM
   // ============================================================================
 
@@ -1291,6 +1449,12 @@ export function useGameState(options: UseGameStateOptions = {}) {
     // Fusion & Evolution
     fuseUnits,
     evolveUnit,
+    
+    // Crafting & Shop
+    craftItem,
+    purchaseShopUnit,
+    purchaseShopEquipment,
+    purchaseConsumable,
     
     // Gacha
     rollGacha,

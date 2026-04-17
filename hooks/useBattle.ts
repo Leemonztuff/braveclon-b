@@ -138,27 +138,24 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
     setCombatLog(prev => [...prev.slice(-4), msg]);
   };
 
-  const addFloatingText = (text: string, type: FloatingTextData['type'], targetId: string, isPlayer: boolean) => {
+  const addFloatingText = (text: string, type: FloatingTextData['type'], targetId: string, isPlayer: boolean, damage?: number) => {
     const isLeft = isPlayer;
     const idx = parseInt(targetId.split('_')[1]);
     const col = idx % 2;
     const row = Math.floor(idx / 2);
     
-    // Use percentages for better responsive positioning
     const baseX = isLeft ? 15 + (col * 15) : 70 + (col * 15);
     const baseY = 40 + (row * 15);
     
-    // Add some randomness
     const x = `calc(${baseX}% + ${Math.random() * 20 - 10}px)`;
     const y = `calc(${baseY}% + ${Math.random() * 20 - 10}px)`;
 
     const id = Math.random().toString(36).substr(2, 9);
-    setFloatingTexts(prev => [...prev, { id, text, type, x, y }]);
+    setFloatingTexts(prev => [...prev, { id, text, type, x, y, damage }]);
     
-    // Remove after animation
     setTimeout(() => {
       setFloatingTexts(prev => prev.filter(ft => ft.id !== id));
-    }, 1000);
+    }, 1100);
   };
 
   const triggerScreenShake = () => {
@@ -354,19 +351,34 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
         }
       }
 
-      addFloatingText(finalDamage.toString(), 'damage', target.id, false);
+      addFloatingText(finalDamage.toString(), 'damage', target.id, false, finalDamage);
+      
       if (isWeakness) {
-        setTimeout(() => addFloatingText('WEAK', 'weak', target.id, false), 100);
+        addFloatingText('WEAK!', 'weak', target.id, false);
+        triggerScreenShake();
+        playSound('weakness');
+      } else if (isBb) {
+        addFloatingText('CRITICAL!', 'critical', target.id, false);
+        triggerScreenShake();
+        playSound('bb_hit');
+      } else {
+        playSound('hit');
+      }
+
+      if (isOD) {
+        addFloatingText(`${newHitCount}x COMBO!`, 'combo', attacker.id, true);
       }
 
       addLog(`${attacker.template.name} ${isBb ? 'uses BB!' : 'attacks'} ${target.template.name} for ${finalDamage} dmg! ${isWeakness ? '(Weakness!)' : ''}`);
       
-      await new Promise(r => setTimeout(r, 400));
+      const impactDelay = isBb || isWeakness ? 150 : 80;
+      await new Promise(r => setTimeout(r, impactDelay));
 
       // Reset states and BC Distribution
-      const bcDrops = isBb ? 0 : Math.floor(Math.random() * 5) + 3; // 3-7 BC dropped by enemy
+      const bcDrops = isBb ? 0 : Math.floor(Math.random() * 5) + 3;
       
       if (bcDrops > 0) {
+        playSound('bc_drop');
         addFloatingText(`+${bcDrops} BC`, 'bc', target.id, false);
         const alivePlayers = currentPlayer.filter(p => !p.isDead);
         if (alivePlayers.length > 0) {

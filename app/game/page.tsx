@@ -17,6 +17,7 @@ import FusionScreen from '@/components/FusionScreen';
 import EvolutionScreen from '@/components/EvolutionScreen';
 import ArenaScreen from '@/components/ArenaScreen';
 import ShopScreen from '@/components/ShopScreen';
+import CraftScreen from '@/components/CraftScreen';
 
 export default function GameApp() {
   const [user] = useState<{ id: string; email: string } | null>({ id: 'guest', email: '' });
@@ -38,7 +39,6 @@ export default function GameApp() {
     navigate,
     goBack,
     triggerAlert,
-    handlePurchase,
     addUnit,
     setTeamMember,
     spendGems,
@@ -50,11 +50,28 @@ export default function GameApp() {
     setEvolutionTargetId,
     processQrScan,
     evolveUnit,
-    setShowAlert
+    setShowAlert,
+    craftItem,
+    purchaseShopUnit,
+    purchaseShopEquipment,
+    purchaseConsumable,
   } = useGameApp(user?.id);
 
   const state = gameState?.state;
   const isGameLoaded = gameState?.isLoaded ?? isLoaded;
+
+  const handlePurchase = useCallback((price: number, currency: 'zel' | 'gems') => {
+    if (!state) return false;
+    if (currency === 'zel' && state.zel >= price) {
+      gameState?.spendCurrency?.(currency, price);
+      return true;
+    }
+    if (currency === 'gems' && state.gems >= price) {
+      gameState?.spendCurrency?.(currency, price);
+      return true;
+    }
+    return false;
+  }, [state, gameState]);
 
   const handleStartBattle = useCallback((stageId: number) => {
     if (startBattle) startBattle(stageId);
@@ -127,7 +144,19 @@ export default function GameApp() {
           <ShopScreen
             state={state}
             onBack={goBack}
-            onPurchase={handlePurchase}
+            onPurchaseUnit={purchaseShopUnit}
+            onPurchaseEquipment={purchaseShopEquipment}
+            onPurchaseConsumable={purchaseConsumable}
+            onAlert={triggerAlert}
+          />
+        );
+      case 'craft':
+        return (
+          <CraftScreen
+            state={state}
+            onCraft={craftItem}
+            onBack={goBack}
+            onAlert={triggerAlert}
           />
         );
       case 'randall':

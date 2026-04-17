@@ -1,4 +1,4 @@
-export const playSound = (type: 'hit' | 'bb_cast' | 'bb_hit' | 'weakness' | 'bb_ready' | 'heal' | 'victory' | 'defeat') => {
+export const playSound = (type: 'hit' | 'bb_cast' | 'bb_hit' | 'weakness' | 'bb_ready' | 'heal' | 'victory' | 'defeat' | 'bc_drop') => {
   try {
     const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
     if (!AudioContext) return;
@@ -84,6 +84,14 @@ export const playSound = (type: 'hit' | 'bb_cast' | 'bb_hit' | 'weakness' | 'bb_
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
       osc.start(now);
       osc.stop(now + 0.5);
+    } else if (type === 'bc_drop') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.exponentialRampToValueAtTime(1320, now + 0.08);
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+      osc.start(now);
+      osc.stop(now + 0.12);
     } else {
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(400, now);

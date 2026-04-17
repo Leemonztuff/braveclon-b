@@ -58,14 +58,16 @@ function UnitMini({ unit, onClick, turnState, isPlayer }: {
   const hpPercent = (unit.hp / unit.maxHp) * 100;
   const isSelectable = turnState === 'player_input' && !unit.isDead && isPlayer;
   const isQueued = unit.queuedBb && !unit.isDead;
+  const isLowHp = hpPercent < 30 && !unit.isDead;
 
   return (
     <button 
       className={`
-        w-14 h-16 flex flex-col items-center justify-center rounded transition-all
+        w-14 h-16 flex flex-col items-center justify-center rounded transition-all duration-200
         ${isSelectable ? 'cursor-pointer hover:bg-white/10 active:scale-[0.95]' : ''}
-        ${unit.isDead ? 'opacity-40' : 'opacity-100'}
-        ${isQueued ? 'ring-1 ring-purple-500' : ''}
+        ${unit.isDead ? 'opacity-40 grayscale animate-pulse' : 'opacity-100'}
+        ${isQueued ? 'ring-2 ring-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]' : ''}
+        ${isLowHp ? 'animate-pulse' : ''}
       `}
       style={{ background: 'rgba(0,0,0,0.3)' }}
       onClick={onClick}
@@ -73,10 +75,11 @@ function UnitMini({ unit, onClick, turnState, isPlayer }: {
     >
       {/* Unit Icon */}
       <div 
-        className="w-8 h-8 rounded flex items-center justify-center text-lg"
+        className="w-8 h-8 rounded flex items-center justify-center text-lg transition-all duration-200"
         style={{ 
           background: unit.isDead ? 'rgba(30,30,40,1)' : isPlayer ? 'rgba(30,60,120,1)' : 'rgba(120,30,30,1)',
-          border: `2px solid ${unit.isDead ? '#4a4a5a' : isPlayer ? '#3b82f6' : '#dc2626'}`
+          border: `2px solid ${unit.isDead ? '#4a4a5a' : isPlayer ? '#3b82f6' : '#dc2626'}`,
+          boxShadow: isQueued ? '0 0 10px rgba(168,85,247,0.5)' : 'none'
         }}
       >
         {unit.isDead ? '☠' : 
@@ -88,12 +91,13 @@ function UnitMini({ unit, onClick, turnState, isPlayer }: {
       </div>
 
       {/* HP Bar */}
-      <div className="w-10 h-1 bg-gray-900 rounded-full overflow-hidden mt-1">
+      <div className="w-10 h-1.5 bg-gray-900 rounded-full overflow-hidden mt-1">
         <div 
-          className="h-full transition-all duration-300"
+          className="h-full transition-all duration-300 ease-out"
           style={{ 
             width: `${hpPercent}%`,
-            background: hpPercent > 50 ? BF_COLORS.health : hpPercent > 25 ? '#eab308' : '#dc2626'
+            background: hpPercent > 50 ? BF_COLORS.health : hpPercent > 25 ? '#eab308' : '#dc2626',
+            boxShadow: isLowHp ? '0 0 5px #dc2626' : 'none'
           }}
         />
       </div>

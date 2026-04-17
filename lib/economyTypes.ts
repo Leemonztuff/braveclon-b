@@ -250,6 +250,78 @@ export interface QRState {
 }
 
 // ============================================================================
+// CRAFTING SYSTEM
+// ============================================================================
+
+export type CraftOutputType = 'equipment' | 'material' | 'item';
+
+export interface CraftRecipe {
+  id: string;
+  name: string;
+  description: string;
+  outputType: CraftOutputType;
+  outputId: string;
+  outputQuantity: number;
+  materials: Record<MaterialType, number>;
+  zelCost: number;
+  requiredLevel: number;
+  category: 'weapon' | 'armor' | 'accessory' | 'enhancement' | 'consumable';
+}
+
+export interface ConsumableItem {
+  id: string;
+  name: string;
+  description: string;
+  type: 'energy' | 'buff' | 'battle' | 'special';
+  value: number;
+  duration?: number;
+  icon: string;
+}
+
+// ============================================================================
+// SHOP SYSTEM
+// ============================================================================
+
+export type ShopCategory = 'units' | 'equipment' | 'items' | 'materials' | 'craft';
+
+export interface ShopUnitListing {
+  id: string;
+  templateId: string;
+  price: number;
+  currency: CurrencyType;
+  requiredLevel: number;
+}
+
+export interface ShopEquipmentListing {
+  id: string;
+  templateId: string;
+  price: number;
+  currency: CurrencyType;
+  stock: number;
+  maxStock: number;
+  refreshesAt?: string;
+}
+
+export interface ShopItemListing {
+  id: string;
+  consumableId: string;
+  price: number;
+  currency: CurrencyType;
+  stock: number;
+  maxStock: number;
+}
+
+export interface ShopMaterialListing {
+  id: string;
+  materialType: MaterialType;
+  quantity: number;
+  price: number;
+  currency: CurrencyType;
+  stock: number;
+  maxStock: number;
+}
+
+// ============================================================================
 // PLAYER STATE (Complete)
 // ============================================================================
 

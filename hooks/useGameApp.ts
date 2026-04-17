@@ -14,6 +14,7 @@ export type Screen =
   | 'evolution' 
   | 'arena' 
   | 'shop' 
+  | 'craft'
   | 'randall'
   | 'friends';
 
@@ -37,7 +38,11 @@ export function useGameApp(userId?: string | null) {
     fuseUnits,
     updateState,
     processQrScan,
-    evolveUnit
+    evolveUnit,
+    craftItem,
+    purchaseShopUnit,
+    purchaseShopEquipment,
+    purchaseConsumable,
   } = gameState;
   
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
@@ -153,5 +158,9 @@ export function useGameApp(userId?: string | null) {
     fuseUnits,
     processQrScan,
     evolveUnit,
+    craftItem,
+    purchaseShopUnit,
+    purchaseShopEquipment,
+    purchaseConsumable,
   };
 }
