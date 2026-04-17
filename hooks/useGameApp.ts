@@ -15,6 +15,7 @@ export type Screen =
   | 'arena' 
   | 'shop' 
   | 'craft'
+  | 'guild'
   | 'randall'
   | 'friends';
 

@@ -1,4 +1,4 @@
-import { Home, Users, Swords, Sparkles, Package, Hammer } from 'lucide-react';
+import { Home, Users, Swords, Sparkles, Package, Hammer, Castle } from 'lucide-react';
 import { Screen } from '@/hooks/useGameApp';
 import { useState } from 'react';
 
@@ -7,7 +7,7 @@ const NAV_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'units', label: 'Units', icon: Users },
   { id: 'quest', label: 'Quest', icon: Swords },
   { id: 'summon', label: 'Summon', icon: Sparkles },
-  { id: 'shop', label: 'Shop', icon: Package },
+  { id: 'guild', label: 'Guild', icon: Castle },
   { id: 'craft', label: 'Craft', icon: Hammer },
 ];
 

@@ -376,7 +376,7 @@ export const ENEMIES: UnitTemplate[] = [
     name: 'Poring',
     element: 'Water',
     rarity: 1,
-    baseStats: { hp: 500, atk: 100, def: 50, rec: 0 },
+    baseStats: { hp: 500, atk: 100, def: 50, rec: 0 },  // Base: 500 HP
     growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
     maxLevel: 1,
     skill: { id: 'es1', name: 'Tackle', type: 'damage', description: 'Basic attack', power: 1, cost: 100 },
@@ -387,7 +387,7 @@ export const ENEMIES: UnitTemplate[] = [
     name: 'Fabre',
     element: 'Earth',
     rarity: 1,
-    baseStats: { hp: 800, atk: 150, def: 80, rec: 0 },
+    baseStats: { hp: 600, atk: 120, def: 60, rec: 0 },  // +20% from e1
     growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
     maxLevel: 1,
     skill: { id: 'es2', name: 'Club', type: 'damage', description: 'Basic attack', power: 1.2, cost: 100 },
@@ -398,7 +398,7 @@ export const ENEMIES: UnitTemplate[] = [
     name: 'Roda Frog',
     element: 'Water',
     rarity: 2,
-    baseStats: { hp: 1200, atk: 200, def: 120, rec: 0 },
+    baseStats: { hp: 750, atk: 150, def: 80, rec: 0 },  // +50% from e1 (smooth)
     growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
     maxLevel: 1,
     skill: { id: 'es3', name: 'Tongue', type: 'damage', description: 'Basic attack', power: 1.3, cost: 100 },
@@ -409,7 +409,7 @@ export const ENEMIES: UnitTemplate[] = [
     name: 'Lunatic',
     element: 'Dark',
     rarity: 2,
-    baseStats: { hp: 900, atk: 250, def: 90, rec: 0 },
+    baseStats: { hp: 850, atk: 180, def: 70, rec: 0 },  // +70% from e1
     growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
     maxLevel: 1,
     skill: { id: 'es4', name: 'Moon Hit', type: 'damage', description: 'Basic attack', power: 1.4, cost: 100 },
@@ -420,7 +420,7 @@ export const ENEMIES: UnitTemplate[] = [
     name: 'Skeleton',
     element: 'Dark',
     rarity: 2,
-    baseStats: { hp: 1000, atk: 180, def: 150, rec: 0 },
+    baseStats: { hp: 950, atk: 160, def: 100, rec: 0 },  // +90% from e1
     growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
     maxLevel: 1,
     skill: { id: 'es5', name: 'Bone Strike', type: 'damage', description: 'Basic attack', power: 1.2, cost: 100 },
@@ -431,7 +431,7 @@ export const ENEMIES: UnitTemplate[] = [
     name: 'Picky',
     element: 'Fire',
     rarity: 2,
-    baseStats: { hp: 1100, atk: 190, def: 140, rec: 0 },
+    baseStats: { hp: 1050, atk: 170, def: 110, rec: 0 },  // +110% from e1
     growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
     maxLevel: 1,
     skill: { id: 'es6', name: 'Peck', type: 'damage', description: 'Basic attack', power: 1.3, cost: 100 },
@@ -442,7 +442,7 @@ export const ENEMIES: UnitTemplate[] = [
     name: 'Poporing',
     element: 'Water',
     rarity: 2,
-    baseStats: { hp: 1500, atk: 220, def: 150, rec: 0 },
+    baseStats: { hp: 1200, atk: 190, def: 130, rec: 0 },  // +140% from e1
     growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
     maxLevel: 1,
     skill: { id: 'es7', name: 'Slimy Hit', type: 'damage', description: 'Water attack', power: 1.4, cost: 100 },
@@ -453,7 +453,7 @@ export const ENEMIES: UnitTemplate[] = [
     name: 'Dustiness',
     element: 'Earth',
     rarity: 3,
-    baseStats: { hp: 2000, atk: 280, def: 200, rec: 0 },
+    baseStats: { hp: 1350, atk: 220, def: 150, rec: 0 },  // +170% from e1
     growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
     maxLevel: 1,
     skill: { id: 'es8', name: 'Wind Cutter', type: 'damage', description: 'Earth attack', power: 1.5, cost: 100 },
@@ -464,7 +464,7 @@ export const ENEMIES: UnitTemplate[] = [
     name: 'Orc Warrior',
     element: 'Earth',
     rarity: 3,
-    baseStats: { hp: 1800, atk: 350, def: 180, rec: 0 },
+    baseStats: { hp: 1500, atk: 280, def: 160, rec: 0 },  // +200% from e1
     growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
     maxLevel: 1,
     skill: { id: 'es9', name: 'Heavy Strike', type: 'damage', description: 'Earth attack', power: 1.6, cost: 100 },
@@ -475,7 +475,7 @@ export const ENEMIES: UnitTemplate[] = [
     name: 'Drake',
     element: 'Water',
     rarity: 4,
-    baseStats: { hp: 3500, atk: 450, def: 300, rec: 0 },
+    baseStats: { hp: 1800, atk: 350, def: 220, rec: 0 },  // +260% from e1 (3.6x, not 7x!)
     growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
     maxLevel: 1,
     skill: { id: 'es10', name: 'Aqua Breath', type: 'damage', description: 'Massive water attack', power: 2.0, cost: 100 },
@@ -551,32 +551,32 @@ export const ENEMIES: UnitTemplate[] = [
 ];
 
 export const STAGES: StageTemplate[] = [
-  // Region 1: Izlude & Prontera (basic areas)
+  // Region 1: Izlude & Prontera (basic areas) - Smooth early scaling
   { id: 1, name: "Prontera", area: "Izlude Bridge", energy: 3, description: "Where every hero begins their journey.", enemies: ['e1', 'e2', 'e1'], expReward: 50, zelReward: 200, equipmentDrops: ['eq_w1', 'eq_a1'], equipmentDropChance: 0.3 },
-  { id: 2, name: "Prontera", area: "Cave of East Gozar", energy: 4, description: "The first dungeon awaits beginners.", enemies: ['e3', 'e3', 'e1'], expReward: 80, zelReward: 350, equipmentDrops: ['eq_w2', 'eq_ac2'], equipmentDropChance: 0.3 },
+  { id: 2, name: "Prontera", area: "Cave of East Gozar", energy: 4, description: "The first dungeon awaits beginners.", enemies: ['e2', 'e2', 'e3'], expReward: 80, zelReward: 350, equipmentDrops: ['eq_w2', 'eq_ac2'], equipmentDropChance: 0.3 },
   
-  // Region 2: Geffen & Payon (mid areas)
-  { id: 3, name: "Geffen", area: "Geffen Fields", energy: 5, description: "Fields outside the magic city.", enemies: ['e5', 'e6', 'e5'], expReward: 120, zelReward: 500, equipmentDrops: ['eq_w4', 'eq_ac1'], equipmentDropChance: 0.35 },
-  { id: 4, name: "Payon", area: "Payon Forest", energy: 6, description: "Dense forest full of hostile creatures.", enemies: ['e4', 'e2', 'e4'], expReward: 180, zelReward: 800, equipmentDrops: ['eq_a2', 'eq_ac3'], equipmentDropChance: 0.4 },
+  // Region 2: Geffen & Payon (mid areas) - ~10-15% harder per stage
+  { id: 3, name: "Geffen", area: "Geffen Fields", energy: 5, description: "Fields outside the magic city.", enemies: ['e3', 'e4', 'e3'], expReward: 120, zelReward: 500, equipmentDrops: ['eq_w4', 'eq_ac1'], equipmentDropChance: 0.35 },
+  { id: 4, name: "Payon", area: "Payon Forest", energy: 6, description: "Dense forest full of hostile creatures.", enemies: ['e4', 'e5', 'e4'], expReward: 180, zelReward: 800, equipmentDrops: ['eq_a2', 'eq_ac3'], equipmentDropChance: 0.4 },
   
-  // Region 3: Glast Heim (hard areas)
-  { id: 5, name: "Glast Heim", area: "Glast Heim Castle", energy: 7, description: "The cursed castle of fallen knights.", enemies: ['e7', 'e7', 'e1'], expReward: 250, zelReward: 1200, equipmentDrops: ['eq_a3', 'eq_ac4'], equipmentDropChance: 0.45 },
-  { id: 6, name: "Glast Heim", area: "Glast Heim Basement", energy: 8, description: "Deeper into the haunted castle.", enemies: ['e8', 'e8', 'e3'], expReward: 350, zelReward: 1800, equipmentDrops: ['eq_w3', 'eq_ac3'], equipmentDropChance: 0.5 },
+  // Region 3: Glast Heim (hard areas) - Gradual progression
+  { id: 5, name: "Glast Heim", area: "Glast Heim Castle", energy: 7, description: "The cursed castle of fallen knights.", enemies: ['e5', 'e6', 'e5'], expReward: 250, zelReward: 1200, equipmentDrops: ['eq_a3', 'eq_ac4'], equipmentDropChance: 0.45 },
+  { id: 6, name: "Glast Heim", area: "Glast Heim Basement", energy: 8, description: "Deeper into the haunted castle.", enemies: ['e6', 'e7', 'e6'], expReward: 350, zelReward: 1800, equipmentDrops: ['eq_w3', 'eq_ac3'], equipmentDropChance: 0.5 },
   
-  // Region 4: Endless Tower
-  { id: 7, name: "Tower", area: "Endless Tower - Floor 1", energy: 9, description: "The endless tower defies comprehension.", enemies: ['e8', 'e8', 'e1'], expReward: 500, zelReward: 2500, equipmentDrops: ['eq_w4', 'eq_a4'], equipmentDropChance: 0.55 },
-  { id: 8, name: "Tower", area: "Endless Tower - Floor 10", energy: 10, description: "Each floor deadlier than the last.", enemies: ['e8', 'e9', 'e8'], expReward: 700, zelReward: 3500, equipmentDrops: ['eq_ac4'], equipmentDropChance: 0.6 },
-  { id: 9, name: "Tower", area: "Endless Tower - Floor 20", energy: 12, description: "The darkness grows stronger.", enemies: ['e9', 'e9', 'e8', 'e5'], expReward: 1000, zelReward: 5000, equipmentDrops: [], equipmentDropChance: 0.7 },
-  { id: 10, name: "Tower", area: "Endless Tower - Floor 30", energy: 15, description: "Only legends reach this high.", enemies: ['e10', 'e10', 'e9', 'e5', 'e6'], expReward: 1500, zelReward: 8000, equipmentDrops: [], equipmentDropChance: 0.8 },
+  // Region 4: Endless Tower - Escalating but smooth
+  { id: 7, name: "Tower", area: "Endless Tower - Floor 1", energy: 9, description: "The endless tower defies comprehension.", enemies: ['e7', 'e7', 'e8'], expReward: 500, zelReward: 2500, equipmentDrops: ['eq_w4', 'eq_a4'], equipmentDropChance: 0.55 },
+  { id: 8, name: "Tower", area: "Endless Tower - Floor 10", energy: 10, description: "Each floor deadlier than the last.", enemies: ['e7', 'e8', 'e8'], expReward: 700, zelReward: 3500, equipmentDrops: ['eq_ac4'], equipmentDropChance: 0.6 },
+  { id: 9, name: "Tower", area: "Endless Tower - Floor 20", energy: 12, description: "The darkness grows stronger.", enemies: ['e8', 'e8', 'e9', 'e7'], expReward: 1000, zelReward: 5000, equipmentDrops: [], equipmentDropChance: 0.7 },
+  { id: 10, name: "Tower", area: "Endless Tower - Floor 30", energy: 15, description: "Only legends reach this high.", enemies: ['e9', 'e9', 'e8', 'e9', 'e8'], expReward: 1500, zelReward: 8000, equipmentDrops: [], equipmentDropChance: 0.8 },
  
-  // Region 5: Niflheim (dungeon gates)
-  { id: 11, name: "Niflheim", area: "Nifflheim Gate", energy: 5, description: "The realm of the dead beckons.", enemies: ['e3', 'e3', 'e3'], expReward: 800, zelReward: 3000, equipmentDrops: ['eq_w2'], equipmentDropChance: 0.5 },
-  { id: 12, name: "Niflheim", area: "Bio Labyrinth", energy: 5, description: "Where science and horror meet.", enemies: ['e1', 'e1', 'e2'], expReward: 800, zelReward: 3000, equipmentDrops: ['eq_a2'], equipmentDropChance: 0.5 },
-  { id: 13, name: "Niflheim", area: "Umbara Dungeon", energy: 5, description: "Darkness incarnate.", enemies: ['e2', 'e2', 'e2'], expReward: 800, zelReward: 3000, equipmentDrops: ['eq_ac2'], equipmentDropChance: 0.5 },
-  { id: 14, name: "Niflheim", area: "Jawaii", energy: 6, description: "The volcanic island of chaos.", enemies: ['e4', 'e4', 'e4'], expReward: 1000, zelReward: 4000, equipmentDrops: ['eq_w3'], equipmentDropChance: 0.6 },
-  { id: 15, name: "Niflheim", area: "Thor Volcano", energy: 8, description: "Home of the legendary smith.", enemies: ['e6', 'e6', 'e6'], expReward: 1500, zelReward: 6000, equipmentDrops: ['eq_a3'], equipmentDropChance: 0.7 },
-  { id: 16, name: "Niflheim", area: "Abyss Lake", energy: 10, description: "The bottomless lake of darkness.", enemies: ['e5', 'e5', 'e5'], expReward: 2000, zelReward: 8000, equipmentDrops: ['eq_w4'], equipmentDropChance: 0.8 },
- 
+  // Region 5: Niflheim (dungeon gates) - Back to easier stages for variety
+  { id: 11, name: "Niflheim", area: "Nifflheim Gate", energy: 5, description: "The realm of the dead beckons.", enemies: ['e5', 'e6', 'e7'], expReward: 800, zelReward: 3000, equipmentDrops: ['eq_w2'], equipmentDropChance: 0.5 },
+  { id: 12, name: "Niflheim", area: "Bio Labyrinth", energy: 5, description: "Where science and horror meet.", enemies: ['e6', 'e7', 'e8'], expReward: 800, zelReward: 3000, equipmentDrops: ['eq_a2'], equipmentDropChance: 0.5 },
+  { id: 13, name: "Niflheim", area: "Umbara Dungeon", energy: 5, description: "Darkness incarnate.", enemies: ['e7', 'e8', 'e9'], expReward: 800, zelReward: 3000, equipmentDrops: ['eq_ac2'], equipmentDropChance: 0.5 },
+  { id: 14, name: "Niflheim", area: "Jawaii", energy: 6, description: "The volcanic island of chaos.", enemies: ['e8', 'e8', 'e9'], expReward: 1000, zelReward: 4000, equipmentDrops: ['eq_w3'], equipmentDropChance: 0.6 },
+  { id: 15, name: "Niflheim", area: "Thor Volcano", energy: 8, description: "Home of the legendary smith.", enemies: ['e9', 'e9', 'e10'], expReward: 1500, zelReward: 6000, equipmentDrops: ['eq_a3'], equipmentDropChance: 0.7 },
+  { id: 16, name: "Niflheim", area: "Abyss Lake", energy: 10, description: "The bottomless lake of darkness.", enemies: ['e9', 'e10', 'e10'], expReward: 2000, zelReward: 8000, equipmentDrops: ['eq_w4'], equipmentDropChance: 0.8 },
+  
   // Arena / Colosseum (IDs 100-199)
   { id: 100, name: "Arena", area: "Colosseum - Beginner", energy: 0, description: "Practice against shadow knights.", enemies: ['arena_shadow_knight'], expReward: 200, zelReward: 500, equipmentDrops: [], equipmentDropChance: 0 },
   { id: 101, name: "Arena", area: "Colosseum - Warrior", energy: 0, description: "Face the flame warriors.", enemies: ['arena_flame_warrior'], expReward: 250, zelReward: 600, equipmentDrops: [], equipmentDropChance: 0 },

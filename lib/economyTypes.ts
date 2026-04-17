@@ -435,6 +435,12 @@ export interface PlayerState {
   guildCoins: number;
   honorPoints: number;
   
+  // Guild
+  guildId: string | null;
+  guildName: string | null;
+  guildLevel: number;
+  guildContribution: number;
+  
   // Materials
   materials: Record<MaterialType, number>;
   
@@ -584,6 +590,10 @@ export const INITIAL_STATE: PlayerState = {
   arenaMedals: 0,
   guildCoins: 0,
   honorPoints: 0,
+  guildId: null,
+  guildName: null,
+  guildLevel: 1,
+  guildContribution: 0,
   materials: { ...INITIAL_MATERIALS },
   inventory: [
     { instanceId: 'inst_1', templateId: 'u1', level: 1, exp: 0, equipment: { weapon: null, armor: null, accessory: null }, timesFused: 0 },

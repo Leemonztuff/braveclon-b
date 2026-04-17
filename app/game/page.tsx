@@ -19,6 +19,7 @@ import EvolutionScreen from '@/components/EvolutionScreen';
 import ArenaScreen from '@/components/ArenaScreen';
 import ShopScreen from '@/components/ShopScreen';
 import CraftScreen from '@/components/CraftScreen';
+import GuildScreen from '@/components/GuildScreen';
 import { BottomNav } from '@/components/BottomNav';
 import { CurrencyDisplay } from '@/components/ui/DesignSystem';
 
@@ -204,6 +205,15 @@ export default function GameApp() {
             onCraft={craftItem}
             onBack={goBack}
             onAlert={triggerAlert}
+          />
+        );
+      case 'guild':
+        return (
+          <GuildScreen
+            state={state}
+            onBack={goBack}
+            onAlert={triggerAlert}
+            onNavigate={(screen) => navigate(screen as any)}
           />
         );
       case 'randall':

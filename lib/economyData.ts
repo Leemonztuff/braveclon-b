@@ -9,9 +9,9 @@ import { GachaBanner, BattlePassTier, SubscriptionBenefits, CurrencyType, Subscr
 // ============================================================================
 
 export const ENERGY_CONFIG = {
-  REGEN_MS: 3 * 60 * 1000,           // 3 minutes per energy
-  MAX_ENERGY: 30,                    // Base max energy
-  EMERGENCY_CAP: 50,                // Can store up to 50
+  REGEN_MS: 1.5 * 60 * 1000,          // 1.5 minutes per energy (doubled from 3 min = 10/hour regen)
+  MAX_ENERGY: 30,                      // Base max energy
+  EMERGENCY_CAP: 50,                   // Can store up to 50
   DAILY_BONUS_ENERGY: 15,           // From daily quest
   REFILL_COST_PER_ENERGY: 1,        // Gems per energy refilled
   FULL_REFILL_COST: 30,             // 30 gems for full refill
