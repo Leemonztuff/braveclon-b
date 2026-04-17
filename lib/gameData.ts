@@ -1,4 +1,7 @@
+import { MaterialType } from './economyTypes';
+
 export type Element = 'Fire' | 'Water' | 'Earth' | 'Thunder' | 'Light' | 'Dark';
+export type DungeonFloorType = 'normal' | 'elite' | 'boss' | 'treasure' | 'event';
 
 export const ELEMENT_ICONS: Record<Element, string> = {
   Fire: '🔥',
@@ -49,13 +52,45 @@ export interface Stats {
 
 export type EquipSlot = 'weapon' | 'armor' | 'accessory';
 
+export interface EquipmentSetBonus {
+  name: string;
+  description: string;
+  piecesRequired: number;
+  statBonuses?: Partial<Stats>;
+  specialEffect?: {
+    type: 'damage' | 'defense' | 'heal' | 'bb' | 'crit' | 'element';
+    value: number;
+    element?: Element;
+  };
+}
+
+export interface EquipmentSet {
+  id: string;
+  name: string;
+  pieces: string[];
+  bonuses: EquipmentSetBonus[];
+}
+
 export interface EquipmentTemplate {
   id: string;
   name: string;
   type: EquipSlot;
+  rarity: number;
   statsBonus: Partial<Stats>;
   description: string;
   icon: string;
+  setId?: string;
+  uniqueEffect?: {
+    name: string;
+    description: string;
+    trigger: 'onHit' | 'onKill' | 'onHitCrit' | 'onTurnStart' | 'onLowHP' | 'onBattleStart';
+    effect: {
+      type: 'heal' | 'barrier' | 'bbFill' | 'damage' | 'buff' | 'counter';
+      value: number;
+      duration?: number;
+      element?: Element;
+    };
+  };
 }
 
 export type SkillType = 'damage' | 'heal' | 'buff' | 'debuff' | 'leader' | 'extra';
@@ -573,18 +608,18 @@ export const QR_REWARD_TABLE: QRRewardTable[] = [
 ];
 
 export const EQUIPMENT_DATABASE: Record<string, EquipmentTemplate> = {
-  'eq_w1': { id: 'eq_w1', name: 'Brave Sword', type: 'weapon', statsBonus: { atk: 50 }, description: 'A basic sword for brave warriors.', icon: '⚔️' },
-  'eq_w2': { id: 'eq_w2', name: 'Flame Blade', type: 'weapon', statsBonus: { atk: 120, hp: 100 }, description: 'A sword imbued with fire.', icon: '🗡️' },
-  'eq_w3': { id: 'eq_w3', name: 'Muramasa', type: 'weapon', statsBonus: { atk: 250, def: -50 }, description: 'A cursed blade that grants immense power.', icon: '🗡️' },
-  'eq_w4': { id: 'eq_w4', name: 'Holy Lance', type: 'weapon', statsBonus: { atk: 180, rec: 100 }, description: 'A lance blessed by the gods.', icon: '🔱' },
-  'eq_a1': { id: 'eq_a1', name: 'Leather Armor', type: 'armor', statsBonus: { def: 50, hp: 200 }, description: 'Basic protection.', icon: '🛡️' },
-  'eq_a2': { id: 'eq_a2', name: 'Knight Shield', type: 'armor', statsBonus: { def: 150, hp: 500 }, description: 'Heavy shield for knights.', icon: '🛡️' },
-  'eq_a3': { id: 'eq_a3', name: 'Dragon Scale', type: 'armor', statsBonus: { def: 300, hp: 1000 }, description: 'Armor made from dragon scales.', icon: '🐉' },
-  'eq_a4': { id: 'eq_a4', name: 'Phantom Cloak', type: 'armor', statsBonus: { def: 100, hp: 300, rec: 200 }, description: 'A cloak that makes the wearer hard to hit.', icon: '🧥' },
-  'eq_ac1': { id: 'eq_ac1', name: 'Health Ring', type: 'accessory', statsBonus: { hp: 500, rec: 100 }, description: 'Boosts vitality.', icon: '💍' },
-  'eq_ac2': { id: 'eq_ac2', name: 'Power Amulet', type: 'accessory', statsBonus: { atk: 100, def: 50 }, description: 'Increases overall power.', icon: '📿' },
-  'eq_ac3': { id: 'eq_ac3', name: 'Heroic Emblem', type: 'accessory', statsBonus: { hp: 1000, atk: 100, def: 100, rec: 100 }, description: 'An emblem given to true heroes.', icon: '🏅' },
-  'eq_ac4': { id: 'eq_ac4', name: 'Soul Gem', type: 'accessory', statsBonus: { rec: 500 }, description: 'A gem that vastly improves recovery.', icon: '💎' },
+  'eq_w1': { id: 'eq_w1', name: 'Brave Sword', type: 'weapon', rarity: 1, statsBonus: { atk: 50 }, description: 'A basic sword for brave warriors.', icon: '⚔️' },
+  'eq_w2': { id: 'eq_w2', name: 'Flame Blade', type: 'weapon', rarity: 2, statsBonus: { atk: 120, hp: 100 }, description: 'A sword imbued with fire.', icon: '🗡️' },
+  'eq_w3': { id: 'eq_w3', name: 'Muramasa', type: 'weapon', rarity: 4, statsBonus: { atk: 250, def: -50 }, description: 'A cursed blade that grants immense power.', icon: '🗡️' },
+  'eq_w4': { id: 'eq_w4', name: 'Holy Lance', type: 'weapon', rarity: 3, statsBonus: { atk: 180, rec: 100 }, description: 'A lance blessed by the gods.', icon: '🔱' },
+  'eq_a1': { id: 'eq_a1', name: 'Leather Armor', type: 'armor', rarity: 1, statsBonus: { def: 50, hp: 200 }, description: 'Basic protection.', icon: '🛡️' },
+  'eq_a2': { id: 'eq_a2', name: 'Knight Shield', type: 'armor', rarity: 2, statsBonus: { def: 150, hp: 500 }, description: 'Heavy shield for knights.', icon: '🛡️' },
+  'eq_a3': { id: 'eq_a3', name: 'Dragon Scale', type: 'armor', rarity: 4, statsBonus: { def: 300, hp: 1000 }, description: 'Armor made from dragon scales.', icon: '🐉' },
+  'eq_a4': { id: 'eq_a4', name: 'Phantom Cloak', type: 'armor', rarity: 3, statsBonus: { def: 100, hp: 300, rec: 200 }, description: 'A cloak that makes the wearer hard to hit.', icon: '🧥' },
+  'eq_ac1': { id: 'eq_ac1', name: 'Health Ring', type: 'accessory', rarity: 1, statsBonus: { hp: 500, rec: 100 }, description: 'Boosts vitality.', icon: '💍' },
+  'eq_ac2': { id: 'eq_ac2', name: 'Power Amulet', type: 'accessory', rarity: 2, statsBonus: { atk: 100, def: 50 }, description: 'Increases overall power.', icon: '📿' },
+  'eq_ac3': { id: 'eq_ac3', name: 'Heroic Emblem', type: 'accessory', rarity: 4, statsBonus: { hp: 1000, atk: 100, def: 100, rec: 100 }, description: 'An emblem given to true heroes.', icon: '🏅' },
+  'eq_ac4': { id: 'eq_ac4', name: 'Soul Gem', type: 'accessory', rarity: 3, statsBonus: { rec: 500 }, description: 'A gem that vastly improves recovery.', icon: '💎' },
 };
 
 export function getExpForLevel(level: number): number {
@@ -611,4 +646,193 @@ export function getFusionExpGain(materialRarity: number, materialLevel: number, 
 
 export function getEvolutionCost(targetRarity: number): number {
   return targetRarity * 10000;
+}
+
+export const EQUIPMENT_SETS: Record<string, EquipmentSet> = {
+  'set_dragon': {
+    id: 'set_dragon',
+    name: 'Dragon Slayer',
+    pieces: ['eq_w3', 'eq_a3', 'eq_ac3'],
+    bonuses: [
+      { name: 'Dragon Scale', description: '+15% ATK & DEF', piecesRequired: 2, statBonuses: { atk: 0.15, def: 0.15 } },
+      { name: 'Dragon Slayer', description: '+30% Fire damage, +20% crit chance', piecesRequired: 3, specialEffect: { type: 'element', value: 0.3, element: 'Fire' }, statBonuses: { atk: 0.15, def: 0.15 } },
+    ],
+  },
+  'set_holy': {
+    id: 'set_holy',
+    name: 'Holy Knight',
+    pieces: ['eq_w4', 'eq_a2', 'eq_ac4'],
+    bonuses: [
+      { name: 'Divine Protection', description: '+10% HP, +10% DEF', piecesRequired: 2, statBonuses: { hp: 0.1, def: 0.1 } },
+      { name: 'Holy Aura', description: '+20% healing, +25% damage reduction when >50% HP', piecesRequired: 3, specialEffect: { type: 'heal', value: 0.2 }, statBonuses: { hp: 0.1, def: 0.1, rec: 0.1 } },
+    ],
+  },
+  'set_ninja': {
+    id: 'set_ninja',
+    name: 'Shadow Ninja',
+    pieces: ['eq_w2', 'eq_a4', 'eq_ac2'],
+    bonuses: [
+      { name: 'Shadow Step', description: '+15% ATK, +10% evasion', piecesRequired: 2, statBonuses: { atk: 0.15 } },
+      { name: 'Assassin', description: '+30% crit damage, +20% BB gauge on kill', piecesRequired: 3, specialEffect: { type: 'crit', value: 0.5 }, statBonuses: { atk: 0.15, def: 0.1 } },
+    ],
+  },
+};
+
+export function getEquipmentSet(setId: string): EquipmentSet | undefined {
+  return EQUIPMENT_SETS[setId];
+}
+
+export function getSetBonus(setId: string, pieceCount: number): EquipmentSetBonus | undefined {
+  const set = EQUIPMENT_SETS[setId];
+  if (!set) return undefined;
+  return set.bonuses.find(b => b.piecesRequired === pieceCount);
+}
+
+export function getActiveSetBonuses(equipment: { templateId: string }[]): EquipmentSetBonus[] {
+  const setCounts: Record<string, number> = {};
+  
+  for (const eq of equipment) {
+    const template = EQUIPMENT_DATABASE[eq.templateId];
+    if (template?.setId) {
+      setCounts[template.setId] = (setCounts[template.setId] || 0) + 1;
+    }
+  }
+  
+  const activeBonuses: EquipmentSetBonus[] = [];
+  for (const [setId, count] of Object.entries(setCounts)) {
+    const set = EQUIPMENT_SETS[setId];
+    if (set) {
+      const applicableBonus = set.bonuses
+        .filter(b => b.piecesRequired <= count)
+        .sort((a, b) => b.piecesRequired - a.piecesRequired)[0];
+      if (applicableBonus) {
+        activeBonuses.push(applicableBonus);
+      }
+    }
+  }
+  
+  return activeBonuses;
+}
+
+// ============================================================================
+// DUNGEON GENERATOR
+// ============================================================================
+
+import { DungeonTemplate, DungeonFloor } from './economyTypes';
+
+function generateDungeonFloors(dungeonId: string, totalFloors: number, element: Element | 'mixed'): DungeonFloor[] {
+  const floors: DungeonFloor[] = [];
+  const baseEnemies = ['e1', 'e2', 'e3', 'e4', 'e5', 'e6'];
+  
+  for (let i = 1; i <= totalFloors; i++) {
+    const progress = i / totalFloors;
+    let floorType: DungeonFloor['type'] = 'normal';
+    let specialEvent: DungeonFloor['specialEvent'] = 'none';
+    
+    if (i === totalFloors) {
+      floorType = 'boss';
+    } else if (i % 5 === 0 && i < totalFloors) {
+      floorType = 'elite';
+      specialEvent = 'mini_boss';
+    } else if (i % 10 === 0) {
+      floorType = 'treasure';
+      specialEvent = 'treasure';
+    } else if (Math.random() < 0.15) {
+      specialEvent = Math.random() < 0.5 ? 'heal' : 'mystery';
+    }
+    
+    const hpMultiplier = 1 + (progress * 2);
+    const atkMultiplier = 1 + (progress * 1.5);
+    
+    const enemyPool = baseEnemies.slice(0, Math.min(2 + Math.floor(progress * 4), 6));
+    const selectedEnemies = Array(Math.min(1 + Math.floor(Math.random() * 3), 4)).fill(null).map(() => 
+      enemyPool[Math.floor(Math.random() * enemyPool.length)]
+    );
+    
+    const materialPool: MaterialType[] = ['ironOre', 'steelIngot', 'mythril'];
+    if (progress > 0.5) materialPool.push('orichalcum');
+    if (progress > 0.8) materialPool.push('dragonScale');
+    
+    floors.push({
+      floorNumber: i,
+      type: floorType,
+      enemies: selectedEnemies,
+      enemyCount: selectedEnemies.length,
+      baseHpMultiplier: hpMultiplier,
+      baseAtkMultiplier: atkMultiplier,
+      zelReward: Math.floor(500 * (1 + progress) * i),
+      expReward: Math.floor(300 * (1 + progress) * i),
+      materialDrop: materialPool,
+      equipmentDropChance: floorType === 'elite' ? 0.3 : floorType === 'boss' ? 0.5 : 0.1,
+      specialEvent,
+    });
+  }
+  
+  return floors;
+}
+
+export const DUNGEONS: Record<string, DungeonTemplate> = {
+  'dungeon_abyss': {
+    id: 'dungeon_abyss',
+    name: 'Abyss Gate',
+    description: 'A dark portal leading to endless depths.',
+    element: 'Dark',
+    recommendedLevel: 10,
+    totalFloors: 10,
+    entryCost: 10,
+    clearReward: { zel: 5000, gems: 5, materials: ['orichalcum'] },
+    floors: generateDungeonFloors('dungeon_abyss', 10, 'Dark'),
+  },
+  'dungeon_dragon': {
+    id: 'dungeon_dragon',
+    name: "Dragon's Lair",
+    description: 'A volcanic cave home to ancient dragons.',
+    element: 'Fire',
+    recommendedLevel: 30,
+    totalFloors: 15,
+    entryCost: 20,
+    clearReward: { zel: 15000, gems: 15, materials: ['dragonScale', 'orichalcum'] },
+    floors: generateDungeonFloors('dungeon_dragon', 15, 'Fire'),
+  },
+  'dungeon_ruins': {
+    id: 'dungeon_ruins',
+    name: 'Ancient Ruins',
+    description: 'Crumbling ruins filled with mysteries.',
+    element: 'Earth',
+    recommendedLevel: 20,
+    totalFloors: 12,
+    entryCost: 15,
+    clearReward: { zel: 8000, gems: 8, materials: ['mythril'] },
+    floors: generateDungeonFloors('dungeon_ruins', 12, 'Earth'),
+  },
+  'dungeon_forest': {
+    id: 'dungeon_forest',
+    name: 'Phantom Forest',
+    description: 'A twisted forest where spirits dwell.',
+    element: 'Light',
+    recommendedLevel: 25,
+    totalFloors: 10,
+    entryCost: 15,
+    clearReward: { zel: 10000, gems: 10, materials: ['mythril', 'orichalcum'] },
+    floors: generateDungeonFloors('dungeon_forest', 10, 'Light'),
+  },
+  'dungeon_volcano': {
+    id: 'dungeon_volcano',
+    name: 'Volcanic Cave',
+    description: 'Beneath the mountains lies molten danger.',
+    element: 'Fire',
+    recommendedLevel: 35,
+    totalFloors: 20,
+    entryCost: 25,
+    clearReward: { zel: 25000, gems: 25, materials: ['dragonScale'] },
+    floors: generateDungeonFloors('dungeon_volcano', 20, 'Fire'),
+  },
+};
+
+export function getDungeon(dungeonId: string): DungeonTemplate | undefined {
+  return DUNGEONS[dungeonId];
+}
+
+export function getDungeonFloors(dungeonId: string): DungeonFloor[] {
+  return DUNGEONS[dungeonId]?.floors || [];
 }

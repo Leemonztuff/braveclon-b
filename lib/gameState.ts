@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { UnitTemplate, UNIT_DATABASE, Stats, QR_REWARD_TABLE, GACHA_POOL, EQUIPMENT_DATABASE, EquipSlot, STAGES, getExpForLevel, getFusionCost, getFusionExpGain, getEvolutionCost } from './gameData';
+import { UnitTemplate, UNIT_DATABASE, Stats, QR_REWARD_TABLE, GACHA_POOL, EQUIPMENT_DATABASE, EquipSlot, STAGES, getExpForLevel, getFusionCost, getFusionExpGain, getEvolutionCost, getActiveSetBonuses } from './gameData';
 import { 
   PlayerState, 
   INITIAL_STATE,
@@ -1574,6 +1574,8 @@ export function calculateStats(template: UnitTemplate, level: number, equipment?
 
   if (equipment && equipInventory) {
     const equipIds = [equipment.weapon, equipment.armor, equipment.accessory].filter(Boolean);
+    const equippedItems: { templateId: string }[] = [];
+    
     equipIds.forEach(eqInstId => {
       const eqInst = equipInventory.find(e => e.instanceId === eqInstId);
       if (eqInst) {
@@ -1586,8 +1588,20 @@ export function calculateStats(template: UnitTemplate, level: number, equipment?
           base.def += Math.floor((eqTemplate.statsBonus.def || 0) * enhancementMultiplier);
           base.rec += Math.floor((eqTemplate.statsBonus.rec || 0) * enhancementMultiplier);
         }
+        equippedItems.push({ templateId: eqInst.templateId });
       }
     });
+
+    // Apply set bonuses
+    const setBonuses = getActiveSetBonuses(equippedItems);
+    for (const bonus of setBonuses) {
+      if (bonus.statBonuses) {
+        base.hp = Math.floor(base.hp * (1 + (bonus.statBonuses.hp || 0)));
+        base.atk = Math.floor(base.atk * (1 + (bonus.statBonuses.atk || 0)));
+        base.def = Math.floor(base.def * (1 + (bonus.statBonuses.def || 0)));
+        base.rec = Math.floor(base.rec * (1 + (bonus.statBonuses.rec || 0)));
+      }
+    }
   }
   return base;
 }

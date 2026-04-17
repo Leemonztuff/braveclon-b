@@ -1,4 +1,4 @@
-import { UnitTemplate, Stats, EquipSlot } from './gameData';
+import { UnitTemplate, Stats, EquipSlot, Element } from './gameData';
 
 // ============================================================================
 // CORE CURRENCY TYPES
@@ -279,8 +279,98 @@ export interface ConsumableItem {
 }
 
 // ============================================================================
-// SHOP SYSTEM
+// DUNGEON SYSTEM
 // ============================================================================
+
+export type DungeonFloorType = 'normal' | 'elite' | 'boss' | 'treasure' | 'event';
+
+export interface DungeonFloor {
+  floorNumber: number;
+  type: DungeonFloorType;
+  enemies: string[];
+  enemyCount: number;
+  baseHpMultiplier: number;
+  baseAtkMultiplier: number;
+  zelReward: number;
+  expReward: number;
+  materialDrop?: MaterialType[];
+  equipmentDropChance?: number;
+  specialEvent?: 'heal' | 'treasure' | 'mystery' | 'mini_boss' | 'none';
+}
+
+export interface DungeonTemplate {
+  id: string;
+  name: string;
+  description: string;
+  element: Element | 'mixed';
+  recommendedLevel: number;
+  totalFloors: number;
+  entryCost: number;
+  clearReward: {
+    zel: number;
+    gems?: number;
+    materials?: MaterialType[];
+  };
+  floors: DungeonFloor[];
+}
+
+export const DUNGEON_TYPES = ['Abyss Gate', "Dragon's Lair", 'Ancient Ruins', 'Phantom Forest', 'Volcanic Cave'] as const;
+
+// ============================================================================
+// GUILD SYSTEM
+// ============================================================================
+
+export type GuildRank = 'leader' | 'officer' | 'member' | 'recruit';
+
+export interface GuildMember {
+  userId: string;
+  name: string;
+  rank: GuildRank;
+  contribution: number;
+  joinedAt: string;
+  weeklyContribution: number;
+}
+
+export interface Guild {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  leaderId: string;
+  members: GuildMember[];
+  level: number;
+  exp: number;
+  totalMembers: number;
+  maxMembers: number;
+  createdAt: string;
+  guildCoins: number;
+  dailyDonation: number;
+}
+
+export interface GuildActivity {
+  id: string;
+  guildId: string;
+  type: 'donation' | 'upgrade' | 'member_join' | 'member_leave' | 'quest_complete' | 'raid_clear';
+  description: string;
+  timestamp: string;
+  userId?: string;
+}
+
+export interface GuildQuest {
+  id: string;
+  guildId: string;
+  name: string;
+  description: string;
+  requiredContribution: number;
+  reward: {
+    guildExp: number;
+    guildCoins: number;
+    memberRewards?: { userId: string; reward: number }[];
+  };
+  donors: string[];
+  completed: boolean;
+  expiresAt: string;
+}
 
 export type ShopCategory = 'units' | 'equipment' | 'items' | 'materials' | 'craft';
 

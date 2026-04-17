@@ -39,11 +39,22 @@ function createBattleUnit(
     queuedBb: false,
     actionState: 'idle',
     statusEffects: [] as StatusEffect[],
-    atkBuff: 1.0,
-    defBuff: 1.0,
-    recBuff: 1.0,
-    elementalMitigation: 0,
-    hitCount: 0
+    buff: {
+      atkBoost: 1.0,
+      defBoost: 1.0,
+      recBoost: 1.0,
+      critChance: 0.05,
+      critDamage: 1.5,
+      damageReduction: 0,
+      hpRegen: 0,
+      barrier: 0,
+      drain: 0,
+      counter: 0,
+    },
+    hitCount: 0,
+    totalDamageDealt: 0,
+    comboChain: 0,
+    isGuarding: false,
   };
 }
 
@@ -133,6 +144,17 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
 
   const [inventoryItems, setInventoryItems] = useState([...BATTLE_ITEMS]);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [guardActive, setGuardActive] = useState<Record<string, boolean>>({});
+
+  const toggleGuard = (id: string) => {
+    setGuardActive(prev => ({ ...prev, [id]: !prev[id] }));
+    setPlayerUnits(prev => prev.map(u => {
+      if (u.id === id && !u.isDead) {
+        return { ...u, isGuarding: !u.isGuarding, actionState: u.isGuarding ? 'idle' : 'guarding' };
+      }
+      return u;
+    }));
+  };
 
   const addLog = (msg: string) => {
     setCombatLog(prev => [...prev.slice(-4), msg]);
@@ -266,8 +288,8 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
       }
       
       // Apply status effect debuffs (poison, weak, etc)
-      let atkMultiplier = attacker.atkBuff;
-      let defMultiplier = target.defBuff;
+      let atkMultiplier = attacker.buff.atkBoost;
+      let defMultiplier = target.buff.defBoost;
       
       // Poison deals damage at start of turn
       const poisonEffect = attacker.statusEffects.find(e => e.type === 'poison');
@@ -287,7 +309,7 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
       
       // Calculate damage with all modifiers
       let rawDamage = Math.max(1, (attacker.atk * atkMultiplier * powerMultiplier) - (target.def * defMultiplier * 0.5));
-      let finalDamage = Math.floor(rawDamage * elementMultiplier * (1 - target.elementalMitigation));
+      let finalDamage = Math.floor(rawDamage * elementMultiplier * (1 - target.buff.damageReduction));
 
       // Increment hit count for OD system
       const newHitCount = attacker.hitCount + 1;
@@ -436,8 +458,11 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
 
       const elementMultiplier = getElementMultiplier(attacker.template.element, target.template.element);
       const isWeakness = elementMultiplier > 1.0;
+      
+      // Guard damage reduction
+      const guardReduction = target.isGuarding ? 0.5 : 0;
       let rawDamage = Math.max(1, attacker.atk - (target.def * 0.5));
-      let finalDamage = Math.floor(rawDamage * elementMultiplier);
+      let finalDamage = Math.floor(rawDamage * elementMultiplier * (1 - guardReduction));
 
       // ANIMATION: Attacker moves
       currentEnemies[i] = { ...attacker, actionState: 'attacking' };
@@ -445,7 +470,7 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
       await new Promise(r => setTimeout(r, 200));
 
       // Apply damage & ANIMATION: Target hurt
-      const bcGenerated = Math.floor(Math.random() * 3) + 1; // 1-3 BC generated on hit
+      const bcGenerated = Math.floor(Math.random() * 3) + 1;
       
       if (currentPlayer[targetIdx].bbGauge < currentPlayer[targetIdx].maxBb) {
         currentPlayer[targetIdx].bbGauge = Math.min(currentPlayer[targetIdx].maxBb, currentPlayer[targetIdx].bbGauge + bcGenerated);
@@ -458,12 +483,15 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
         ...currentPlayer[targetIdx],
         hp: Math.max(0, target.hp - finalDamage),
         isDead: target.hp - finalDamage <= 0,
-        actionState: 'hurt',
+        actionState: target.isGuarding ? 'guarding' : 'hurt',
         isWeaknessHit: isWeakness
       };
       setPlayerUnits([...currentPlayer]);
 
-      if (isWeakness) {
+      if (target.isGuarding) {
+        addLog(`${target.template.name} guards! Damage reduced to ${finalDamage}!`);
+        addFloatingText('GUARD!', 'buff', target.id, true);
+      } else if (isWeakness) {
         playSound('weakness');
         triggerScreenShake();
       } else {
@@ -475,7 +503,7 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
         setTimeout(() => addFloatingText('WEAK', 'weak', target.id, true), 100);
       }
 
-      addLog(`${attacker.template.name} attacks ${target.template.name} for ${finalDamage} dmg! ${isWeakness ? '(Weakness!)' : ''}`);
+      addLog(`${attacker.template.name} attacks ${target.template.name} for ${finalDamage} dmg!${target.isGuarding ? ' (Guarded!)' : ''}${isWeakness ? ' (Weakness!)' : ''}`);
       
       await new Promise(r => setTimeout(r, 400));
 
@@ -522,6 +550,8 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
     handleUnitClick,
     executeTurn,
     screenShake,
-    floatingTexts
+    floatingTexts,
+    toggleGuard,
+    guardActive
   };
 }
