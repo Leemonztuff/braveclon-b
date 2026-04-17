@@ -11,16 +11,9 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ENUMS
 -- ============================================================================
 
--- El tipo se crea como ENUM si no existe (para Supabase nuevo)
-DO $$ BEGIN
-    CREATE TYPE element_type AS ENUM ('Fire', 'Water', 'Earth', 'Thunder', 'Light', 'Dark');
-EXCEPTION
-    WHEN duplicate_object THEN NULL;
-END $$;
-
--- Añadir nuevos valores si el tipo ya existe
-ALTER TYPE element_type ADD VALUE IF NOT EXISTS 'Poison';
-ALTER TYPE element_type ADD VALUE IF NOT EXISTS 'Wind';
+-- Crear ENUM con todos los valores necesarios desde el inicio
+DROP TYPE IF EXISTS element_type CASCADE;
+CREATE TYPE element_type AS ENUM ('Fire', 'Water', 'Earth', 'Thunder', 'Light', 'Dark', 'Poison', 'Wind');
 CREATE TYPE equip_slot AS ENUM ('weapon', 'armor', 'accessory');
 CREATE TYPE guild_rank AS ENUM ('leader', 'officer', 'member', 'recruit');
 CREATE TYPE quest_type AS ENUM ('daily', 'weekly', 'guild', 'event');
