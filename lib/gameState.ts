@@ -34,6 +34,7 @@ import {
   SHOP_CONSUMABLES,
 } from './economyData';
 import { saveGameState, loadGameState } from './auth';
+import { queueSave, initSaveQueue, isOnline, getQueueLength } from './save-queue';
 
 export * from './gameTypes';
 export * from './economyTypes';
@@ -91,6 +92,9 @@ export function useGameState(options: UseGameStateOptions = {}) {
 
       setState(loadedState || INITIAL_STATE);
       setIsLoaded(true);
+      
+      // Initialize save queue after loading state
+      initSaveQueue();
     };
 
     loadState();
@@ -182,7 +186,8 @@ export function useGameState(options: UseGameStateOptions = {}) {
 
     const interval = setInterval(async () => {
       setIsSaving(true);
-      await saveGameState(userId, state);
+      // Use queue for offline-first saves
+      queueSave(userId, state);
       setIsSaving(false);
       setLastSaved(new Date());
     }, saveInterval);
@@ -589,12 +594,14 @@ export function useGameState(options: UseGameStateOptions = {}) {
       playerLeveledUp: boolean;
       leveledUpUnits: { name: string; oldLevel: number; newLevel: number }[];
       equipmentDropped: EquipInstance[];
+      arenaScoreGain: number;
     } = {
       zel: 0,
       exp: 0,
       playerLeveledUp: false,
       leveledUpUnits: [],
       equipmentDropped: [],
+      arenaScoreGain: 0,
     };
 
     setState(prev => {
@@ -656,7 +663,7 @@ export function useGameState(options: UseGameStateOptions = {}) {
         playerLeveledUp,
         leveledUpUnits: leveledUp,
         equipmentDropped: equipmentDrops,
-        arenaScoreGain, // Can be consumed by UI if needed
+        arenaScoreGain,
       };
 
       return {

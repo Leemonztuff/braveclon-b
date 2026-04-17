@@ -1,23 +1,85 @@
-import { useState, useRef, useCallback } from 'react';
-import { PlayerState, calculateStats } from '@/lib/gameState';
-import { UNIT_DATABASE, ENEMIES, STAGES, getElementMultiplier } from '@/lib/gameData';
+/**
+ * Battle Hook - UI State Management + Animation Control
+ * 
+ * Delegates pure battle logic to lib/combat-engine.ts
+ * This hook only manages UI state, animations, and user interaction.
+ * All combat calculations are pure functions in combat-engine.ts
+ * 
+ * Complexity: LOW
+ * Public API:
+ * - useBattle(state, stageId, onEnd) → BattleState & Actions
+ */
+
+import { useState, useRef, useCallback, useMemo } from 'react';
+import { PlayerState } from '@/lib/gameTypes';
+import { UNIT_DATABASE, ENEMIES, STAGES, UnitTemplate } from '@/lib/gameData';
 import { playSound } from '@/lib/audio';
 import { BattleUnit, StatusEffect } from '@/lib/battleTypes';
 import { FloatingTextData } from '@/components/FloatingText';
 
-export const OD_GAUGE_THRESHOLD = 8;
+// ============================================================================
+// COMBAT ENGINE IMPORTS
+// ============================================================================
 
-export const BATTLE_ITEMS = [
-  { id: 'cure', name: 'Cure', count: 10, icon: '🧪', type: 'heal' as const, value: 1000 },
-  { id: 'high_cure', name: 'High Cure', count: 5, icon: '🧪', type: 'heal' as const, value: 2500 },
-  { id: 'divine_light', name: 'Divine Light', count: 3, icon: '✨', type: 'heal_all' as const, value: 2000 },
-  { id: 'fujin', name: 'Fujin Potion', count: 2, icon: '⚡', type: 'bb_fill' as const, value: 100 },
-  { id: 'revive', name: 'Revive', count: 1, icon: '👼', type: 'revive' as const, value: 0.5 },
-];
+import {
+  calculateUnitStats,
+  createDefaultBuffState,
+  calculateDamage,
+  calculateEnemyStats,
+  resolvePlayerAttack,
+  resolveEnemyAttack,
+  distributeBcDrops,
+  grantEnemyBcGauge,
+  applyBattleItem,
+  calculateFloatingTextPosition,
+  checkVictoryConditions,
+  VictoryState,
+  OD_GAUGE_THRESHOLD,
+  BATTLE_ITEMS,
+  type BattleItem,
+} from '@/lib/combat-engine';
 
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+export type TurnPhase = 'player_input' | 'player_executing' | 'enemy_executing' | 'victory' | 'defeat';
+
+interface BattleState {
+  playerUnits: BattleUnit[];
+  enemyUnits: BattleUnit[];
+  turnCount: number;
+  turnState: TurnPhase;
+  combatLog: string[];
+  bbFlash: boolean;
+  bbCutInUnit: BattleUnit | null;
+  bbHitEffect: { targetId: string; element: string } | null;
+  screenShake: boolean;
+  floatingTexts: FloatingTextData[];
+  inventoryItems: BattleItem[];
+  selectedItem: string | null;
+  guardActive: Record<string, boolean>;
+}
+
+interface BattleActions {
+  setSelectedItem: (id: string | null) => void;
+  handleUnitClick: (id: string) => void;
+  executeTurn: () => Promise<void>;
+  toggleGuard: (id: string) => void;
+}
+
+export type UseBattleReturn = BattleState & BattleActions;
+
+// ============================================================================
+// PURE FUNCTIONS - Unit Creation
+// ============================================================================
+
+/**
+ * Create a battle unit from template and stats
+ */
 function createBattleUnit(
   id: string,
-  template: typeof ENEMIES[0],
+  template: UnitTemplate,
   isPlayer: boolean,
   hp: number,
   maxHp: number,
@@ -39,18 +101,7 @@ function createBattleUnit(
     queuedBb: false,
     actionState: 'idle',
     statusEffects: [] as StatusEffect[],
-    buff: {
-      atkBoost: 1.0,
-      defBoost: 1.0,
-      recBoost: 1.0,
-      critChance: 0.05,
-      critDamage: 1.5,
-      damageReduction: 0,
-      hpRegen: 0,
-      barrier: 0,
-      drain: 0,
-      counter: 0,
-    },
+    buff: createDefaultBuffState(),
     hitCount: 0,
     totalDamageDealt: 0,
     comboChain: 0,
@@ -58,8 +109,24 @@ function createBattleUnit(
   };
 }
 
-export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: boolean) => void) {
+// ============================================================================
+// HOOK IMPLEMENTATION
+// ============================================================================
+
+/**
+ * Main battle hook - delegates calculations to combat-engine
+ */
+export function useBattle(
+  state: PlayerState,
+  stageId: number,
+  onEnd: (victory: boolean) => void
+): UseBattleReturn {
   const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
+
+  // -------------------------------------------------------------------------
+  // Helper Functions (UI/Audio + Timing only)
+  // -------------------------------------------------------------------------
+
   const addTimeout = useCallback((fn: () => void, ms: number) => {
     const id = setTimeout(fn, ms);
     timeoutRefs.current.push(id);
@@ -71,27 +138,31 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
     timeoutRefs.current = [];
   }, []);
 
-  const [playerUnits, setPlayerUnits] = useState<BattleUnit[]>(() => {
+  // -------------------------------------------------------------------------
+  // Initialize Units from State
+  // -------------------------------------------------------------------------
+
+  const initialPlayerUnits = useMemo(() => {
     const units: BattleUnit[] = [];
     for (let idx = 0; idx < state.team.length; idx++) {
       const instanceId = state.team[idx];
       if (!instanceId) continue;
-      
+
       const inst = state.inventory.find(u => u.instanceId === instanceId);
       if (!inst) continue;
-      
+
       const template = UNIT_DATABASE[inst.templateId];
       if (!template) continue;
-      
-      const stats = calculateStats(template, inst.level, inst.equipment, state.equipmentInventory);
+
+      const stats = calculateUnitStats(template, inst.level, inst.equipment, state.equipmentInventory);
       let atkBonus = 1.0;
-      
+
       if (idx === 0 && template.leaderSkill) {
         if (template.leaderSkill.statBoost?.atk) {
           atkBonus += template.leaderSkill.statBoost.atk;
         }
       }
-      
+
       units.push(createBattleUnit(
         `p_${idx}`,
         template,
@@ -104,49 +175,89 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
       ));
     }
     return units;
-  });
+  }, [state.team, state.inventory, state.equipmentInventory]);
 
-  const [enemyUnits, setEnemyUnits] = useState<BattleUnit[]>(() => {
+  const initialEnemyUnits = useMemo(() => {
     const stageData = STAGES.find(s => s.id === stageId);
     if (!stageData) return [];
-    
+
     const hpMultiplier = 1 + (stageId * 0.1);
     const units: BattleUnit[] = [];
-    
+
     for (let idx = 0; idx < stageData.enemies.length; idx++) {
       const enemyId = stageData.enemies[idx];
       const template = ENEMIES.find(e => e.id === enemyId);
       if (!template) continue;
-      
-      const scaledHp = Math.floor(template.baseStats.hp * hpMultiplier);
+
+      const scaledStats = calculateEnemyStats(
+        template.baseStats,
+        stageId,
+        'tier1'
+      );
+
       units.push(createBattleUnit(
         `e_${idx}`,
         template,
         false,
-        scaledHp,
-        scaledHp,
-        template.baseStats.atk,
-        template.baseStats.def,
+        scaledStats.hp,
+        scaledStats.hp,
+        scaledStats.atk,
+        scaledStats.def,
         template.skill.cost
       ));
     }
     return units;
-  });
+  }, [stageId]);
 
-  const [turnState, setTurnState] = useState<'player_input' | 'player_executing' | 'enemy_executing' | 'victory' | 'defeat'>('player_input');
+  // -------------------------------------------------------------------------
+  // React State for UI
+  // -------------------------------------------------------------------------
+
+  const [playerUnits, setPlayerUnits] = useState<BattleUnit[]>(initialPlayerUnits);
+  const [enemyUnits, setEnemyUnits] = useState<BattleUnit[]>(initialEnemyUnits);
+  const [turnState, setTurnState] = useState<TurnPhase>('player_input');
   const [turnCount, setTurnCount] = useState(1);
   const [combatLog, setCombatLog] = useState<string[]>(['Battle Started!']);
   const [bbFlash, setBbFlash] = useState(false);
   const [bbCutInUnit, setBbCutInUnit] = useState<BattleUnit | null>(null);
-  const [bbHitEffect, setBbHitEffect] = useState<{ targetId: string, element: string } | null>(null);
+  const [bbHitEffect, setBbHitEffect] = useState<{ targetId: string; element: string } | null>(null);
   const [screenShake, setScreenShake] = useState(false);
   const [floatingTexts, setFloatingTexts] = useState<FloatingTextData[]>([]);
-
   const [inventoryItems, setInventoryItems] = useState([...BATTLE_ITEMS]);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [guardActive, setGuardActive] = useState<Record<string, boolean>>({});
 
-  const toggleGuard = (id: string) => {
+  // -------------------------------------------------------------------------
+  // UI Actions
+  // -------------------------------------------------------------------------
+
+  const addLog = useCallback((msg: string) => {
+    setCombatLog(prev => [...prev.slice(-4), msg]);
+  }, []);
+
+  const addFloatingText = useCallback((
+    text: string,
+    type: FloatingTextData['type'],
+    targetId: string,
+    isPlayer: boolean,
+    damage?: number
+  ) => {
+    const pos = calculateFloatingTextPosition(targetId, isPlayer);
+    const id = Math.random().toString(36).substr(2, 9);
+
+    setFloatingTexts(prev => [...prev, { id, text, type, x: pos.x, y: pos.y, damage }]);
+
+    setTimeout(() => {
+      setFloatingTexts(prev => prev.filter(ft => ft.id !== id));
+    }, 1100);
+  }, []);
+
+  const triggerScreenShake = useCallback(() => {
+    setScreenShake(true);
+    setTimeout(() => setScreenShake(false), 300);
+  }, []);
+
+  const toggleGuard = useCallback((id: string) => {
     setGuardActive(prev => ({ ...prev, [id]: !prev[id] }));
     setPlayerUnits(prev => prev.map(u => {
       if (u.id === id && !u.isDead) {
@@ -154,41 +265,12 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
       }
       return u;
     }));
-  };
+  }, []);
 
-  const addLog = (msg: string) => {
-    setCombatLog(prev => [...prev.slice(-4), msg]);
-  };
-
-  const addFloatingText = (text: string, type: FloatingTextData['type'], targetId: string, isPlayer: boolean, damage?: number) => {
-    const isLeft = isPlayer;
-    const idx = parseInt(targetId.split('_')[1]);
-    const col = idx % 2;
-    const row = Math.floor(idx / 2);
-    
-    const baseX = isLeft ? 15 + (col * 15) : 70 + (col * 15);
-    const baseY = 40 + (row * 15);
-    
-    const x = `calc(${baseX}% + ${Math.random() * 20 - 10}px)`;
-    const y = `calc(${baseY}% + ${Math.random() * 20 - 10}px)`;
-
-    const id = Math.random().toString(36).substr(2, 9);
-    setFloatingTexts(prev => [...prev, { id, text, type, x, y, damage }]);
-    
-    setTimeout(() => {
-      setFloatingTexts(prev => prev.filter(ft => ft.id !== id));
-    }, 1100);
-  };
-
-  const triggerScreenShake = () => {
-    setScreenShake(true);
-    setTimeout(() => setScreenShake(false), 300);
-  };
-
-  const applyItem = (itemId: string, targetId: string) => {
+  const applyItem = useCallback((itemId: string, targetId: string) => {
     const itemIdx = inventoryItems.findIndex(i => i.id === itemId);
     if (itemIdx === -1 || inventoryItems[itemIdx].count <= 0) return;
-    
+
     const item = inventoryItems[itemIdx];
     let itemUsed = false;
 
@@ -215,7 +297,7 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
         if (item.type === 'revive' && u.isDead) {
           itemUsed = true;
           addFloatingText('REVIVED', 'heal', u.id, true);
-          return { ...u, isDead: false, hp: u.maxHp * item.value, bbGauge: 0, actionState: 'idle' };
+          return { ...u, isDead: false, hp: Math.floor(u.maxHp * item.value), bbGauge: 0, actionState: 'idle' };
         }
       }
       return u;
@@ -230,18 +312,18 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
     } else {
       addLog(`Cannot use ${item.name} on that target.`);
     }
-  };
+  }, [inventoryItems, addFloatingText, addLog]);
 
-  const toggleBb = (id: string) => {
+  const toggleBb = useCallback((id: string) => {
     setPlayerUnits(prev => prev.map(u => {
       if (u.id === id && u.bbGauge >= u.maxBb && !u.isDead) {
         return { ...u, queuedBb: !u.queuedBb };
       }
       return u;
     }));
-  };
+  }, []);
 
-  const handleUnitClick = (id: string) => {
+  const handleUnitClick = useCallback((id: string) => {
     if (turnState !== 'player_input') return;
 
     if (selectedItem) {
@@ -250,84 +332,75 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
     } else {
       toggleBb(id);
     }
-  };
+  }, [turnState, selectedItem, applyItem, toggleBb]);
 
-  const executeTurn = async () => {
+  // -------------------------------------------------------------------------
+  // Get Leader Element Boost (memoized)
+  // -------------------------------------------------------------------------
+
+  const leaderElementBoost = useMemo(() => {
+    const leaderUnit = state.team[0] ? state.inventory.find(u => u.instanceId === state.team[0]) : null;
+    if (!leaderUnit) return undefined;
+
+    const leaderTemplate = UNIT_DATABASE[leaderUnit.templateId];
+    return leaderTemplate?.leaderSkill?.elementBoost;
+  }, [state.team, state.inventory]);
+
+  // -------------------------------------------------------------------------
+  // Battle Execution - Delegates to Combat Engine
+  // -------------------------------------------------------------------------
+
+  const executeTurn = useCallback(async () => {
     if (turnState !== 'player_input') return;
     setTurnState('player_executing');
-    
+
     let currentEnemies = [...enemyUnits];
     let currentPlayer = [...playerUnits];
 
-    // Player attacks
+    // ---------------------------------------------------------------------
+    // Player Attacks Phase
+    // ---------------------------------------------------------------------
+
     for (let i = 0; i < currentPlayer.length; i++) {
       const attacker = currentPlayer[i];
       if (attacker.isDead) continue;
 
-      // Find alive enemy
+      // Find alive enemy target
       const targetIdx = currentEnemies.findIndex(e => !e.isDead);
       if (targetIdx === -1) break; // All enemies dead
       const target = currentEnemies[targetIdx];
 
-      // Calculate damage
       const isBb = attacker.queuedBb;
-      const powerMultiplier = isBb ? attacker.template.skill.power : 1.0;
-      let elementMultiplier = getElementMultiplier(attacker.template.element, target.template.element);
-      const isWeakness = elementMultiplier > 1.0;
-      
-      // Apply leader skill elemental boost (only to attacker if leader is in position 0)
-      const leaderUnit = state.team[0] ? state.inventory.find(u => u.instanceId === state.team[0]) : null;
-      if (leaderUnit && i === 0) {
-        const leaderTemplate = UNIT_DATABASE[leaderUnit.templateId];
-        if (leaderTemplate.leaderSkill?.elementBoost) {
-          const elementBoost = leaderTemplate.leaderSkill.elementBoost[attacker.template.element];
-          if (elementBoost) {
-            elementMultiplier *= (1 + elementBoost);
-          }
-        }
-      }
-      
-      // Apply status effect debuffs (poison, weak, etc)
-      let atkMultiplier = attacker.buff.atkBoost;
-      let defMultiplier = target.buff.defBoost;
-      
-      // Poison deals damage at start of turn
-      const poisonEffect = attacker.statusEffects.find(e => e.type === 'poison');
-      if (poisonEffect && attacker.isPlayer && attacker.hp > 1) {
-        const poisonDmg = Math.floor(attacker.maxHp * 0.1 * poisonEffect.power);
-        currentPlayer[i] = { 
-          ...attacker, 
-          hp: Math.max(1, attacker.hp - poisonDmg),
-          statusEffects: attacker.statusEffects.map(e => 
-            e.type === 'poison' ? { ...e, turnsRemaining: e.turnsRemaining - 1 } : e
-          )
-        };
-        addLog(`${attacker.template.name} takes ${poisonDmg} poison damage!`);
-        setPlayerUnits([...currentPlayer]);
-        await new Promise(r => setTimeout(r, 300));
-      }
-      
-      // Calculate damage with all modifiers
-      let rawDamage = Math.max(1, (attacker.atk * atkMultiplier * powerMultiplier) - (target.def * defMultiplier * 0.5));
-      let finalDamage = Math.floor(rawDamage * elementMultiplier * (1 - target.buff.damageReduction));
 
-      // Increment hit count for OD system
-      const newHitCount = attacker.hitCount + 1;
-      const isOD = newHitCount >= OD_GAUGE_THRESHOLD;
-      
+      // Calculate damage using COMBAT ENGINE pure function
+      const damageResult = calculateDamage(attacker, target, {
+        isBb,
+        isPlayerAttack: true,
+        leaderElementBoost,
+      });
+
+      const isOD = damageResult.isOD;
+      const isWeakness = damageResult.isWeakness;
+
       // ANIMATION: Attacker moves
-      currentPlayer[i] = { ...attacker, hitCount: newHitCount, actionState: isBb ? 'skill' : 'attacking' };
+      currentPlayer[i] = {
+        ...attacker,
+        hitCount: attacker.hitCount + 1,
+        actionState: isBb ? 'skill' : 'attacking'
+      };
       setPlayerUnits([...currentPlayer]);
-      
+
+      // OD notification
       if (isOD) {
         addLog(`⚡ OVERDRIVE! ${attacker.template.name}'s BB is ready!`);
         addFloatingText('OD!', 'buff', attacker.id, true);
       }
-      
+
+      // BB Cut-in animation
       if (isBb) {
         setBbCutInUnit(attacker);
         playSound('bb_cast');
-        await new Promise(r => setTimeout(r, 1500)); // Wait for cut-in
+        await new Promise(r => setTimeout(r, 1500));
         setBbCutInUnit(null);
         setBbFlash(true);
         triggerScreenShake();
@@ -337,31 +410,38 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
         await new Promise(r => setTimeout(r, 200));
       }
 
-      // Apply damage & ANIMATION: Target hurt
+      // Apply damage to enemy
       currentEnemies[targetIdx] = {
         ...target,
-        hp: Math.max(0, target.hp - finalDamage),
-        isDead: target.hp - finalDamage <= 0,
+        hp: Math.max(0, target.hp - damageResult.finalDamage),
+        isDead: target.hp - damageResult.finalDamage <= 0,
         actionState: isBb ? 'bb_hurt' : 'hurt',
         isWeaknessHit: isWeakness
       };
       setEnemyUnits([...currentEnemies]);
 
+      // BB effects
       if (isBb) {
         setBbHitEffect({ targetId: target.id, element: attacker.template.element });
         playSound('bb_hit');
         if (isWeakness) setTimeout(() => playSound('weakness'), 100);
         setTimeout(() => setBbHitEffect(null), 800);
-        
-        // Apply status effects from BB attacks
-        if (attacker.template.skill.statusEffect && Math.random() < attacker.template.skill.statusEffect.chance) {
-          const effect = attacker.template.skill.statusEffect;
+
+        // Status effect from BB
+        if (damageResult.statusEffectApplied) {
           currentEnemies[targetIdx] = {
             ...currentEnemies[targetIdx],
-            statusEffects: [...currentEnemies[targetIdx].statusEffects, { type: effect.type, turnsRemaining: effect.turns, power: effect.power }]
+            statusEffects: [
+              ...currentEnemies[targetIdx].statusEffects,
+              {
+                type: damageResult.statusEffectApplied.type as StatusEffect['type'],
+                turnsRemaining: damageResult.statusEffectApplied.turns,
+                power: damageResult.statusEffectApplied.power,
+              }
+            ]
           };
           setEnemyUnits([...currentEnemies]);
-          addLog(`${target.template.name} is affected by ${effect.type}!`);
+          addLog(`${target.template.name} is affected by ${damageResult.statusEffectApplied.type}!`);
           await new Promise(r => setTimeout(r, 300));
         }
       } else {
@@ -373,8 +453,9 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
         }
       }
 
-      addFloatingText(finalDamage.toString(), 'damage', target.id, false, finalDamage);
-      
+      // Floating text feedback
+      addFloatingText(damageResult.finalDamage.toString(), 'damage', target.id, false, damageResult.finalDamage);
+
       if (isWeakness) {
         addFloatingText('WEAK!', 'weak', target.id, false);
         triggerScreenShake();
@@ -388,41 +469,32 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
       }
 
       if (isOD) {
-        addFloatingText(`${newHitCount}x COMBO!`, 'combo', attacker.id, true);
+        addFloatingText(`${attacker.hitCount + 1}x COMBO!`, 'combo', attacker.id, true);
       }
 
-      addLog(`${attacker.template.name} ${isBb ? 'uses BB!' : 'attacks'} ${target.template.name} for ${finalDamage} dmg! ${isWeakness ? '(Weakness!)' : ''}`);
-      
+      addLog(`${attacker.template.name} ${isBb ? 'uses BB!' : 'attacks'} ${target.template.name} for ${damageResult.finalDamage} dmg! ${isWeakness ? '(Weakness!)' : ''}`);
+
       const impactDelay = isBb || isWeakness ? 150 : 80;
       await new Promise(r => setTimeout(r, impactDelay));
 
-      // Reset states and BC Distribution
-      const bcDrops = isBb ? 0 : Math.floor(Math.random() * 5) + 3;
-      
-      if (bcDrops > 0) {
+      // BC Distribution using COMBAT ENGINE pure function
+      if (damageResult.bcDrops > 0) {
         playSound('bc_drop');
-        addFloatingText(`+${bcDrops} BC`, 'bc', target.id, false);
+        addFloatingText(`+${damageResult.bcDrops} BC`, 'bc', target.id, false);
+
+        // Distribute BC drops
         const alivePlayers = currentPlayer.filter(p => !p.isDead);
-        if (alivePlayers.length > 0) {
-          for (let b = 0; b < bcDrops; b++) {
-            const rp = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
-            const pIdx = currentPlayer.findIndex(p => p.id === rp.id);
-            if (currentPlayer[pIdx].bbGauge < currentPlayer[pIdx].maxBb) {
-              currentPlayer[pIdx].bbGauge += 1;
-              if (currentPlayer[pIdx].bbGauge === currentPlayer[pIdx].maxBb) {
-                playSound('bb_ready');
-              }
-            }
-          }
-        }
+        currentPlayer = distributeBcDrops(currentPlayer, damageResult.bcDrops);
+        setPlayerUnits([...currentPlayer]);
       }
 
+      // Reset attacker state
       currentPlayer[i] = {
         ...currentPlayer[i],
-        queuedBb: isOD ? true : currentPlayer[i].queuedBb, // Auto-queue BB on OD
-        bbGauge: isBb ? 0 : (isOD ? currentPlayer[i].maxBb : currentPlayer[i].bbGauge), // Fill BB on OD
+        queuedBb: isOD ? true : currentPlayer[i].queuedBb,
+        bbGauge: isBb ? 0 : (isOD ? currentPlayer[i].maxBb : currentPlayer[i].bbGauge),
         actionState: 'idle',
-        hitCount: 0 // Reset hit count after turn
+        hitCount: 0
       };
       currentEnemies[targetIdx] = {
         ...currentEnemies[targetIdx],
@@ -431,54 +503,58 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
       };
       setPlayerUnits([...currentPlayer]);
       setEnemyUnits([...currentEnemies]);
-      
-      // Small delay between attacks
+
       await new Promise(r => setTimeout(r, 100));
     }
 
-    // Check win condition
-    if (currentEnemies.every(e => e.isDead)) {
+    // Check victory using COMBAT ENGINE pure function
+    const victoryState = checkVictoryConditions(currentPlayer, currentEnemies);
+    if (victoryState === 'victory') {
       setTurnState('victory');
       addLog("Victory!");
       setTimeout(() => onEnd(true), 2000);
       return;
     }
 
+    // ---------------------------------------------------------------------
+    // Enemy Attacks Phase
+    // ---------------------------------------------------------------------
+
     setTurnState('enemy_executing');
 
-    // Enemy attacks
     for (let i = 0; i < currentEnemies.length; i++) {
       const attacker = currentEnemies[i];
       if (attacker.isDead) continue;
 
-      // Find alive player
+      // Find alive player target
       const targetIdx = currentPlayer.findIndex(p => !p.isDead);
-      if (targetIdx === -1) break; // All players dead
+      if (targetIdx === -1) break;
       const target = currentPlayer[targetIdx];
 
-      const elementMultiplier = getElementMultiplier(attacker.template.element, target.template.element);
-      const isWeakness = elementMultiplier > 1.0;
-      
-      // Guard damage reduction
-      const guardReduction = target.isGuarding ? 0.5 : 0;
-      let rawDamage = Math.max(1, attacker.atk - (target.def * 0.5));
-      let finalDamage = Math.floor(rawDamage * elementMultiplier * (1 - guardReduction));
+      // Calculate enemy damage using COMBAT ENGINE's damage calculation (passing false for isPlayerAttack)
+      const enemyDamageResult = calculateDamage(attacker, target, {
+        isBb: false,
+        isPlayerAttack: false,
+      });
 
-      // ANIMATION: Attacker moves
+      const isWeakness = enemyDamageResult.isWeakness;
+      const guardReduction = target.isGuarding ? 0.5 : 0;
+      const finalDamage = Math.floor(enemyDamageResult.finalDamage * (1 - guardReduction));
+
+      // ANIMATION: Enemy attacks
       currentEnemies[i] = { ...attacker, actionState: 'attacking' };
       setEnemyUnits([...currentEnemies]);
       await new Promise(r => setTimeout(r, 200));
 
-      // Apply damage & ANIMATION: Target hurt
+      // Grant BC from enemy attack
       const bcGenerated = Math.floor(Math.random() * 3) + 1;
-      
-      if (currentPlayer[targetIdx].bbGauge < currentPlayer[targetIdx].maxBb) {
-        currentPlayer[targetIdx].bbGauge = Math.min(currentPlayer[targetIdx].maxBb, currentPlayer[targetIdx].bbGauge + bcGenerated);
-        if (currentPlayer[targetIdx].bbGauge === currentPlayer[targetIdx].maxBb) {
-          playSound('bb_ready');
-        }
-      }
+      currentPlayer = grantEnemyBcGauge(currentPlayer, bcGenerated);
+      setPlayerUnits([...currentPlayer]);
 
+      const bcReady = currentPlayer[targetIdx].bbGauge >= currentPlayer[targetIdx].maxBb;
+      if (bcReady) playSound('bb_ready');
+
+      // Apply damage to player
       currentPlayer[targetIdx] = {
         ...currentPlayer[targetIdx],
         hp: Math.max(0, target.hp - finalDamage),
@@ -504,14 +580,11 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
       }
 
       addLog(`${attacker.template.name} attacks ${target.template.name} for ${finalDamage} dmg!${target.isGuarding ? ' (Guarded!)' : ''}${isWeakness ? ' (Weakness!)' : ''}`);
-      
+
       await new Promise(r => setTimeout(r, 400));
 
       // Reset states
-      currentEnemies[i] = {
-        ...currentEnemies[i],
-        actionState: 'idle'
-      };
+      currentEnemies[i] = { ...currentEnemies[i], actionState: 'idle' };
       currentPlayer[targetIdx] = {
         ...currentPlayer[targetIdx],
         actionState: currentPlayer[targetIdx].isDead ? 'dead' : 'idle',
@@ -523,8 +596,9 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
       await new Promise(r => setTimeout(r, 100));
     }
 
-    // Check lose condition
-    if (currentPlayer.every(p => p.isDead)) {
+    // Check defeat using COMBAT ENGINE pure function
+    const postBattleState = checkVictoryConditions(currentPlayer, currentEnemies);
+    if (postBattleState === 'defeat') {
       setTurnState('defeat');
       addLog("Defeat...");
       setTimeout(() => onEnd(false), 2000);
@@ -533,9 +607,10 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
 
     setTurnState('player_input');
     setTurnCount(prev => prev + 1);
-  };
+  }, [turnState, enemyUnits, playerUnits, leaderElementBoost, onEnd, addLog, addFloatingText, triggerScreenShake]);
 
   return {
+    // State
     playerUnits,
     enemyUnits,
     turnCount,
@@ -544,14 +619,15 @@ export function useBattle(state: PlayerState, stageId: number, onEnd: (victory: 
     bbFlash,
     bbCutInUnit,
     bbHitEffect,
+    screenShake,
+    floatingTexts,
     inventoryItems,
     selectedItem,
+    guardActive,
+    // Actions
     setSelectedItem,
     handleUnitClick,
     executeTurn,
-    screenShake,
-    floatingTexts,
     toggleGuard,
-    guardActive
   };
 }
