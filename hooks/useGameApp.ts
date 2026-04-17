@@ -28,6 +28,7 @@ export function useGameApp(userId?: string | null) {
     isLoaded, 
     timeToNextEnergy,
     spendEnergy, 
+    refundEnergy,
     winBattle,
     addUnit,
     setTeamMember,
@@ -72,15 +73,23 @@ export function useGameApp(userId?: string | null) {
   }, [spendEnergy, triggerAlert]);
 
   const endBattle = useCallback((victory: boolean) => {
-    if (victory && battleStage !== null) {
-      const rewards = winBattle(battleStage);
+    const completedStageId = battleStage;
+    
+    if (victory && completedStageId !== null) {
+      const rewards = winBattle(completedStageId);
       if (rewards) {
         setBattleRewards(rewards);
       }
+    } else if (completedStageId !== null) {
+      const stage = STAGES.find(s => s.id === completedStageId);
+      if (stage) {
+        refundEnergy(stage.energy);
+      }
     }
+    
     setCurrentScreen('home');
     setBattleStage(null);
-  }, [battleStage, winBattle]);
+  }, [battleStage, winBattle, refundEnergy]);
 
   const dismissBattleRewards = useCallback(() => {
     setBattleRewards(null);

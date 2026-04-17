@@ -354,6 +354,13 @@ export function useGameState(options: UseGameStateOptions = {}) {
     return hadEnough;
   }, []);
 
+  const refundEnergy = useCallback((amount: number): void => {
+    setState(prev => ({
+      ...prev,
+      energy: prev.energy + amount,
+    }));
+  }, []);
+
   const refillEnergy = useCallback((amount: number, useGems: boolean = false): boolean => {
     let success = false;
     setState(prev => {
@@ -559,28 +566,26 @@ export function useGameState(options: UseGameStateOptions = {}) {
     const stage = STAGES.find(s => s.id === stageId);
     if (!stage) return null;
 
-    let zelReward = stage.zelReward;
-    const expReward = stage.expReward;
-    
-    const subscriptionBonus = SUBSCRIPTION_CONFIG[state.subscription.tier]?.zelBonus || 0;
-    zelReward = Math.floor(zelReward * (1 + subscriptionBonus));
-    
-    const teamInstanceIds = state.team.filter(id => id !== null) as string[];
-    const equipmentDrops: EquipInstance[] = [];
-    if (stage.equipmentDrops && stage.equipmentDropChance && Math.random() < stage.equipmentDropChance) {
-      const dropIndex = Math.floor(Math.random() * stage.equipmentDrops.length);
-      const equipTemplateId = stage.equipmentDrops[dropIndex];
-      equipmentDrops.push({
-        instanceId: `eq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        templateId: equipTemplateId,
-        enhancementLevel: 0,
-        sockets: [],
-      });
-    }
+    let battleResult: {
+      zel: number;
+      exp: number;
+      playerLeveledUp: boolean;
+      leveledUpUnits: { name: string; oldLevel: number; newLevel: number }[];
+      equipmentDropped: EquipInstance[];
+    } = {
+      zel: 0,
+      exp: 0,
+      playerLeveledUp: false,
+      leveledUpUnits: [],
+      equipmentDropped: [],
+    };
 
-    const result = setState(prev => {
+    setState(prev => {
+      const zelReward = Math.floor(stage.zelReward * (1 + (SUBSCRIPTION_CONFIG[prev.subscription.tier]?.zelBonus || 0)));
+      const expReward = stage.expReward;
+      const teamInstanceIds = prev.team.filter(id => id !== null) as string[];
+      
       const leveledUp: { name: string; oldLevel: number; newLevel: number }[] = [];
-      const playerExpGain = expReward * teamInstanceIds.length;
       
       const newInventory = prev.inventory.map(unit => {
         if (!teamInstanceIds.includes(unit.instanceId)) return unit;
@@ -602,11 +607,34 @@ export function useGameState(options: UseGameStateOptions = {}) {
         return { ...unit, level: newLevel, exp: newExp };
       });
 
+      const playerExpGain = expReward * teamInstanceIds.length;
       const playerNewExp = prev.exp + playerExpGain;
       const playerExpNeeded = prev.playerLevel * 100;
       const playerLeveledUp = playerNewExp >= playerExpNeeded;
       const newPlayerLevel = playerLeveledUp ? prev.playerLevel + 1 : prev.playerLevel;
       const newPlayerExp = playerLeveledUp ? playerNewExp - playerExpNeeded : playerNewExp;
+
+      const equipmentDrops: EquipInstance[] = [];
+      if (stage.equipmentDrops?.length && stage.equipmentDropChance && Math.random() < stage.equipmentDropChance) {
+        const dropIndex = Math.floor(Math.random() * stage.equipmentDrops.length);
+        const equipTemplateId = stage.equipmentDrops[dropIndex];
+        if (equipTemplateId) {
+          equipmentDrops.push({
+            instanceId: `eq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            templateId: equipTemplateId,
+            enhancementLevel: 0,
+            sockets: equipTemplateId.includes('ac') ? [] : [null, null],
+          });
+        }
+      }
+
+      battleResult = {
+        zel: zelReward,
+        exp: playerExpGain,
+        playerLeveledUp,
+        leveledUpUnits: leveledUp,
+        equipmentDropped: equipmentDrops,
+      };
 
       return {
         ...prev,
@@ -641,14 +669,8 @@ export function useGameState(options: UseGameStateOptions = {}) {
       };
     });
 
-    return {
-      zel: zelReward,
-      exp: expReward * teamInstanceIds.length,
-      playerLeveledUp: false,
-      leveledUpUnits: [],
-      equipmentDropped: equipmentDrops,
-    };
-  }, [state]);
+    return battleResult;
+  }, []);
 
   // ============================================================================
   // FUSION & EVOLUTION
@@ -1030,8 +1052,8 @@ export function useGameState(options: UseGameStateOptions = {}) {
           ...newPity,
           star5Pulls: rarity === 5 ? 0 : newPity.star5Pulls + 1,
           star4Pulls: rarity === 4 ? 0 : newPity.star4Pulls + 1,
-          lastStar5Pull: rarity === 5 ? rarity : newPity.lastStar5Pull,
-          lastStar4Pull: rarity === 4 ? rarity : newPity.lastStar4Pull,
+          lastStar5Pull: rarity === 5 ? currentPity : newPity.lastStar5Pull,
+          lastStar4Pull: rarity === 4 ? currentPity : newPity.lastStar4Pull,
           totalPulls: newPity.totalPulls + 1,
           bannerPulls: {
             ...newPity.bannerPulls,
@@ -1463,6 +1485,7 @@ export function useGameState(options: UseGameStateOptions = {}) {
     
     // Energy operations
     spendEnergy,
+    refundEnergy,
     refillEnergy,
     
     // Daily/Weekly quests
