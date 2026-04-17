@@ -11,7 +11,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ENUMS
 -- ============================================================================
 
-CREATE TYPE element_type AS ENUM ('Fire', 'Water', 'Earth', 'Thunder', 'Light', 'Dark');
+CREATE TYPE element_type AS ENUM ('Fire', 'Water', 'Earth', 'Thunder', 'Light', 'Dark', 'Poison', 'Wind');
 CREATE TYPE equip_slot AS ENUM ('weapon', 'armor', 'accessory');
 CREATE TYPE guild_rank AS ENUM ('leader', 'officer', 'member', 'recruit');
 CREATE TYPE quest_type AS ENUM ('daily', 'weekly', 'guild', 'event');
