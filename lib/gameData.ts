@@ -157,10 +157,12 @@ export interface GachaRate {
 }
 
 export interface QRRewardTable {
-  type: 'zel' | 'energy' | 'gems' | 'unit' | 'equipment';
+  type: 'zel' | 'energy' | 'gems' | 'material' | 'unit_frag' | 'unit' | 'equipment';
   chance: number; // 0-100
   min?: number;
   max?: number;
+  materialType?: MaterialType;
+  unitFrag?: string;
 }
 
 export const ELEMENTS: Element[] = ['Fire', 'Water', 'Earth', 'Thunder', 'Light', 'Dark'];
@@ -600,11 +602,16 @@ export const GACHA_POOL: GachaRate[] = [
 ];
 
 export const QR_REWARD_TABLE: QRRewardTable[] = [
-  { type: 'zel', chance: 40, min: 500, max: 2000 },
-  { type: 'energy', chance: 25, min: 3, max: 7 },
-  { type: 'gems', chance: 15, min: 1, max: 3 },
-  { type: 'equipment', chance: 15 },
-  { type: 'unit', chance: 5 }
+  { type: 'zel', chance: 30, min: 500, max: 2000 },
+  { type: 'energy', chance: 20, min: 3, max: 7 },
+  { type: 'gems', chance: 10, min: 1, max: 3 },
+  { type: 'material', chance: 20, materialType: 'ironOre' },
+  { type: 'material', chance: 12, materialType: 'steelIngot' },
+  { type: 'material', chance: 6, materialType: 'mythril' },
+  { type: 'material', chance: 3, materialType: 'orichalcum' },
+  { type: 'unit_frag', chance: 5, unitFrag: 'u1' },
+  { type: 'unit_frag', chance: 3, unitFrag: 'u2' },
+  { type: 'unit_frag', chance: 1, unitFrag: 'u7' },
 ];
 
 export const EQUIPMENT_DATABASE: Record<string, EquipmentTemplate> = {

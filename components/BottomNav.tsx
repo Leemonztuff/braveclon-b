@@ -1,6 +1,6 @@
 import { Home, Users, Swords, Sparkles, Package, Hammer, Castle } from 'lucide-react';
 import { Screen } from '@/hooks/useGameApp';
-import { useState } from 'react';
+import { EFFECTS } from './ui/DesignSystem';
 
 const NAV_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'home', label: 'Home', icon: Home },
@@ -13,7 +13,7 @@ const NAV_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = [
 
 export function BottomNav({ currentScreen, setCurrentScreen }: { currentScreen: Screen, setCurrentScreen: (s: Screen) => void }) {
   return (
-    <nav className="flex justify-around bg-zinc-950 pb-safe pt-2 border-t border-zinc-800 z-10">
+    <nav className={`grid grid-cols-6 bg-zinc-950 pb-safe pt-2 border-t border-zinc-800/50 z-10 ${EFFECTS.glass} px-2`}>
       {NAV_ITEMS.map(item => {
         const Icon = item.icon;
         const isActive = currentScreen === item.id;
@@ -24,17 +24,32 @@ export function BottomNav({ currentScreen, setCurrentScreen }: { currentScreen: 
             onClick={() => setCurrentScreen(item.id)}
             className={`
               flex flex-col items-center justify-center
-              px-2 py-2 min-w-[52px] min-h-[52px]
-              transition-all duration-100 touch-manipulation select-none rounded-lg
+              py-2 transition-all duration-300 touch-manipulation select-none rounded-xl relative
               ${isActive 
-                ? 'text-amber-400' 
-                : 'text-zinc-500 active:text-zinc-300'
+                ? 'text-amber-400 scale-110' 
+                : 'text-zinc-500 hover:text-zinc-300 active:scale-95'
               }
             `}
             aria-label={item.label}
           >
-            <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-            <span className="text-[10px] mt-1 font-semibold uppercase tracking-wider">{item.label}</span>
+            {isActive && (
+              <div className="absolute inset-0 bg-amber-400/5 blur-xl rounded-full" />
+            )}
+            <div className={`
+              relative z-10 p-1.5 rounded-lg transition-all
+              ${isActive ? 'bg-amber-400/10 shadow-[0_0_15px_rgba(251,191,36,0.2)]' : ''}
+            `}>
+              <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+            </div>
+            <span className={`
+              text-[9px] mt-1 font-black uppercase tracking-widest leading-none z-10
+              ${isActive ? 'opacity-100' : 'opacity-60'}
+            `}>
+              {item.label}
+            </span>
+            {isActive && (
+              <div className="absolute bottom-0 w-8 h-0.5 bg-amber-400 rounded-full animate-pulse-glow" />
+            )}
           </button>
         );
       })}

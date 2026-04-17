@@ -989,6 +989,8 @@ export function useGameState(options: UseGameStateOptions = {}) {
     const item = CONSUMABLE_ITEMS[listing.consumableId];
     if (!item) return { success: false, message: 'Item not found' };
     
+    const now = Date.now();
+    
     setState(prev => {
       const newState: Partial<PlayerState> = {
         [currencyKey]: (prev[currencyKey as keyof PlayerState] as number) - listing.price,
@@ -997,12 +999,32 @@ export function useGameState(options: UseGameStateOptions = {}) {
       // Apply immediate effects
       if (item.type === 'energy') {
         newState.energy = Math.min(prev.energy + item.value, prev.maxEnergy);
+      } else if (item.type === 'special' && (item.id === 'qr_scan_small' || item.id === 'qr_scan_medium' || item.id === 'qr_scan_large')) {
+        // QR Scan boosters
+        const bonusScans = item.value;
+        const durationHours = item.duration || 24;
+        const expiresAt = now + (durationHours * 60 * 60 * 1000);
+        
+        newState.qrState = {
+          ...prev.qrState,
+          maxDailyScans: prev.qrState.maxDailyScans + bonusScans,
+          tempBonusScans: (prev.qrState.tempBonusScans || 0) + bonusScans,
+          tempBonusExpiresAt: prev.qrState.tempBonusExpiresAt && prev.qrState.tempBonusExpiresAt > now
+            ? Math.max(prev.qrState.tempBonusExpiresAt, expiresAt)
+            : expiresAt,
+        };
       }
       
       return { ...prev, ...newState };
     });
     
-    return { success: true, message: `Used ${item.name}!` };
+    const effectMsg = item.type === 'special' && item.id?.includes('qr_scan') 
+      ? `+${item.value} QR scans for ${item.duration || 24}h` 
+      : item.type === 'energy' 
+        ? `+${item.value} energy` 
+        : '';
+    
+    return { success: true, message: `Used ${item.name}! ${effectMsg}` };
   }, [state]);
 
   // ============================================================================
@@ -1377,50 +1399,113 @@ export function useGameState(options: UseGameStateOptions = {}) {
   const processQrScan = useCallback((qrHash: string) => {
     const today = new Date().toISOString().split('T')[0];
     const qrState = state.qrState;
+    const maxScans = qrState.maxDailyScans || 5;
     
-    if (qrState.scansToday >= 5) {
-      return { success: false, message: "Daily scan limit reached (5/5).", rewardType: undefined, rewardValue: undefined };
+    if (qrState.scansToday >= maxScans) {
+      return { success: false, message: `Daily scan limit reached (${maxScans}/${maxScans}).`, rewardType: undefined, rewardValue: undefined };
     }
     
     if (qrState.scannedHashes.includes(qrHash)) {
       return { success: false, message: "This QR code has already been scanned!", rewardType: undefined, rewardValue: undefined };
     }
     
-    const reward = QR_REWARD_TABLE[Math.floor(Math.random() * QR_REWARD_TABLE.length)];
+    // Weighted random selection
+    const totalWeight = QR_REWARD_TABLE.reduce((sum, r) => sum + r.chance, 0);
+    let rand = Math.random() * totalWeight;
+    let selectedReward = QR_REWARD_TABLE[0];
+    
+    for (const reward of QR_REWARD_TABLE) {
+      rand -= reward.chance;
+      if (rand <= 0) {
+        selectedReward = reward;
+        break;
+      }
+    }
+    
     let zelReward = 0;
-    let expReward = 0;
     let gemsReward = 0;
     let energyReward = 0;
+    let materialReward: MaterialType | null = null;
+    let unitFragReward: string | null = null;
+    let materialAmount = 0;
     
-    if (reward.type === 'zel' && reward.min && reward.max) {
-      zelReward = Math.floor(Math.random() * (reward.max - reward.min + 1)) + reward.min;
-    } else if (reward.type === 'gems' && reward.min && reward.max) {
-      gemsReward = Math.floor(Math.random() * (reward.max - reward.min + 1)) + reward.min;
-    } else if (reward.type === 'energy' && reward.min && reward.max) {
-      energyReward = Math.floor(Math.random() * (reward.max - reward.min + 1)) + reward.min;
-    } else {
-      zelReward = 500;
-      expReward = 100;
+    switch (selectedReward.type) {
+      case 'zel':
+        zelReward = Math.floor(Math.random() * ((selectedReward.max || 2000) - (selectedReward.min || 500) + 1)) + (selectedReward.min || 500);
+        break;
+      case 'gems':
+        gemsReward = Math.floor(Math.random() * ((selectedReward.max || 3) - (selectedReward.min || 1) + 1)) + (selectedReward.min || 1);
+        break;
+      case 'energy':
+        energyReward = Math.floor(Math.random() * ((selectedReward.max || 7) - (selectedReward.min || 3) + 1)) + (selectedReward.min || 3);
+        break;
+      case 'material':
+        materialReward = (selectedReward.materialType || 'ironOre') as MaterialType;
+        materialAmount = selectedReward.materialType === 'mythril' ? 1 : selectedReward.materialType === 'orichalcum' ? 1 : Math.floor(Math.random() * 3) + 1;
+        break;
+      case 'unit_frag':
+        unitFragReward = selectedReward.unitFrag || 'u1';
+        break;
+      default:
+        zelReward = 500;
     }
     
     const newScannedHashes = [...qrState.scannedHashes, qrHash];
     
-    setState(prev => ({
-      ...prev,
-      qrState: {
-        scansToday: qrState.lastScanDate === today ? qrState.scansToday + 1 : 1,
-        lastScanDate: today,
-        scannedHashes: newScannedHashes,
-        lifetimeScans: prev.qrState.lifetimeScans + 1,
-      },
-      zel: prev.zel + zelReward,
-      exp: prev.exp + expReward,
-      gems: prev.gems + gemsReward,
-      energy: Math.min(prev.maxEnergy, prev.energy + energyReward),
-    }));
+    setState(prev => {
+      const updates: Partial<PlayerState> = {
+        qrState: {
+          scansToday: qrState.lastScanDate === today ? qrState.scansToday + 1 : 1,
+          lastScanDate: today,
+          scannedHashes: newScannedHashes,
+          lifetimeScans: prev.qrState.lifetimeScans + 1,
+          maxDailyScans: prev.qrState.maxDailyScans || 5,
+        },
+        zel: prev.zel + zelReward,
+        gems: prev.gems + gemsReward,
+        energy: Math.min(prev.maxEnergy, prev.energy + energyReward),
+      };
+      
+      if (materialReward) {
+        updates.materials = {
+          ...prev.materials,
+          [materialReward]: (prev.materials[materialReward] || 0) + materialAmount,
+        };
+      }
+      
+      if (unitFragReward) {
+        const existingFrag = prev.unitFragments?.[unitFragReward] || 0;
+        updates.unitFragments = {
+          ...prev.unitFragments,
+          [unitFragReward]: existingFrag + 1,
+        };
+      }
+      
+      return { ...prev, ...updates };
+    });
     
-    const message = zelReward > 0 ? `+${zelReward} zel` : gemsReward > 0 ? `+${gemsReward} gems` : `+${energyReward} energy`;
-    return { success: true, message, rewardType: reward.type, rewardValue: zelReward || gemsReward || energyReward };
+    let message = '';
+    let rewardType = selectedReward.type;
+    let rewardValue: number | string = 0;
+    
+    if (zelReward > 0) {
+      message = `+${zelReward} zel`;
+      rewardValue = zelReward;
+    } else if (gemsReward > 0) {
+      message = `+${gemsReward} gems`;
+      rewardValue = gemsReward;
+    } else if (energyReward > 0) {
+      message = `+${energyReward} energy`;
+      rewardValue = energyReward;
+    } else if (materialReward) {
+      message = `+${materialAmount} ${materialReward}`;
+      rewardValue = materialReward;
+    } else if (unitFragReward) {
+      message = `+1 ${unitFragReward} fragment`;
+      rewardValue = unitFragReward;
+    }
+    
+    return { success: true, message, rewardType, rewardValue };
   }, [state.qrState]);
 
   // ============================================================================

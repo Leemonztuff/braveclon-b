@@ -247,6 +247,9 @@ export interface QRState {
   lastScanDate: string;
   scannedHashes: string[];
   lifetimeScans: number;
+  maxDailyScans: number;
+  tempBonusScans: number;
+  tempBonusExpiresAt: number | null;
 }
 
 // ============================================================================
@@ -444,6 +447,9 @@ export interface PlayerState {
   // Materials
   materials: Record<MaterialType, number>;
   
+  // Unit Fragments (from QR scans, etc.)
+  unitFragments: Record<string, number>;
+  
   // Inventory
   inventory: UnitInstance[];
   equipmentInventory: EquipInstance[];
@@ -570,6 +576,9 @@ export const INITIAL_QR_STATE: QRState = {
   lastScanDate: new Date().toISOString().split('T')[0],
   scannedHashes: [],
   lifetimeScans: 0,
+  maxDailyScans: 5,
+  tempBonusScans: 0,
+  tempBonusExpiresAt: null,
 };
 
 // ============================================================================
@@ -595,6 +604,7 @@ export const INITIAL_STATE: PlayerState = {
   guildLevel: 1,
   guildContribution: 0,
   materials: { ...INITIAL_MATERIALS },
+  unitFragments: {},
   inventory: [
     { instanceId: 'inst_1', templateId: 'u1', level: 1, exp: 0, equipment: { weapon: null, armor: null, accessory: null }, timesFused: 0 },
     { instanceId: 'inst_2', templateId: 'u2', level: 1, exp: 0, equipment: { weapon: null, armor: null, accessory: null }, timesFused: 0 },

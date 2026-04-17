@@ -527,6 +527,9 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItem> = {
   exp_small: { id: 'exp_small', name: 'EXP Capsule', description: '+50% EXP for 1 battle', type: 'buff', value: 50, duration: 1, icon: '💫' },
   exp_medium: { id: 'exp_medium', name: 'EXP Elixir', description: '+100% EXP for 1 battle', type: 'buff', value: 100, duration: 1, icon: '✨' },
   zel_small: { id: 'zel_small', name: 'Zel Pouch', description: '+20% Zel for 1 battle', type: 'buff', value: 20, duration: 1, icon: '💰' },
+  qr_scan_small: { id: 'qr_scan_small', name: 'QR Booster', description: '+3 QR scans today', type: 'special', value: 3, icon: '📱' },
+  qr_scan_medium: { id: 'qr_scan_medium', name: 'QR Prime', description: '+5 QR scans for 24 hours', type: 'special', value: 5, duration: 24, icon: '📲' },
+  qr_scan_large: { id: 'qr_scan_large', name: 'QR VIP', description: '+10 QR scans for 7 days', type: 'special', value: 10, duration: 168, icon: '👑' },
 };
 
 // ============================================================================
@@ -695,6 +698,10 @@ export const SHOP_CONSUMABLES: ShopItemListing[] = [
   { id: 'shop_reviver', consumableId: 'reviver', price: 50, currency: 'gems', stock: 50, maxStock: 50 },
   { id: 'shop_exp_small', consumableId: 'exp_small', price: 25, currency: 'gems', stock: 99, maxStock: 99 },
   { id: 'shop_exp_medium', consumableId: 'exp_medium', price: 60, currency: 'gems', stock: 50, maxStock: 50 },
+  // QR Scan Boosters
+  { id: 'shop_qr_scan_small', consumableId: 'qr_scan_small', price: 20, currency: 'gems', stock: 30, maxStock: 30 },
+  { id: 'shop_qr_scan_medium', consumableId: 'qr_scan_medium', price: 40, currency: 'gems', stock: 15, maxStock: 15 },
+  { id: 'shop_qr_scan_large', consumableId: 'qr_scan_large', price: 100, currency: 'gems', stock: 5, maxStock: 5 },
 ];
 
 // ============================================================================
