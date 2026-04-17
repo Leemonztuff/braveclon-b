@@ -992,16 +992,18 @@ export function useGameState(options: UseGameStateOptions = {}) {
     if (!banner) return [];
     
     const totalCost = banner.cost * count;
-    if (state.gems < totalCost) return [];
-    
     const results: SummonResult[] = [];
     const pool = GACHA_POOL;
     const totalWeight = pool.reduce((sum, item) => sum + item.weight, 0);
     
     // Update state with gem deduction
     setState(prev => {
+      if (prev.gems < totalCost) return prev;
+      
       let newPity = { ...prev.summonPity };
       const bannerPity = newPity.bannerPulls[bannerId] || 0;
+      const newInventory = [...prev.inventory];
+      const newOwnedIds = new Set(prev.ownedUnitIds);
       
       for (let i = 0; i < count; i++) {
         const currentPity = bannerPity + i;
@@ -1075,13 +1077,13 @@ export function useGameState(options: UseGameStateOptions = {}) {
         
         // Add to owned units if new
         if (isNew) {
-          prev.ownedUnitIds.add(selected.unitId);
+          newOwnedIds.add(selected.unitId);
         }
       }
       
       // Add units to inventory
       results.forEach(result => {
-        prev.inventory.push({
+        newInventory.push({
           instanceId: `inst_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           templateId: result.templateId,
           level: 1,
@@ -1094,9 +1096,9 @@ export function useGameState(options: UseGameStateOptions = {}) {
       return {
         ...prev,
         gems: prev.gems - totalCost,
-        inventory: prev.inventory,
+        inventory: newInventory,
         summonPity: newPity,
-        ownedUnitIds: new Set(prev.ownedUnitIds),
+        ownedUnitIds: newOwnedIds,
         stats: {
           ...prev.stats,
           totalGemsSpent: prev.stats.totalGemsSpent + totalCost,
@@ -1116,7 +1118,7 @@ export function useGameState(options: UseGameStateOptions = {}) {
     });
     
     return results;
-  }, [state.gems]);
+  }, []);
 
   const convertDuplicate = useCallback((instanceId: string): { prism: number; zel: number } | null => {
     const unit = state.inventory.find(u => u.instanceId === instanceId);
