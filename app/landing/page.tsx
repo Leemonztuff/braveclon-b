@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getCurrentUser, onAuthChange, AuthUser } from '@/lib/auth';
+import GameDatabase from '@/components/GameDatabase';
 
 export default function LandingPage() {
   const [showFeatures, setShowFeatures] = useState(false);
+  const [showDatabase, setShowDatabase] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -141,6 +143,22 @@ export default function LandingPage() {
                 <p className="text-zinc-400 text-sm">Juega en tu navegador o instálalo en tu móvil. Guardado en la nube.</p>
               </div>
             </div>
+          </div>
+        )}
+
+        <button
+          onClick={() => setShowDatabase(!showDatabase)}
+          className="w-full mt-4 py-4 bg-amber-500/10 rounded-2xl border border-amber-500/30 flex items-center justify-between px-6"
+        >
+          <span className="font-bold text-lg text-amber-400">📚 Game Database</span>
+          <span className="text-2xl text-amber-400 transition-transform duration-300" style={{ transform: showDatabase ? 'rotate(180deg)' : 'rotate(0)' }}>
+            ▼
+          </span>
+        </button>
+
+        {showDatabase && (
+          <div className="mt-4">
+            <GameDatabase />
           </div>
         )}
       </div>
