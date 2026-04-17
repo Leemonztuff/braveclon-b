@@ -222,7 +222,7 @@ CREATE TABLE dungeons (
 
 INSERT INTO dungeons (id, name, description, element, recommended_level, total_floors, entry_cost, base_hp_multiplier, base_atk_multiplier, zel_per_floor, exp_per_floor) VALUES
 ('dungeon_abyss', 'Abyss Gate', 'A dark portal leading to endless depths.', 'Dark', 10, 10, 10, 2.0, 1.5, 500, 300),
-('dungeon_dragon', "Dragon's Lair", 'A volcanic cave home to ancient dragons.', 'Fire', 30, 15, 20, 3.0, 2.0, 1000, 600),
+('dungeon_dragon', 'Dragon''s Lair', 'A volcanic cave home to ancient dragons.', 'Fire', 30, 15, 20, 3.0, 2.0, 1000, 600),
 ('dungeon_ruins', 'Ancient Ruins', 'Crumbling ruins filled with mysteries.', 'Earth', 20, 12, 15, 2.5, 1.8, 800, 500),
 ('dungeon_forest', 'Phantom Forest', 'A twisted forest where spirits dwell.', 'Light', 25, 10, 15, 2.2, 1.6, 1000, 700),
 ('dungeon_volcano', 'Volcanic Cave', 'Beneath the mountains lies molten danger.', 'Fire', 35, 20, 25, 4.0, 2.5, 2500, 1200);
