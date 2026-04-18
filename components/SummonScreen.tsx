@@ -85,13 +85,18 @@ export default function SummonScreen({ state, rollGacha, onAlert, onBack }: {
 const handleSummon = () => {
     if (phase !== 'idle') return;
     
+    console.log('[SummonScreen] handleSummon called, gems:', state.gems);
     const results = rollGacha('standard', 1);
+    console.log('[SummonScreen] rollGacha returned:', results.length, 'results');
+    
     if (results.length === 0) {
       onAlert(`Not enough gems! You need ${GACHA_CONFIG.BANNERS.standard.cost} 💎 to summon a hero.`);
       return;
     }
     
     const result = results[0];
+    console.log('[SummonScreen] result:', result);
+    
     const unit = UNIT_DATABASE[result.templateId];
     if (!unit) {
       onAlert('Error: Unit not found in database');

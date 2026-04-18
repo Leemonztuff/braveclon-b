@@ -66,6 +66,7 @@ export function useGameState(options: UseGameStateOptions = {}) {
   // Track spendEnergy result - avoids closure issue
   const energyResultRef = useRef<{ success: boolean; energy: number }>({ success: false, energy: 0 });
   const currencyResultRef = useRef<boolean>(false);
+  const gachaResultsRef = useRef<SummonResult[]>([]);
 
   // ============================================================================
   // STATE LOADING
@@ -1055,9 +1056,56 @@ export function useGameState(options: UseGameStateOptions = {}) {
     if (!banner) return [];
     
     const totalCost = banner.cost * count;
+    // Generate results FIRST (synchronously), then update state
     const results: SummonResult[] = [];
     const pool = GACHA_POOL;
     const totalWeight = pool.reduce((sum, item) => sum + item.weight, 0);
+    const currentStateSnapshot = { gems: 0, ownedUnitIds: new Set<string>() };
+    
+    // Get current state synchronously first
+    setState(prev => {
+      currentStateSnapshot.gems = prev.gems;
+      currentStateSnapshot.ownedUnitIds = new Set(prev.ownedUnitIds);
+      return prev;
+    });
+    
+    if (currentStateSnapshot.gems < totalCost) return [];
+    
+    // Generate results OUTSIDE setState
+    for (let i = 0; i < count; i++) {
+      const rand = Math.random() * totalWeight;
+      let cumulative = 0;
+      let selected = pool[0];
+      
+      for (const item of pool) {
+        cumulative += item.weight;
+        if (rand <= cumulative) {
+          selected = item;
+          break;
+        }
+      }
+      
+      let rarity = 1;
+      if (selected.weight >= 100) rarity = 3;
+      else if (selected.weight >= 20) rarity = 4;
+      else if (selected.weight >= 5) rarity = 5;
+      
+      const isNew = !currentStateSnapshot.ownedUnitIds.has(selected.unitId);
+      const duplicateValues = GACHA_CONFIG.DUPLICATE_VALUES[`STAR${rarity}` as keyof typeof GACHA_CONFIG.DUPLICATE_VALUES];
+      
+      results.push({
+        templateId: selected.unitId,
+        rarity,
+        isNew,
+        duplicate: !isNew,
+        prismValue: isNew ? 0 : duplicateValues.prism,
+        zelValue: isNew ? 0 : duplicateValues.zel,
+      });
+    }
+    
+    // NOW update state with gem deduction
+    setState(prev => {
+      if (prev.gems < totalCost) return prev;
     
     // Update state with gem deduction
     setState(prev => {
@@ -1117,7 +1165,7 @@ export function useGameState(options: UseGameStateOptions = {}) {
           `STAR${rarity}` as keyof typeof GACHA_CONFIG.DUPLICATE_VALUES
         ];
         
-        results.push({
+        gachaResultsRef.current.push({
           templateId: selected.unitId,
           rarity,
           isNew,
@@ -1182,7 +1230,7 @@ export function useGameState(options: UseGameStateOptions = {}) {
       };
     });
     
-    return results;
+    return gachaResultsRef.current;
   }, []);
 
   const convertDuplicate = useCallback((instanceId: string): { prism: number; zel: number } | null => {
