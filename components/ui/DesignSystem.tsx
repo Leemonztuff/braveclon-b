@@ -63,11 +63,50 @@ export const RARITY = {
 } as const;
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'gold' | 'silver' | 'green' | 'classic';
   size?: 'sm' | 'md' | 'lg';
   icon?: ReactNode;
   children?: ReactNode;
 }
+
+const HS_STYLES = {
+  classic: {
+    wrapper: 'bg-gradient-to-b from-[#c1b3b0] to-[#1c140d] border-t-[#AD9A90] border-b-[#1c140d]',
+    border: 'bg-gradient-to-b from-[#f756fe] via-[#c84bd6] to-[#661f91] shadow-[0_2px_6px_#331e0b]',
+    text: 'bg-gradient-to-b from-[#bc22c7] via-[#7c1693] to-[#5c1096]',
+    textHover: 'bg-gradient-to-b from-[#e235ee] via-[#981cb4] to-[#661f91]',
+  },
+  gold: {
+    wrapper: 'bg-gradient-to-b from-[#d8be52] to-[#1c140d] border-t-[#d8be52] border-b-[#1c140d]',
+    border: 'bg-gradient-to-b from-[#d8be52] via-[#d5b631] to-[#362c26] shadow-[0_2px_6px_#362c26]',
+    text: 'bg-gradient-to-b from-[#edca37] via-[#a77d33] to-[#5f3f1d]',
+    textHover: 'bg-gradient-to-b from-[#fed83b] via-[#dba23e] to-[#9d6224]',
+  },
+  silver: {
+    wrapper: 'bg-gradient-to-b from-[#d8be52] to-[#1c140d] border-t-[#d8be52] border-b-[#1c140d]',
+    border: 'bg-gradient-to-b from-[#bfcce6] via-[#a1b9e8] to-[#3a4663] shadow-[0_2px_6px_#3a4663]',
+    text: 'bg-gradient-to-b from-[#b6c2dd] via-[#838da5] to-[#43506e]',
+    textHover: 'bg-gradient-to-b from-[#cfdbf5] via-[#a3afcc] to-[#697da9]',
+  },
+  green: {
+    wrapper: 'bg-gradient-to-b from-[#d8be52] to-[#1c140d] border-t-[#d8be52] border-b-[#1c140d]',
+    border: 'bg-gradient-to-b from-[#18e9d5] via-[#13bcab] to-[#014640] shadow-[0_2px_6px_#014640]',
+    text: 'bg-gradient-to-b from-[#05c4b2] via-[#009688] to-[#015f57]',
+    textHover: 'bg-gradient-to-b from-[#18e9d5] via-[#05a193] to-[#028277]',
+  },
+  classicPlain: {
+    wrapper: 'bg-gradient-to-b from-[#c1b3b0] to-[#1c140d] border-t-[#AD9A90] border-b-[#1c140d]',
+    border: 'bg-gradient-to-b from-[#f756fe] via-[#c84bd6] to-[#661f91]',
+    text: 'from-[#e235ee] via-[#981cb4] to-[#661f91]',
+    textHover: 'from-[#e235ee] via-[#981cb4] to-[#661f91]',
+  },
+  primary: {
+    wrapper: 'bg-gradient-to-b from-amber-400 to-amber-600 border-t-amber-300 border-b-amber-700',
+    border: 'bg-gradient-to-b from-yellow-300 via-amber-400 to-amber-600',
+    text: 'from-yellow-100 via-amber-200 to-amber-500',
+    textHover: 'from-white via-yellow-200 to-amber-400',
+  },
+};
 
 export function Button({ 
   variant = 'secondary', 
@@ -77,19 +116,47 @@ export function Button({
   className = '', 
   ...props 
 }: ButtonProps) {
-  const baseClasses = 'font-bold rounded-lg transition-all touch-manipulation active:scale-95 flex items-center justify-center gap-2';
+  const baseClasses = 'font-bold rounded-lg transition-all touch-manipulation active:scale-95 flex items-center justify-center gap-2 relative overflow-hidden';
   
   const sizeClasses = {
     sm: 'px-3 py-2 text-xs min-h-[36px]',
     md: 'px-4 py-3 text-sm min-h-[44px]',
     lg: 'px-6 py-4 text-base min-h-[52px]',
   };
-  
+
+  // HearthStone style buttons
+  if (['classic', 'gold', 'silver', 'green', 'primary'].includes(variant)) {
+    const hs = HS_STYLES[variant === 'primary' ? 'primary' : 'classicPlain'];
+    return (
+      <button 
+        className={`${baseClasses} ${sizeClasses[size]} ${className}`}
+        {...props}
+      >
+        {/* Wrapper layer */}
+        <span className={`absolute inset-0 rounded-lg border-t-2 border-b-2 ${hs.wrapper}`} />
+        {/* Border layer */}
+        <span className={`absolute inset-0.5 rounded-md ${hs.border}`} />
+        {/* Text layer */}
+        <span className={`relative z-10 bg-gradient-to-b ${hs.text} bg-clip-text text-transparent font-bold uppercase tracking-wider drop-shadow-md`}>
+          {icon && <span className="mr-2">{icon}</span>}
+          {children}
+        </span>
+        {/* Hover glow effect */}
+        <span className="absolute inset-0 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-200 shadow-[0_0_20px_rgba(255,255,255,0.3)]" />
+      </button>
+    );
+  }
+
+  // Regular buttons
   const variantClasses = {
     primary: `${COLORS.primary} ${COLORS.primaryText} shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40`,
     secondary: `${COLORS.bg.elevated} ${COLORS.border.base} ${COLORS.text.secondary} hover:${COLORS.bg.hover} hover:${COLORS.text.primary}`,
     ghost: 'bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800',
     danger: `${COLORS.danger} text-white`,
+    gold: `${COLORS.primary} ${COLORS.primaryText}`,
+    silver: 'bg-zinc-300 text-zinc-800',
+    green: 'bg-emerald-500 text-white',
+    classic: 'bg-purple-600 text-white',
   };
 
   return (
