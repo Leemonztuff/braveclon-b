@@ -71,40 +71,34 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const HS_STYLES = {
   classic: {
-    wrapper: 'bg-gradient-to-b from-[#c1b3b0] to-[#1c140d] border-t-[#AD9A90] border-b-[#1c140d]',
-    border: 'bg-gradient-to-b from-[#f756fe] via-[#c84bd6] to-[#661f91] shadow-[0_2px_6px_#331e0b]',
-    text: 'bg-gradient-to-b from-[#bc22c7] via-[#7c1693] to-[#5c1096]',
-    textHover: 'bg-gradient-to-b from-[#e235ee] via-[#981cb4] to-[#661f91]',
+    wrapper: 'bg-gradient-to-b from-[#9b7ba8] via-[#6f4a7b] to-[#3d2a4a]',
+    border: 'border-t-[#bc8cc8] border-b-[#2a1a3a]',
+    inner: 'bg-gradient-to-b from-[#d49fe8] via-[#9b5bb8] to-[#5a2a6a]',
+    text: 'text-white',
   },
   gold: {
-    wrapper: 'bg-gradient-to-b from-[#d8be52] to-[#1c140d] border-t-[#d8be52] border-b-[#1c140d]',
-    border: 'bg-gradient-to-b from-[#d8be52] via-[#d5b631] to-[#362c26] shadow-[0_2px_6px_#362c26]',
-    text: 'bg-gradient-to-b from-[#edca37] via-[#a77d33] to-[#5f3f1d]',
-    textHover: 'bg-gradient-to-b from-[#fed83b] via-[#dba23e] to-[#9d6224]',
+    wrapper: 'bg-gradient-to-b from-[#d4a01c] via-[#a07810] to-[#5a4010]',
+    border: 'border-t-[#f4c02c] border-b-[#3a2808]',
+    inner: 'bg-gradient-to-b from-[#f4c82c] via-[#c09020] to-[#705010]',
+    text: 'text-white',
   },
   silver: {
-    wrapper: 'bg-gradient-to-b from-[#d8be52] to-[#1c140d] border-t-[#d8be52] border-b-[#1c140d]',
-    border: 'bg-gradient-to-b from-[#bfcce6] via-[#a1b9e8] to-[#3a4663] shadow-[0_2px_6px_#3a4663]',
-    text: 'bg-gradient-to-b from-[#b6c2dd] via-[#838da5] to-[#43506e]',
-    textHover: 'bg-gradient-to-b from-[#cfdbf5] via-[#a3afcc] to-[#697da9]',
+    wrapper: 'bg-gradient-to-b from-[#9a9aa8] via-[#6a6a78] to-[#3a3a48]',
+    border: 'border-t-[#bcbcc8] border-b-[#282830]',
+    inner: 'bg-gradient-to-b from-[#d4d4e8] via-[#909098] to-[#505058]',
+    text: 'text-white',
   },
   green: {
-    wrapper: 'bg-gradient-to-b from-[#d8be52] to-[#1c140d] border-t-[#d8be52] border-b-[#1c140d]',
-    border: 'bg-gradient-to-b from-[#18e9d5] via-[#13bcab] to-[#014640] shadow-[0_2px_6px_#014640]',
-    text: 'bg-gradient-to-b from-[#05c4b2] via-[#009688] to-[#015f57]',
-    textHover: 'bg-gradient-to-b from-[#18e9d5] via-[#05a193] to-[#028277]',
-  },
-  classicPlain: {
-    wrapper: 'bg-gradient-to-b from-[#c1b3b0] to-[#1c140d] border-t-[#AD9A90] border-b-[#1c140d]',
-    border: 'bg-gradient-to-b from-[#f756fe] via-[#c84bd6] to-[#661f91]',
-    text: 'from-[#e235ee] via-[#981cb4] to-[#661f91]',
-    textHover: 'from-[#e235ee] via-[#981cb4] to-[#661f91]',
+    wrapper: 'bg-gradient-to-b from-[#40a878] via-[#287848] to-[#184828]',
+    border: 'border-t-[#50c898] border-b-[#083018]',
+    inner: 'bg-gradient-to-b from-[#60e898] via-[#38a868] to-[#186838]',
+    text: 'text-white',
   },
   primary: {
-    wrapper: 'bg-gradient-to-b from-amber-400 to-amber-600 border-t-amber-300 border-b-amber-700',
-    border: 'bg-gradient-to-b from-yellow-300 via-amber-400 to-amber-600',
-    text: 'from-yellow-100 via-amber-200 to-amber-500',
-    textHover: 'from-white via-yellow-200 to-amber-400',
+    wrapper: 'bg-gradient-to-b from-amber-500 to-amber-700',
+    border: 'border-t-amber-300 border-b-amber-800',
+    inner: 'bg-gradient-to-b from-yellow-400 via-amber-400 to-amber-600',
+    text: 'text-amber-900',
   },
 };
 
@@ -126,23 +120,21 @@ export function Button({
 
   // HearthStone style buttons
   if (['classic', 'gold', 'silver', 'green', 'primary'].includes(variant)) {
-    const hs = HS_STYLES[variant === 'primary' ? 'primary' : 'classicPlain'];
+    const hs = HS_STYLES[variant as keyof typeof HS_STYLES];
     return (
       <button 
         className={`${baseClasses} ${sizeClasses[size]} ${className}`}
         {...props}
       >
-        {/* Wrapper layer */}
-        <span className={`absolute inset-0 rounded-lg border-t-2 border-b-2 ${hs.wrapper}`} />
-        {/* Border layer */}
-        <span className={`absolute inset-0.5 rounded-md ${hs.border}`} />
-        {/* Text layer */}
-        <span className={`relative z-10 bg-gradient-to-b ${hs.text} bg-clip-text text-transparent font-bold uppercase tracking-wider drop-shadow-md`}>
+        {/* Wrapper - top/bottom borders */}
+        <span className={`absolute inset-x-0 top-0 bottom-0 rounded-lg border-t-2 border-b-2 ${hs.border} ${hs.wrapper}`} />
+        {/* Inner gradient */}
+        <span className={`absolute inset-x-0 top-0 bottom-0 rounded-md mx-0.5 my-0.5 ${hs.inner}`} />
+        {/* Text */}
+        <span className={`relative z-10 font-bold uppercase tracking-wider ${hs.text} drop-shadow-md`}>
           {icon && <span className="mr-2">{icon}</span>}
           {children}
         </span>
-        {/* Hover glow effect */}
-        <span className="absolute inset-0 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-200 shadow-[0_0_20px_rgba(255,255,255,0.3)]" />
       </button>
     );
   }
