@@ -843,3 +843,127 @@ export function getDungeon(dungeonId: string): DungeonTemplate | undefined {
 export function getDungeonFloors(dungeonId: string): DungeonFloor[] {
   return DUNGEONS[dungeonId]?.floors || [];
 }
+
+// ============================================================================
+// DATA-DRIVEN LAYER (Supabase fallback to local data)
+// ============================================================================
+
+import { 
+  loadUnitTemplates, 
+  loadEquipmentTemplates, 
+  loadStages,
+  loadEnemies,
+  loadGachaPool,
+  isConfigured 
+} from './gameApi';
+
+let _usingFallback = false;
+
+export const GameData = {
+  _initialized: false,
+  _units: null as Record<string, UnitTemplate> | null,
+  _equipment: null as Record<string, EquipmentTemplate> | null,
+  _stages: null as StageTemplate[] | null,
+  _enemies: null as Record<string, any> | null,
+  _gachaPool: null as GachaRate[] | null,
+
+  async initialize() {
+    if (this._initialized) return;
+    
+    if (isConfigured()) {
+      try {
+        const [units, equipment, stages, enemies, gachaPool] = await Promise.all([
+          loadUnitTemplates(),
+          loadEquipmentTemplates(),
+          loadStages(),
+          loadEnemies(),
+          loadGachaPool(),
+        ]);
+        
+        this._units = units;
+        this._equipment = equipment;
+        this._stages = stages;
+        this._enemies = enemies;
+        
+        if (gachaPool) {
+          this._gachaPool = Object.entries(gachaPool).map(([unitId, weight]) => ({ unitId, weight }));
+        }
+        
+        this._initialized = true;
+        console.log('Game data loaded from Supabase');
+      } catch (e) {
+        console.warn('Failed to load from Supabase, using local data:', e);
+        _usingFallback = true;
+        this._useLocalData();
+      }
+    } else {
+      _usingFallback = true;
+      this._useLocalData();
+    }
+  },
+
+  _useLocalData() {
+    this._units = UNIT_DATABASE;
+    this._equipment = EQUIPMENT_DATABASE;
+    this._stages = STAGES;
+    this._enemies = {}; 
+    for (const enemy of ENEMIES) {
+      this._enemies![enemy.id] = enemy;
+    }
+    this._gachaPool = GACHA_POOL;
+    this._initialized = true;
+    console.log('Using local game data');
+  },
+
+  getUnit(id: string): UnitTemplate | undefined {
+    return this._units?.[id];
+  },
+
+  getEquipment(id: string): EquipmentTemplate | undefined {
+    return this._equipment?.[id];
+  },
+
+  getStages(): StageTemplate[] {
+    return this._stages || STAGES;
+  },
+
+  getStage(id: number): StageTemplate | undefined {
+    return this._stages?.find(s => s.id === id);
+  },
+
+  getGachaPool(): GachaRate[] {
+    return this._gachaPool || GACHA_POOL;
+  },
+
+  isReady(): boolean {
+    return this._initialized;
+  }
+};
+
+export async function initializeGameData(): Promise<void> {
+  await GameData.initialize();
+}
+
+export function isUsingOfflineMode(): boolean {
+  return _usingFallback;
+}
+
+export function getUnitTemplate(id: string): UnitTemplate | undefined {
+  return GameData.getUnit(id);
+}
+
+export function getEquipmentTemplate(id: string): EquipmentTemplate | undefined {
+  return GameData.getEquipment(id);
+}
+
+export function getStages(): StageTemplate[] {
+  return GameData.getStages();
+}
+
+export function getStage(id: number): StageTemplate | undefined {
+  return GameData.getStage(id);
+}
+
+export function getGachaRates(): GachaRate[] {
+  return GameData.getGachaPool();
+}

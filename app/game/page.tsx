@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useGameApp, Screen } from '@/hooks/useGameApp';
 import { getCurrentUser, onAuthChange, AuthUser } from '@/lib/auth';
+import { initializeGameData, isUsingOfflineMode } from '@/lib/gameData';
 import { BattleRewards } from '@/components/BattleRewardsModal';
 import { X } from 'lucide-react';
 import ViewportWrapper from '@/components/ViewportWrapper';
@@ -28,6 +29,7 @@ export default function GameApp() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [skippedAuth, setSkippedAuth] = useState(false);
+  const [showOfflineToast, setShowOfflineToast] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -39,6 +41,12 @@ export default function GameApp() {
 
     const authListener = onAuthChange((user) => {
       setUser(user);
+    });
+
+    initializeGameData().then(() => {
+      if (isUsingOfflineMode()) {
+        setShowOfflineToast(true);
+      }
     });
 
     return () => {
@@ -335,6 +343,21 @@ export default function GameApp() {
 
           {currentScreen !== 'battle' && (
             <BottomNav currentScreen={currentScreen} setCurrentScreen={navigate} />
+          )}
+
+          {showOfflineToast && (
+            <div className="fixed top-20 left-4 right-4 bg-amber-950/90 backdrop-blur border border-amber-800/50 rounded-lg p-3 shadow-lg animate-slideDown z-50">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">⚡</span>
+                <div>
+                  <p className="text-sm font-medium text-amber-100">Modo offline</p>
+                  <p className="text-xs text-amber-200/70">Datos locales cargados</p>
+                </div>
+                <button onClick={() => setShowOfflineToast(false)} className="ml-auto text-amber-200 hover:text-amber-100">
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
           )}
 
           {showAlert && alertMessage && (
