@@ -365,13 +365,14 @@ export function useGameState(options: UseGameStateOptions = {}) {
   // ============================================================================
 
   const spendEnergy = useCallback((amount: number): boolean => {
-    let canAfford = false;
+    // Use a ref to track the result synchronously
+    const resultRef = { current: false };
     let beforeEnergy = 0;
     
     setState(prev => {
       beforeEnergy = prev.energy;
-      canAfford = prev.energy >= amount;
-      if (canAfford) {
+      resultRef.current = prev.energy >= amount;
+      if (resultRef.current) {
         console.log(`[spendEnergy] ✅ SUCCESS: ${beforeEnergy} - ${amount} = ${beforeEnergy - amount}`);
         return { ...prev, energy: prev.energy - amount };
       }
@@ -379,7 +380,7 @@ export function useGameState(options: UseGameStateOptions = {}) {
       return prev;
     });
     
-    return canAfford;
+    return resultRef.current;
   }, []);
 
   const refundEnergy = useCallback((amount: number): void => {
