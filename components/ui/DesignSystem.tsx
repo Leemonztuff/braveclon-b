@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode, ButtonHTMLAttributes } from 'react';
+import type { PlayerState } from '@/lib/gameTypes';
 
 export const COLORS = {
   primary: 'bg-amber-400',
@@ -275,6 +276,90 @@ export function Progress({ value, max = 100, variant = 'default', showLabel = fa
       {showLabel && (
         <div className="text-xs text-zinc-400 mt-1 text-center font-mono">
           {Math.round(percentage)}%
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// CURRENCY DISPLAY
+// ============================================================================
+
+interface CurrencyDisplayProps {
+  zel?: number;
+  gems?: number;
+  energy?: number;
+  maxEnergy?: number;
+  compact?: boolean;
+}
+
+export function CurrencyDisplay({ zel, gems, energy, maxEnergy, compact }: CurrencyDisplayProps) {
+  if (compact) {
+    return (
+      <div className="flex items-center gap-3 text-xs">
+        {zel !== undefined && (
+          <span className="text-amber-400">💰 {zel >= 1000 ? `${(zel/1000).toFixed(1)}k` : zel}</span>
+        )}
+        {gems !== undefined && (
+          <span className="text-sky-400">💎 {gems}</span>
+        )}
+        {energy !== undefined && (
+          <span className="text-emerald-400">⚡ {energy}/{maxEnergy}</span>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-4">
+      {zel !== undefined && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-xl">💰</span>
+          <span className="text-amber-400 font-bold">{zel.toLocaleString()}</span>
+        </div>
+      )}
+      {gems !== undefined && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-xl">💎</span>
+          <span className="text-sky-400 font-bold">{gems.toLocaleString()}</span>
+        </div>
+      )}
+      {energy !== undefined && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-xl">⚡</span>
+          <span className="text-emerald-400 font-bold">{energy}/{maxEnergy}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// TOP BAR COMPONENT
+// ============================================================================
+
+interface TopBarProps {
+  state: PlayerState;
+  onNavigate?: (screen: string) => void;
+}
+
+export function TopBar({ state, onNavigate }: TopBarProps) {
+  return (
+    <div className="flex items-center justify-between px-4 py-2 bg-zinc-950/80 border-b border-zinc-800/50 backdrop-blur">
+      <div className="flex items-center gap-4">
+        <CurrencyDisplay 
+          zel={state.zel} 
+          gems={state.gems} 
+          energy={state.energy}
+          maxEnergy={state.maxEnergy}
+          compact
+        />
+      </div>
+      {state.playerLevel !== undefined && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-zinc-500">Lv.</span>
+          <span className="text-sm font-bold text-amber-400">{state.playerLevel}</span>
         </div>
       )}
     </div>
