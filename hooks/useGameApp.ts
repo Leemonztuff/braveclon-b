@@ -45,7 +45,6 @@ export function useGameApp(userId?: string | null) {
     purchaseShopUnit,
     purchaseShopEquipment,
     purchaseConsumable,
-    state,
   } = gameState;
   
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
@@ -64,25 +63,18 @@ export function useGameApp(userId?: string | null) {
 
   const startBattle = useCallback((stageId: number) => {
     const stage = STAGES.find(s => s.id === stageId);
-    console.log('[startBattle] stageId:', stageId, 'stage:', stage, 'energy:', stage?.energy);
     
-    if (!stage) {
-      console.error('[startBattle] Stage not found:', stageId);
-      return;
-    }
+    if (!stage) return;
 
     const energyCost = stage.energy ?? 1;
-    console.log('[startBattle] Energy cost:', energyCost, 'has spendEnergy fn:', typeof spendEnergy);
 
     if (spendEnergy(energyCost)) {
-      console.log('[startBattle] Success, setting battle stage:', stageId);
       setBattleStage(stageId);
       setCurrentScreen('battle');
     } else {
-      console.log('[startBattle] Failed to spend energy, current energy:', state?.energy);
       triggerAlert(`Not enough energy! You need ${energyCost} ⚡ to start this quest.`);
     }
-  }, [spendEnergy, triggerAlert, state]);
+  }, [spendEnergy, triggerAlert]);
 
   const endBattle = useCallback((victory: boolean) => {
     const completedStageId = battleStage;

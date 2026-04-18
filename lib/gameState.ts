@@ -365,18 +365,16 @@ export function useGameState(options: UseGameStateOptions = {}) {
   // ============================================================================
 
   const spendEnergy = useCallback((amount: number): boolean => {
-    let hadEnough = false;
+    let success = false;
     setState(prev => {
-      console.log(`[spendEnergy] Checking: have=${prev.energy}, need=${amount}`);
       if (prev.energy >= amount) {
-        hadEnough = true;
-        console.log(`[spendEnergy] SUCCESS: deducting ${amount}, new energy=${prev.energy - amount}`);
+        success = true;
         return { ...prev, energy: prev.energy - amount };
       }
-      console.log(`[spendEnergy] FAILED: not enough energy`);
       return prev;
     });
-    return hadEnough;
+    console.log(`[spendEnergy] result:`, success);
+    return success;
   }, []);
 
   const refundEnergy = useCallback((amount: number): void => {
