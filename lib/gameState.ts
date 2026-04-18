@@ -365,18 +365,20 @@ export function useGameState(options: UseGameStateOptions = {}) {
   // ============================================================================
 
   const spendEnergy = useCallback((amount: number): boolean => {
-    // We need to check current state synchronously first
-    let currentEnergy = 0;
     let canAfford = false;
+    let beforeEnergy = 0;
     
-    // Use a sync check first by reading from state directly
     setState(prev => {
-      currentEnergy = prev.energy;
+      beforeEnergy = prev.energy;
       canAfford = prev.energy >= amount;
-      return canAfford ? { ...prev, energy: prev.energy - amount } : prev;
+      if (canAfford) {
+        console.log(`[spendEnergy] ✅ SUCCESS: ${beforeEnergy} - ${amount} = ${beforeEnergy - amount}`);
+        return { ...prev, energy: prev.energy - amount };
+      }
+      console.log(`[spendEnergy] ❌ FAILED: need ${amount}, have ${beforeEnergy}`);
+      return prev;
     });
     
-    console.log(`[spendEnergy] amount=${amount}, had=${currentEnergy}, success=${canAfford}`);
     return canAfford;
   }, []);
 
