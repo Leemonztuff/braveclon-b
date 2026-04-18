@@ -65,6 +65,7 @@ export function useGameState(options: UseGameStateOptions = {}) {
   
   // Track spendEnergy result - avoids closure issue
   const energyResultRef = useRef<{ success: boolean; energy: number }>({ success: false, energy: 0 });
+  const currencyResultRef = useRef<boolean>(false);
 
   // ============================================================================
   // STATE LOADING
@@ -331,11 +332,12 @@ export function useGameState(options: UseGameStateOptions = {}) {
   }, []);
 
   const spendCurrency = useCallback((type: CurrencyType, amount: number): boolean => {
-    let success = false;
+    let canAfford = false;
     setState(prev => {
       const current = prev[type as keyof PlayerState] as number;
-      if (current >= amount) {
-        success = true;
+      canAfford = current >= amount;
+      currencyResultRef.current = canAfford;
+      if (canAfford) {
         return {
           ...prev,
           [type]: current - amount,
@@ -344,7 +346,8 @@ export function useGameState(options: UseGameStateOptions = {}) {
       }
       return prev;
     });
-    return success;
+    console.log(`[spendCurrency] type=${type}, amount=${amount}, result=${currencyResultRef.current}`);
+    return currencyResultRef.current;
   }, []);
 
   const refundCurrency = useCallback((type: CurrencyType, amount: number): void => {
@@ -355,12 +358,14 @@ export function useGameState(options: UseGameStateOptions = {}) {
   }, []);
 
   const hasCurrency = useCallback((type: CurrencyType, amount: number): boolean => {
+    // Use ref for synchronous check
     let result = false;
     setState(prev => {
       result = (prev[type as keyof PlayerState] as number) >= amount;
+      currencyResultRef.current = result;
       return prev;
     });
-    return result;
+    return currencyResultRef.current;
   }, []);
 
   // ============================================================================
