@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { PlayerState } from '@/lib/gameState';
-import { Header, Card, Button, CurrencyDisplay, EmptyState } from './ui/DesignSystem';
+import { Header, Card, Button, CurrencyDisplay } from './ui/DesignSystem';
 import { motion } from 'motion/react';
 
 interface GuildScreenProps {
@@ -63,16 +63,16 @@ export default function GuildScreen({ state, onBack, onAlert, onNavigate }: Guil
       <div className="flex-1 overflow-y-auto p-4">
         {!hasGuild ? (
           <div className="flex flex-col items-center justify-center h-full gap-6">
-            <EmptyState 
-              icon="🏰"
-              title="No Guild"
-              description="Join or create a guild to unlock social features, guild quests, and exclusive rewards!"
-            />
+            <div className="text-center p-8">
+              <div className="text-6xl mb-4">🏰</div>
+              <h2 className="text-xl font-bold text-white mb-2">No Guild</h2>
+              <p className="text-sm text-zinc-400">Join or create a guild to unlock social features, guild quests, and exclusive rewards!</p>
+            </div>
             <div className="flex gap-4 w-full max-w-sm">
-              <Button variant="primary" className="flex-1" onClick={() => onAlert('Guild creation coming soon!')}>
+              <Button variant="primary" onClick={() => onAlert('Guild creation coming soon!')}>
                 Create Guild
               </Button>
-              <Button variant="secondary" className="flex-1" onClick={() => onAlert('Guild list coming soon!')}>
+              <Button variant="secondary" onClick={() => onAlert('Guild list coming soon!')}>
                 Find Guild
               </Button>
             </div>

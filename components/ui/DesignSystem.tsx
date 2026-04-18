@@ -376,9 +376,10 @@ interface HeaderProps {
   subtitle?: string;
   onBack?: () => void;
   actions?: ReactNode;
+  rightContent?: ReactNode;
 }
 
-export function Header({ title, icon, subtitle, onBack, actions }: HeaderProps) {
+export function Header({ title, icon, subtitle, onBack, actions, rightContent }: HeaderProps) {
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-950/50">
       <div className="flex items-center gap-3">
@@ -393,7 +394,10 @@ export function Header({ title, icon, subtitle, onBack, actions }: HeaderProps) 
           {subtitle && <p className="text-xs text-zinc-500">{subtitle}</p>}
         </div>
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      <div className="flex items-center gap-2">
+        {actions}
+        {rightContent}
+      </div>
     </div>
   );
 }
