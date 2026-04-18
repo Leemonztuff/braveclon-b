@@ -128,7 +128,7 @@ const handleSummon = () => {
   };
 
   return (
-    <div className={`flex flex-col h-full items-center justify-center p-6 relative overflow-hidden ${isShaking ? 'animate-[shake_0.1s_ease-in-out_infinite]' : ''}`}>
+    <div className="flex flex-col h-full items-center justify-center p-6 relative overflow-hidden">
       <style>{`
         @keyframes shake {
           0%, 100% { transform: translate(0, 0) rotate(0deg); }
@@ -136,7 +136,20 @@ const handleSummon = () => {
           50% { transform: translate(0, -5px) rotate(-1deg); }
           75% { transform: translate(-5px, 5px) rotate(0deg); }
         }
+        @keyframes glow-pulse {
+          0%, 100% { box-shadow: 0 0 20px currentColor; }
+          50% { box-shadow: 0 0 60px currentColor, 0 0 100px currentColor; }
+        }
+        @keyframes spin-glow {
+          0% { transform: rotate(0deg) scale(1); filter: brightness(1); }
+          50% { transform: rotate(180deg) scale(1.2); filter: brightness(1.5); }
+          100% { transform: rotate(360deg) scale(1); filter: brightness(1); }
+        }
       `}</style>
+      
+      {isShaking && (
+        <div className="absolute inset-0 animate-[shake_0.1s_ease-in-out_infinite] pointer-events-none z-40" />
+      )}
 
       {/* Back Button */}
       {onBack && (
@@ -181,14 +194,17 @@ const handleSummon = () => {
                 <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/gate/200/200')] opacity-20 bg-cover" />
                 <span className="text-zinc-400 font-black tracking-widest z-10 text-xl drop-shadow-md">RARE SUMMON</span>
               </div>
-              <button 
+              <motion.button 
                 onClick={handleSummon}
-                className="relative overflow-hidden rounded-full bg-gradient-to-r from-pink-500 to-purple-600 px-8 py-4 font-black text-white shadow-[0_0_20px_rgba(236,72,153,0.4)] transition-transform active:scale-95 hover:scale-105"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="relative overflow-hidden rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-pink-500 px-8 py-4 font-black text-white shadow-[0_0_30px_rgba(236,72,153,0.5)]"
+                style={{ animation: 'glow-pulse 2s ease-in-out infinite' }}
               >
                 <span className="relative z-10 flex items-center gap-2 text-lg">
-                  SUMMON ({GACHA_CONFIG.BANNERS.standard.cost} 💎)
+                  ⚡ SUMMON ({GACHA_CONFIG.BANNERS.standard.cost} 💎)
                 </span>
-              </button>
+              </motion.button>
             </motion.div>
           )}
 
