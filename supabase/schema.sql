@@ -319,8 +319,30 @@ INSERT INTO consumable_items (id, name, description, item_type, value, duration,
 ('reviver', 'Phoenix Feather', 'Revive fallen unit', 'battle', 50, NULL, '🪶', 50);
 
 -- ============================================================================
--- PLAYER PROFILES (Existing table expanded)
+-- PLAYER PROFILES
 -- ============================================================================
+
+CREATE TABLE IF NOT EXISTS profiles (
+    id TEXT PRIMARY KEY,
+    username TEXT NOT NULL,
+    avatar_url TEXT,
+    rank INTEGER DEFAULT 1,
+    level INTEGER DEFAULT 1,
+    exp INTEGER DEFAULT 0,
+    energy INTEGER DEFAULT 10,
+    max_energy INTEGER DEFAULT 10,
+    last_energy_update TIMESTAMPTZ DEFAULT NOW(),
+    gems INTEGER DEFAULT 50,
+    zel INTEGER DEFAULT 1000,
+    arena_score INTEGER DEFAULT 0,
+    arena_medals INTEGER DEFAULT 0,
+    guild_coins INTEGER DEFAULT 0,
+    honor_points INTEGER DEFAULT 0,
+    guild_id TEXT,
+    guild_contribution INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS arena_score INTEGER DEFAULT 0;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS arena_medals INTEGER DEFAULT 0;

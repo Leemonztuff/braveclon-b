@@ -44,6 +44,27 @@ export async function signOut() {
   await supabase.auth.signOut();
 }
 
+export async function updateProfile(userId: string, updates: { username?: string; avatar_url?: string }) {
+  if (!supabase) return { error: 'Not connected to Supabase' };
+  
+  const { error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId);
+    
+  return { error };
+}
+
+export async function resetPassword(email: string) {
+  if (!supabase) return { error: 'Offline mode' };
+  
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/reset-password`
+  });
+  
+  return { error: error?.message };
+}
+
 export async function getCurrentUser() {
   if (!supabase) return null;
   const { data: { user } } = await supabase.auth.getUser();

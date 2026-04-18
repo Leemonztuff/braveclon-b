@@ -17,7 +17,8 @@ export type Screen =
   | 'craft'
   | 'guild'
   | 'randall'
-  | 'friends';
+  | 'friends'
+  | 'settings';
 
 export function useGameApp(userId?: string | null) {
   const gameState = useGameState({

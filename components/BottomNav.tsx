@@ -1,4 +1,4 @@
-import { Home, Users, Swords, Sparkles, Package, Hammer, Castle } from 'lucide-react';
+import { Home, Users, Swords, Sparkles, Package, Hammer, Castle, Settings } from 'lucide-react';
 import { Screen } from '@/hooks/useGameApp';
 import { EFFECTS } from './ui/DesignSystem';
 
@@ -9,11 +9,12 @@ const NAV_ITEMS: { id: Screen; label: string; icon: typeof Home }[] = [
   { id: 'summon', label: 'Summon', icon: Sparkles },
   { id: 'guild', label: 'Guild', icon: Castle },
   { id: 'craft', label: 'Craft', icon: Hammer },
+  { id: 'settings', label: 'Ajustes', icon: Settings },
 ];
 
 export function BottomNav({ currentScreen, setCurrentScreen }: { currentScreen: Screen, setCurrentScreen: (s: Screen) => void }) {
   return (
-    <nav className={`grid grid-cols-6 bg-zinc-950 pb-safe pt-2 border-t border-zinc-800/50 z-10 ${EFFECTS.glass} px-2`}>
+    <nav className={`grid grid-cols-7 bg-zinc-950 pb-safe pt-2 border-t border-zinc-800/50 z-10 ${EFFECTS.glass} px-2`}>
       {NAV_ITEMS.map(item => {
         const Icon = item.icon;
         const isActive = currentScreen === item.id;

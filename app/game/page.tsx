@@ -21,6 +21,7 @@ import ArenaScreen from '@/components/ArenaScreen';
 import ShopScreen from '@/components/ShopScreen';
 import CraftScreen from '@/components/CraftScreen';
 import GuildScreen from '@/components/GuildScreen';
+import SettingsScreen from '@/components/SettingsScreen';
 import { BottomNav } from '@/components/BottomNav';
 import { CurrencyDisplay, EFFECTS } from '@/components/ui/DesignSystem';
 import { User } from 'lucide-react';
@@ -223,6 +224,14 @@ export default function GameApp() {
             onBack={goBack}
             onAlert={triggerAlert}
             onNavigate={(screen) => navigate(screen as any)}
+          />
+        );
+      case 'settings':
+        return (
+          <SettingsScreen
+            user={user}
+            onBack={goBack}
+            onAlert={triggerAlert}
           />
         );
       case 'randall':
