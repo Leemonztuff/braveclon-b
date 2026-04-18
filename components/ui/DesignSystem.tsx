@@ -98,109 +98,27 @@ export function Button({
     lg: 'px-8 py-4 text-base min-h-[56px]',
   };
 
-  // Premium HearthStone style buttons
+  // Premium HearthStone style buttons (simplified for compatibility)
   const isPremium = ['gold', 'ruby', 'diamond', 'green', 'silver'].includes(variant);
   
   if (isPremium) {
+    const premiumClasses = {
+      gold: 'bg-gradient-to-b from-yellow-500 via-amber-500 to-amber-700 border-t-yellow-400 border-b-amber-800 text-black',
+      ruby: 'bg-gradient-to-b from-red-500 via-red-600 to-red-800 border-t-red-400 border-b-red-900 text-white',
+      diamond: 'bg-gradient-to-b from-sky-400 via-blue-500 to-blue-700 border-t-sky-300 border-b-blue-900 text-white',  
+      green: 'bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-700 border-t-emerald-300 border-b-emerald-900 text-white',
+      silver: 'bg-gradient-to-b from-zinc-300 via-zinc-400 to-zinc-600 border-t-zinc-200 border-b-zinc-800 text-black',
+    };
+    
     return (
       <button 
-        className={`relative font-bold rounded-xl transition-all duration-200 touch-manipulation active:scale-95 flex items-center justify-center gap-2 ${sizeClasses[size]} ${className}`}
+        className={`relative font-bold rounded-xl transition-all duration-200 touch-manipulation active:scale-95 flex items-center justify-center gap-2 shadow-lg ${sizeClasses[size]} ${premiumClasses[variant as keyof typeof premiumClasses]} ${className}`}
         {...props}
       >
-        {/* === HS-GLADER BUTTON === */}
-        <div className="relative flex items-center justify-center w-full h-full">
-          
-          {/* LAYER 1: Outer frame/border - creates depth */}
-          <div className="absolute inset-0 rounded-xl" 
-            style={{
-              background: variant === 'gold' ? 'linear-gradient(135deg, #f4c430 0%, #b8860b 50%, #8b6914 100%)' :
-                       variant === 'ruby' ? 'linear-gradient(135deg, #e74c3c 0%, #c0392b 50%, #922b21 100%)' :
-                       variant === 'diamond' ? 'linear-gradient(135deg, #3498db 0%, #2980b9 50%, #1a5276 100%)' :
-                       variant === 'green' ? 'linear-gradient(135deg, #2ecc71 0%, #27ae60 50%, #1e8449 100%)' :
-                       'linear-gradient(135deg, #bdc3c7 0%, #95a5a6 50%, #7f8c8d 100%)',
-              boxShadow: variant === 'gold' ? '0 4px 15px rgba(244,196,48,0.4), inset 0 1px 0 rgba(255,255,255,0.3)' :
-                       variant === 'ruby' ? '0 4px 15px rgba(231,76,60,0.4), inset 0 1px 0 rgba(255,255,255,0.3)' :
-                       variant === 'diamond' ? '0 4px 15px rgba(52,152,219,0.4), inset 0 1px 0 rgba(255,255,255,0.3)' :
-                       variant === 'green' ? '0 4px 15px rgba(46,204,113,0.4), inset 0 1px 0 rgba(255,255,255,0.3)' :
-                       '0 4px 15px rgba(189,195,199,0.3), inset 0 1px 0 rgba(255,255,255,0.3)'
-            }}
-          />
-          
-          {/* LAYER 2: Inner shine - top highlight */}
-          <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-xl opacity-30"
-            style={{
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%)',
-              boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3)'
-            }}
-          />
-          
-          {/* LAYER 3: Main button face */}
-          <div 
-            className="absolute inset-0.5 -top-0.5 rounded-lg mx-0.5"
-            style={{
-              background: variant === 'gold' ? 'linear-gradient(180deg, #f9d423 0%, #f39c12 50%, #d68910 100%)' :
-                       variant === 'ruby' ? 'linear-gradient(180deg, #e74c3c 0%, #d62c1a 50%, #a93226 100%)' :
-                       variant === 'diamond' ? 'linear-gradient(180deg, #5dade2 0%, #3498db 50%, #2471a3 100%)' :
-                       variant === 'green' ? 'linear-gradient(180deg, #58d68d 0%, #2ecc71 50%, #239e56 100%)' :
-                       'linear-gradient(180deg, #ecf0f1 0%, #bdc3c7 50%, #95a5a6 100%)',
-              boxShadow: variant === 'gold' ? 'inset 0 -4px 8px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.1)' :
-                       variant === 'ruby' ? 'inset 0 -4px 8px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.1)' :
-                       variant === 'diamond' ? 'inset 0 -4px 8px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.1)' :
-                       variant === 'green' ? 'inset 0 -4px 8px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.1)' :
-                       'inset 0 -4px 8px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.1)'
-            }}
-          />
-          
-          {/* LAYER 4: Text highlight/shimmer */}
-          <div 
-            className="absolute inset-x-0 top-0 h-1/3 rounded-t-md opacity-50"
-            style={{
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%)'
-            }}
-          />
-          
-          {/* LAYER 5: Gem/emblem decoration */}
-          {['gold', 'ruby', 'diamond', 'green'].includes(variant) && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full"
-              style={{
-                background: variant === 'gold' ? 'radial-gradient(circle at 30% 30%, #f4d92c, #b8860b, #8b6508)' :
-                         variant === 'ruby' ? 'radial-gradient(circle at 30% 30%, #ec7063, #c0392b, #922b21)' :
-                         variant === 'diamond' ? 'radial-gradient(circle at 30% 30%, #85c1e9, #3498db, #1a5276)' :
-                         'radial-gradient(circle at 30% 30%, #82e0aa, #27ae60, #1e8449)',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.3), inset 0 -2px 4px rgba(0,0,0,0.2)'
-              }}
-            />
-          )}
-          
-          {/* LAYER 6: Button text */}
-          <span 
-            className="relative z-10 font-black uppercase tracking-[0.15em] drop-shadow-lg"
-            style={{
-              color: variant === 'ruby' ? '#fdfefe' : 
-                     variant === 'diamond' ? '#fdfefe' : '#1a1a2e',
-              textShadow: variant === 'gold' ? '0 2px 4px rgba(139,69,19,0.5)' :
-                         variant === 'ruby' ? '0 2px 4px rgba(0,0,0,0.5)' :
-                         variant === 'diamond' ? '0 2px 4px rgba(0,0,0,0.5)' :
-                         '0 2px 4px rgba(0,0,0,0.3)',
-              fontSize: size === 'sm' ? '0.65rem' : size === 'lg' ? '1.1rem' : '0.8rem',
-            }}
-          >
-            {icon && <span className="mr-2" style={{ fontSize: '1.1em' }}>{icon}</span>}
-            {children}
-          </span>
-        </div>
-        
-        {/* === ANIMATED FOIL EFFECT (subtle shimmer) === */}
-        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
-          <div 
-            className="absolute inset-0 opacity-0 hover:opacity-20 transition-opacity duration-300"
-            style={{
-              background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.4) 25%, transparent 50%, rgba(255,255,255,0.4) 75%, transparent 100%)',
-              backgroundSize: '200% 200%',
-              animation: 'shimmer 3s infinite linear'
-            }}
-          />
-        </div>
+        <span className="relative z-10 font-black uppercase tracking-wider drop-shadow-md">
+          {icon && <span className="mr-2">{icon}</span>}
+          {children}
+        </span>
       </button>
     );
   }
