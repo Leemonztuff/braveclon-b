@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { UnitTemplate, UNIT_DATABASE, Stats, QR_REWARD_TABLE, GACHA_POOL, EQUIPMENT_DATABASE, EquipSlot, STAGES, getExpForLevel, getFusionCost, getFusionExpGain, getEvolutionCost, getActiveSetBonuses } from './gameData';
 import { 
   PlayerState, 
@@ -62,6 +62,9 @@ export function useGameState(options: UseGameStateOptions = {}) {
   const [timeToNextEnergy, setTimeToNextEnergy] = useState<number>(0);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
+  // Track spendEnergy result - avoids closure issue
+  const energyResultRef = useRef<{ success: boolean; energy: number }>({ success: false, energy: 0 });
 
   // ============================================================================
   // STATE LOADING
@@ -365,22 +368,29 @@ export function useGameState(options: UseGameStateOptions = {}) {
   // ============================================================================
 
   const spendEnergy = useCallback((amount: number): boolean => {
-    // Use a ref to track the result synchronously
-    const resultRef = { current: false };
+    // Use ref to avoid closure issue - store result outside the callback scope
+    let canAfford = false;
     let beforeEnergy = 0;
     
     setState(prev => {
       beforeEnergy = prev.energy;
-      resultRef.current = prev.energy >= amount;
-      if (resultRef.current) {
-        console.log(`[spendEnergy] ✅ SUCCESS: ${beforeEnergy} - ${amount} = ${beforeEnergy - amount}`);
+      canAfford = prev.energy >= amount;
+      
+      if (canAfford) {
+        console.log(`[spendEnergy] ✅ SPEND: ${prev.energy} - ${amount} = ${prev.energy - amount}`);
+        // Update ref for external access
+        energyResultRef.current = { success: true, energy: prev.energy - amount };
         return { ...prev, energy: prev.energy - amount };
       }
-      console.log(`[spendEnergy] ❌ FAILED: need ${amount}, have ${beforeEnergy}`);
+      console.log(`[spendEnergy] ❌ NOT ENOUGH: have ${prev.energy}, need ${amount}`);
+      // Update ref for external access
+      energyResultRef.current = { success: false, energy: prev.energy };
       return prev;
     });
     
-    return resultRef.current;
+    // Read from ref which was updated synchronously in setState callback
+    console.log('[spendEnergy] REF result:', energyResultRef.current.success, 'energy:', energyResultRef.current.energy);
+    return energyResultRef.current.success;
   }, []);
 
   const refundEnergy = useCallback((amount: number): void => {
