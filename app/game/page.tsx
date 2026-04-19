@@ -6,6 +6,7 @@ import { getCurrentUser, onAuthChange, AuthUser } from '@/lib/auth';
 import { initializeGameData, isUsingOfflineMode } from '@/lib/gameData';
 import { BattleRewards } from '@/components/BattleRewardsModal';
 import { X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import ViewportWrapper from '@/components/ViewportWrapper';
 import AuthScreen from '@/components/AuthScreen';
 import HomeScreen from '@/components/HomeScreen';
@@ -346,7 +347,18 @@ export default function GameApp() {
 
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
             <div className="w-full h-full animate-fadeIn">
-              {renderScreen()}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentScreen}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  className="flex-1"
+                >
+                  {renderScreen()}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
 

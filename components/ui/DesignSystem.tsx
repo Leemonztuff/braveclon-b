@@ -3,6 +3,24 @@
 import { ReactNode, ButtonHTMLAttributes } from 'react';
 import type { PlayerState } from '@/lib/gameTypes';
 
+interface EmptyStateProps {
+  icon?: string;
+  title: string;
+  description?: string;
+  action?: ReactNode;
+}
+
+export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
+  return (
+    <div className="flex flex-col items-center justify-center p-8 text-center">
+      {icon && <div className="text-4xl mb-3 opacity-60">{icon}</div>}
+      <h3 className="text-lg font-bold text-zinc-400 mb-1">{title}</h3>
+      {description && <p className="text-sm text-zinc-500 mb-4">{description}</p>}
+      {action && <div>{action}</div>}
+    </div>
+  );
+}
+
 export const COLORS = {
   primary: 'bg-amber-400',
   primaryHover: 'hover:bg-amber-300',
@@ -55,6 +73,8 @@ export const EFFECTS = {
   glassElevated: 'backdrop-blur-lg bg-zinc-800/40 border-zinc-700/30',
   glowAmber: 'shadow-[0_0_15px_rgba(251,191,36,0.15)]',
   glowEmerald: 'shadow-[0_0_15px_rgba(52,211,153,0.15)]',
+  gothic: 'gothic-paper-gradient gothic-border-gold',
+  epicGlow: 'glow-epic',
 };
 
 export const RARITY = {
@@ -78,11 +98,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 /**
- * Premium HearthStone-style buttons with:
- * - Multi-layer gradient textures
- * - Foil/reflection effects  
- * - Rarity-based glow animations
- * - Premium card game aesthetic
+ * Premium Gothic Metal-style buttons with:
+ * - Metallic texture gradients
+ * - Ornate border effects
+ * - Shine animations
+ * - Touch-optimized with native-tap
  */
 export function Button({ 
   variant = 'secondary', 
@@ -99,24 +119,24 @@ export function Button({
     lg: 'px-8 py-4 text-base min-h-[56px]',
   };
 
-  // Premium HearthStone style buttons (simplified for compatibility)
+  // Premium Gothic Metal style buttons
   const isPremium = ['gold', 'ruby', 'diamond', 'green', 'silver'].includes(variant);
   
   if (isPremium) {
     const premiumClasses = {
-      gold: 'bg-gradient-to-b from-yellow-500 via-amber-500 to-amber-700 border-t-yellow-400 border-b-amber-800 text-black',
-      ruby: 'bg-gradient-to-b from-red-500 via-red-600 to-red-800 border-t-red-400 border-b-red-900 text-white',
-      diamond: 'bg-gradient-to-b from-sky-400 via-blue-500 to-blue-700 border-t-sky-300 border-b-blue-900 text-white',  
-      green: 'bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-700 border-t-emerald-300 border-b-emerald-900 text-white',
-      silver: 'bg-gradient-to-b from-zinc-300 via-zinc-400 to-zinc-600 border-t-zinc-200 border-b-zinc-800 text-black',
+      gold: 'bg-gradient-to-b from-amber-400 via-yellow-500 to-amber-600 border-2 border-amber-300 text-amber-950 metal-texture shine-effect',
+      ruby: 'bg-gradient-to-b from-red-500 via-red-600 to-red-700 border-2 border-red-400 text-white metal-texture shine-effect',
+      diamond: 'bg-gradient-to-b from-sky-400 via-blue-500 to-blue-600 border-2 border-sky-300 text-white metal-texture shine-effect',  
+      green: 'bg-gradient-to-b from-emerald-400 via-emerald-500 to-emerald-600 border-2 border-emerald-300 text-white metal-texture shine-effect',
+      silver: 'bg-gradient-to-b from-zinc-300 via-zinc-400 to-zinc-500 border-2 border-zinc-200 text-zinc-900 metal-texture shine-effect',
     };
     
     return (
       <button 
-        className={`relative font-bold rounded-xl transition-all duration-200 touch-manipulation active:scale-95 flex items-center justify-center gap-2 shadow-lg ${sizeClasses[size]} ${premiumClasses[variant as keyof typeof premiumClasses]} ${className}`}
+        className={`relative font-bold rounded-lg transition-all duration-200 native-tap active:scale-95 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl ${sizeClasses[size]} ${premiumClasses[variant as keyof typeof premiumClasses]} ${className}`}
         {...props}
       >
-        <span className="relative z-10 font-black uppercase tracking-wider drop-shadow-md">
+        <span className="relative z-10 font-black uppercase tracking-wider drop-shadow-sm">
           {icon && <span className="mr-2">{icon}</span>}
           {children}
         </span>
@@ -124,19 +144,19 @@ export function Button({
     );
   }
 
-  // Regular buttons
-  const baseClasses = 'font-bold rounded-lg transition-all touch-manipulation active:scale-95 flex items-center justify-center gap-2';
+  // Regular buttons with gothic styling
+  const baseClasses = 'font-bold rounded-lg transition-all native-tap active:scale-95 flex items-center justify-center gap-2 gothic-paper-gradient border border-zinc-700';
   
   const variantClasses = {
-    primary: `${COLORS.primary} ${COLORS.primaryText} shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40`,
-    secondary: `${COLORS.bg.elevated} ${COLORS.border.base} ${COLORS.text.secondary} hover:${COLORS.bg.hover} hover:${COLORS.text.primary}`,
-    ghost: 'bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800',
-    danger: `${COLORS.danger} text-white`,
-    gold: `${COLORS.primary} ${COLORS.primaryText}`,
-    silver: 'bg-zinc-300 text-zinc-800',
-    green: 'bg-emerald-500 text-white',
-    ruby: 'bg-red-600 text-white',
-    diamond: 'bg-sky-500 text-white',
+    primary: 'bg-amber-500/20 border-amber-500/50 text-amber-400 hover:bg-amber-500/30 hover:border-amber-400',
+    secondary: 'bg-zinc-800/80 border-zinc-600 text-zinc-300 hover:bg-zinc-700 hover:text-white',
+    ghost: 'bg-transparent border-transparent text-zinc-400 hover:text-white hover:bg-zinc-800/50',
+    danger: 'bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500/30 hover:border-red-400',
+    gold: 'bg-amber-500/20 border-amber-500/50 text-amber-400 hover:bg-amber-500/30',
+    silver: 'bg-zinc-500/20 border-zinc-500/50 text-zinc-300 hover:bg-zinc-500/30',
+    green: 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/30',
+    ruby: 'bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500/30',
+    diamond: 'bg-sky-500/20 border-sky-500/50 text-sky-400 hover:bg-sky-500/30',
   };
 
   return (
@@ -163,11 +183,11 @@ interface CardProps {
 
 export function Card({ children, className = '', onClick, rarity }: CardProps) {
   const rarityStyles = {
-    1: { border: 'border-zinc-600', glow: 'shadow-none', bg: 'bg-zinc-800' },
-    2: { border: 'border-blue-500/40', glow: 'shadow-[0_0_15px_rgba(59,130,246,0.2)]', bg: 'bg-blue-900/20' },
-    3: { border: 'border-purple-500/40', glow: 'shadow-[0_0_15px_rgba(168,85,247,0.2)]', bg: 'bg-purple-900/20' },
-    4: { border: 'border-amber-500/50', glow: 'shadow-[0_0_20px_rgba(251,191,36,0.3)]', bg: 'bg-amber-900/20' },
-    5: { border: 'border-amber-400', glow: 'shadow-[0_0_30px_rgba(251,191,36,0.5)]', bg: 'bg-gradient-to-br from-amber-900/40 to-purple-900/40' },
+    1: { borderClass: 'gothic-border', glowClass: '', bgClass: 'gothic-paper' },
+    2: { borderClass: 'gothic-border-silver', glowClass: 'shadow-[0_0_15px_rgba(59,130,246,0.2)]', bgClass: 'gothic-paper-gradient bg-blue-900/10' },
+    3: { borderClass: 'gothic-border-silver', glowClass: 'shadow-[0_0_15px_rgba(168,85,247,0.2)]', bgClass: 'gothic-paper-gradient bg-purple-900/10' },
+    4: { borderClass: 'gothic-border-amber', glowClass: 'shadow-[0_0_20px_rgba(251,191,36,0.3)]', bgClass: 'gothic-paper-gradient bg-amber-900/20' },
+    5: { borderClass: 'gothic-border-gold', glowClass: 'glow-epic', bgClass: 'gothic-paper-gradient bg-gradient-to-br from-amber-900/40 to-purple-900/40' },
   };
 
   const style = rarity ? rarityStyles[rarity] : rarityStyles[1];
@@ -176,9 +196,9 @@ export function Card({ children, className = '', onClick, rarity }: CardProps) {
     <div 
       onClick={onClick}
       className={`
-        rounded-xl border-2 p-4 transition-all duration-200
-        ${style.border} ${style.glow} ${style.bg}
-        ${onClick ? 'cursor-pointer hover:scale-[1.02] active:scale-95' : ''}
+        rounded-lg p-4 transition-all duration-200 relative
+        ${style.bgClass} ${style.borderClass} ${style.glowClass}
+        ${onClick ? 'cursor-pointer hover:scale-[1.01] active:scale-[0.98] native-tap' : ''}
         ${className}
       `}
     >
@@ -248,33 +268,32 @@ export function Progress({ value, max = 100, variant = 'default', showLabel = fa
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
 
   const variantStyles = {
-    default: { bg: 'bg-zinc-800', fill: 'from-cyan-500 to-blue-500' },
-    health: { bg: 'bg-red-900/30', fill: 'from-red-500 via-red-400 to-green-500' },
-    mana: { bg: 'bg-blue-900/30', fill: 'from-blue-400 via-cyan-400 to-sky-500' },
-    exp: { bg: 'bg-purple-900/30', fill: 'from-purple-400 via-pink-400 to-purple-600' },
-    gold: { bg: 'bg-amber-900/30', fill: 'from-yellow-400 via-amber-500 to-orange-500' },
+    default: { bg: 'bg-zinc-900', fill: 'from-amber-600 to-amber-500', border: 'border-amber-900/50' },
+    health: { bg: 'bg-red-950', fill: 'from-red-600 via-red-500 to-red-400', border: 'border-red-900/50' },
+    mana: { bg: 'bg-blue-950', fill: 'from-sky-500 via-cyan-500 to-sky-400', border: 'border-sky-900/50' },
+    exp: { bg: 'bg-purple-950', fill: 'from-purple-500 via-pink-500 to-purple-400', border: 'border-purple-900/50' },
+    gold: { bg: 'bg-amber-950', fill: 'from-yellow-500 via-amber-500 to-orange-500', border: 'border-amber-900/50' },
   };
 
   const sizeStyles = {
     sm: 'h-2',
-    md: 'h-4',
-    lg: 'h-6',
+    md: 'h-3',
+    lg: 'h-5',
   };
 
   const style = variantStyles[variant];
 
   return (
     <div className="w-full">
-      <div className={`relative ${sizeStyles[size]} ${style.bg} rounded-full overflow-hidden border border-white/10`}>
+      <div className={`relative ${sizeStyles[size]} ${style.bg} rounded-full overflow-hidden border ${style.border}`}>
         <div 
-          className={`h-full ${style.fill} bg-gradient-to-r transition-all duration-500 rounded-full`}
+          className={`h-full ${style.fill} bg-gradient-to-r transition-all duration-500 rounded-full shadow-[0_0_10px_rgba(251,191,36,0.3)]`}
           style={{ width: `${percentage}%` }}
         />
-        {/* Shine effect */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent h-1/2 rounded-t-full" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent h-1/2 rounded-t-full" />
       </div>
       {showLabel && (
-        <div className="text-xs text-zinc-400 mt-1 text-center font-mono">
+        <div className="text-xs text-amber-500/70 mt-1 text-center font-mono">
           {Math.round(percentage)}%
         </div>
       )}
@@ -297,38 +316,38 @@ interface CurrencyDisplayProps {
 export function CurrencyDisplay({ zel, gems, energy, maxEnergy, compact }: CurrencyDisplayProps) {
   if (compact) {
     return (
-      <div className="flex items-center gap-3 text-xs">
+      <div className="flex items-center gap-3 text-xs gothic-paper px-2 py-1 rounded border border-amber-900/30">
         {zel !== undefined && (
-          <span className="text-amber-400">💰 {zel >= 1000 ? `${(zel/1000).toFixed(1)}k` : zel}</span>
+          <span className="text-amber-400 drop-shadow-md">💰 <span className="font-bold">{zel >= 1000 ? `${(zel/1000).toFixed(1)}k` : zel}</span></span>
         )}
         {gems !== undefined && (
-          <span className="text-sky-400">💎 {gems}</span>
+          <span className="text-sky-400 drop-shadow-md">💎 <span className="font-bold">{gems}</span></span>
         )}
         {energy !== undefined && (
-          <span className="text-emerald-400">⚡ {energy}/{maxEnergy}</span>
+          <span className="text-emerald-400 drop-shadow-md">⚡ <span className="font-bold">{energy}/{maxEnergy}</span></span>
         )}
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-3">
       {zel !== undefined && (
-        <div className="flex items-center gap-1.5">
-          <span className="text-xl">💰</span>
-          <span className="text-amber-400 font-bold">{zel.toLocaleString()}</span>
+        <div className="flex items-center gap-1.5 gothic-paper px-3 py-1.5 rounded-lg border border-amber-500/30">
+          <span className="text-lg filter drop-shadow-lg">💰</span>
+          <span className="text-amber-400 font-bold drop-shadow-md">{zel.toLocaleString()}</span>
         </div>
       )}
       {gems !== undefined && (
-        <div className="flex items-center gap-1.5">
-          <span className="text-xl">💎</span>
-          <span className="text-sky-400 font-bold">{gems.toLocaleString()}</span>
+        <div className="flex items-center gap-1.5 gothic-paper px-3 py-1.5 rounded-lg border border-sky-500/30">
+          <span className="text-lg filter drop-shadow-lg">💎</span>
+          <span className="text-sky-400 font-bold drop-shadow-md">{gems.toLocaleString()}</span>
         </div>
       )}
       {energy !== undefined && (
-        <div className="flex items-center gap-1.5">
-          <span className="text-xl">⚡</span>
-          <span className="text-emerald-400 font-bold">{energy}/{maxEnergy}</span>
+        <div className="flex items-center gap-1.5 gothic-paper px-3 py-1.5 rounded-lg border border-emerald-500/30">
+          <span className="text-lg filter drop-shadow-lg">⚡</span>
+          <span className="text-emerald-400 font-bold drop-shadow-md">{energy}/{maxEnergy}</span>
         </div>
       )}
     </div>
@@ -381,17 +400,17 @@ interface HeaderProps {
 
 export function Header({ title, icon, subtitle, onBack, actions, rightContent }: HeaderProps) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-950/50">
+    <div className="flex items-center justify-between px-4 py-3 border-b border-amber-900/30 gothic-paper-gradient">
       <div className="flex items-center gap-3">
         {onBack && (
-          <button onClick={onBack} className="p-2 -ml-2 text-zinc-400 hover:text-white">
+          <button onClick={onBack} className="p-2 -ml-2 text-amber-500/70 hover:text-amber-400 native-tap min-w-[44px] min-h-[44px] flex items-center justify-center">
             ←
           </button>
         )}
-        {icon && <span className="text-2xl">{icon}</span>}
+        {icon && <span className="text-2xl filter drop-shadow-lg">{icon}</span>}
         <div>
-          <h1 className="text-lg font-bold text-white">{title}</h1>
-          {subtitle && <p className="text-xs text-zinc-500">{subtitle}</p>}
+          <h1 className="text-lg font-bold text-amber-400 drop-shadow-md tracking-wide">{title}</h1>
+          {subtitle && <p className="text-xs text-amber-500/50">{subtitle}</p>}
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -414,16 +433,16 @@ interface TabsProps {
 
 export function Tabs({ tabs, activeTab, onTabChange }: TabsProps) {
   return (
-    <div className="flex gap-1 p-1 bg-zinc-900 rounded-lg">
+    <div className="flex gap-1 p-1 gothic-paper rounded-lg border border-amber-900/30">
       {tabs.map(tab => (
         <button
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
           className={`
-            flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all
+            flex-1 px-4 py-2.5 text-sm font-bold rounded-md transition-all native-tap min-h-[44px]
             ${activeTab === tab.id 
-              ? 'bg-amber-500 text-zinc-900 shadow-lg shadow-amber-500/20' 
-              : 'text-zinc-400 hover:text-white hover:bg-zinc-800'}
+              ? 'bg-gradient-to-b from-amber-500 to-amber-600 text-amber-950 shadow-lg shadow-amber-500/30' 
+              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 gothic-text'}
           `}
         >
           {tab.icon && <span className="mr-2">{tab.icon}</span>}

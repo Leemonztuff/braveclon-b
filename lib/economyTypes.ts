@@ -632,7 +632,7 @@ export const INITIAL_STATE: PlayerState = {
 // HELPER FUNCTIONS
 // ============================================================================
 
-function getWeekStart(): Date {
+export function getWeekStart(): Date {
   const now = new Date();
   const dayOfWeek = now.getDay();
   const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);

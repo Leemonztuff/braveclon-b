@@ -119,14 +119,14 @@ export default function UnitsScreen({
   ];
 
   return (
-    <div className="flex flex-col h-full" onClick={closeContextMenu}>
+    <div className="flex flex-col h-full gothic-paper" onClick={closeContextMenu}>
       <Header 
         title="Units" 
         icon="👤"
         onBack={onBack}
       />
 
-      <div className="px-4 py-3">
+      <div className="px-4 py-3 gothic-paper-gradient border-b border-amber-900/20">
         <Tabs 
           tabs={TABS} 
           activeTab={activeTab} 
@@ -138,19 +138,19 @@ export default function UnitsScreen({
       {activeTab === 'inventory' && (
         <div className="flex gap-2 mb-4 px-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-500/50" size={14} />
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search units..."
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg pl-8 pr-3 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500 min-h-[44px]"
+              className="w-full gothic-paper border border-amber-900/30 rounded-lg pl-8 pr-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-amber-500 min-h-[44px]"
             />
           </div>
           <select
             value={elementFilter}
             onChange={e => setElementFilter(e.target.value as Element | 'all')}
-            className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none min-h-[44px]"
+            className="gothic-paper border border-amber-900/30 rounded-lg px-3 py-2.5 text-sm text-zinc-300 focus:outline-none min-h-[44px]"
           >
             <option value="all">All</option>
             {(['Fire', 'Water', 'Earth', 'Thunder', 'Light', 'Dark'] as Element[]).map(el => (
@@ -160,7 +160,7 @@ export default function UnitsScreen({
           <select
             value={rarityFilter}
             onChange={e => setRarityFilter(Number(e.target.value) as number | 'all')}
-            className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none min-h-[44px]"
+            className="gothic-paper border border-amber-900/30 rounded-lg px-3 py-2.5 text-sm text-zinc-300 focus:outline-none min-h-[44px]"
           >
             <option value="all">All ★</option>
             {[3, 4, 5].map(r => (
@@ -172,10 +172,10 @@ export default function UnitsScreen({
 
       {/* Team Display */}
       {activeTab === 'team' && (
-        <div className="mb-6 p-4 bg-zinc-900/50 rounded-xl border border-zinc-800">
+        <div className="mb-6 p-4 gothic-paper-gradient rounded-lg border border-amber-900/30">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">Your Squad</h3>
-            <span className="text-xs text-zinc-500">{state.team.filter(Boolean).length}/7 Units</span>
+            <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">Your Squad</h3>
+            <span className="text-xs text-amber-500/70">{state.team.filter(Boolean).length}/7 Units</span>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2">
             {Array.from({ length: 7 }).map((_, idx) => {
