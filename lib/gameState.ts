@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { UnitTemplate, UNIT_DATABASE, Stats, QR_REWARD_TABLE, GACHA_POOL, EQUIPMENT_DATABASE, EquipSlot, STAGES, getExpForLevel, getFusionCost, getFusionExpGain, getEvolutionCost, getActiveSetBonuses } from './gameData';
+import { calculateStats as calculateStatsFn } from './calculateStats';
 import { 
   PlayerState, 
   INITIAL_STATE,
@@ -38,6 +39,7 @@ import { queueSave, initSaveQueue, isOnline, getQueueLength } from './save-queue
 
 export * from './gameTypes';
 export * from './economyTypes';
+export { calculateStatsFn as calculateStats };
 
 // ============================================================================
 // CONSTANTS
@@ -1106,10 +1108,6 @@ export function useGameState(options: UseGameStateOptions = {}) {
     // NOW update state with gem deduction
     setState(prev => {
       if (prev.gems < totalCost) return prev;
-    
-    // Update state with gem deduction
-    setState(prev => {
-      if (prev.gems < totalCost) return prev;
       
       let newPity = { ...prev.summonPity };
       const bannerPity = newPity.bannerPulls[bannerId] || 0;
@@ -1714,7 +1712,3 @@ export function useGameState(options: UseGameStateOptions = {}) {
     saveToCloud,
   };
 }
-
-// ============================================================================
-// UTILITY FUNCTIONS
-export { calculateStats } from './calculateStats';
