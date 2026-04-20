@@ -1068,15 +1068,17 @@ export interface QRReward {
   unitFrag?: string;
 }
 
-export const QR_REWARD_TABLE: QRReward[] = [
+// Extended QR_REWARD_TABLE with Wolf and QR materials
+export const QR_REWARD_TABLE_EXTENDED: QRReward[] = [
   // Common rewards (high chance)
-  { type: 'material', materialType: 'qrEssence', min: 1, max: 3, chance: 25 },
-  { type: 'material', materialType: 'ironOre', min: 3, max: 8, chance: 20 },
+  { type: 'material', materialType: 'qrEssence', min: 1, max: 3, chance: 20 },
+  { type: 'material', materialType: 'ironOre', min: 3, max: 8, chance: 15 },
+  { type: 'material', materialType: 'wolfFang', min: 1, max: 2, chance: 10 },
   { type: 'zel', min: 300, max: 800, chance: 15 },
   { type: 'energy', min: 3, max: 7, chance: 10 },
   
   // Uncommon rewards
-  { type: 'material', materialType: 'steelIngot', min: 1, max: 3, chance: 10 },
+  { type: 'material', materialType: 'steelIngot', min: 1, max: 3, chance: 8 },
   { type: 'gems', min: 1, max: 3, chance: 8 },
   
   // Rare rewards
@@ -1084,8 +1086,8 @@ export const QR_REWARD_TABLE: QRReward[] = [
   { type: 'material', materialType: 'mythril', min: 1, max: 1, chance: 4 },
   
   // Very rare
-  { type: 'material', materialType: 'wolfFang', min: 1, max: 2, chance: 2 },
-  { type: 'material', materialType: 'qrFragment', min: 1, max: 1, chance: 1 },
+  { type: 'material', materialType: 'wolfPelt', min: 1, max: 1, chance: 3 },
+  { type: 'material', materialType: 'qrFragment', min: 1, max: 1, chance: 2 },
 ];
 
 // QR Code type-based reward multipliers
@@ -1111,7 +1113,7 @@ export const TIER4_EQUIPMENT: Record<string, EquipmentTemplate> = {
     stats: { atk: 450, def: 80, rec: 40 },
     effects: [{ type: 'critDamage', value: 20 }],
     elements: ['Earth'],
-    setId: 'wolf',
+    setId: 'set_wolf',
     cost: 25000,
   },
   'eq_lunar_shroud': {
@@ -1124,7 +1126,7 @@ export const TIER4_EQUIPMENT: Record<string, EquipmentTemplate> = {
     stats: { hp: 1200, atk: 100, def: 280, rec: 60 },
     effects: [{ type: 'statBoost', value: 30, condition: 'nightStage' }],
     elements: ['Dark'],
-    setId: 'wolf',
+    setId: 'set_wolf',
     cost: 25000,
   },
   'eq_ancient_crown': {
@@ -1137,7 +1139,7 @@ export const TIER4_EQUIPMENT: Record<string, EquipmentTemplate> = {
     stats: { hp: 600, atk: 150, def: 150, rec: 150 },
     effects: [{ type: 'allStats', value: 10 }],
     elements: [],
-    setId: 'ancient',
+    setId: 'set_ancient',
     cost: 30000,
   },
   'eq_qr_spirit_blade': {
@@ -1150,7 +1152,7 @@ export const TIER4_EQUIPMENT: Record<string, EquipmentTemplate> = {
     stats: { atk: 380, def: 120, rec: 80 },
     effects: [{ type: 'damageReflect', value: 15 }],
     elements: ['Light'],
-    setId: 'qr',
+    setId: 'set_qr',
     cost: 20000,
   },
   'eq_qr_aegis_amulet': {
@@ -1163,14 +1165,35 @@ export const TIER4_EQUIPMENT: Record<string, EquipmentTemplate> = {
     stats: { hp: 800, atk: 50, def: 200, rec: 100 },
     effects: [{ type: 'defBoost', value: 25 }],
     elements: [],
-    setId: 'qr',
+    setId: 'set_qr',
     cost: 18000,
   },
 };
 
-// Equipment set bonuses
-export const EQUIPMENT_SETS: Record<string, { name: string; pieces: number; bonus: string; effect: { type: string; value: number } }> = {
-  'wolf': { name: 'Wolf Pack', pieces: 2, bonus: '+15% ATK to pack', effect: { type: 'wolfPackAtk', value: 15 } },
-  'ancient': { name: 'Ancient Relic', pieces: 2, bonus: '+10% All Stats', effect: { type: 'allStats', value: 10 } },
-  'qr': { name: 'QR Fusion', pieces: 2, bonus: '+20% Critical', effect: { type: 'critRate', value: 20 } },
+// Add new equipment sets (Wolf, Ancient, QR)
+export const EQUIPMENT_SETS_EXTENDED: Record<string, EquipmentSet> = {
+  'set_wolf': {
+    id: 'set_wolf',
+    name: 'Wolf Pack',
+    pieces: ['eq_wolf_fang_edge', 'eq_lunar_shroud'],
+    bonuses: [
+      { name: 'Pack Hunter', description: '+15% ATK to all units', piecesRequired: 2, statBonuses: { atk: 0.15 } },
+    ],
+  },
+  'set_ancient': {
+    id: 'set_ancient',
+    name: 'Ancient Relic',
+    pieces: ['eq_ancient_crown'],
+    bonuses: [
+      { name: 'Ancient Power', description: '+10% All Stats', piecesRequired: 1, statBonuses: { atk: 0.1, def: 0.1, rec: 0.1, hp: 0.1 } },
+    ],
+  },
+  'set_qr': {
+    id: 'set_qr',
+    name: 'QR Fusion',
+    pieces: ['eq_qr_spirit_blade', 'eq_qr_aegis_amulet'],
+    bonuses: [
+      { name: 'Digital Blessing', description: '+20% Critical Rate', piecesRequired: 2, statBonuses: { atk: 0.1 } },
+    ],
+  },
 };
