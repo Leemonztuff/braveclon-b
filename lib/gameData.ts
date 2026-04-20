@@ -549,8 +549,88 @@ export const ENEMIES: UnitTemplate[] = [
     maxLevel: 1,
     skill: { id: 'arena_s6', name: 'Doom', type: 'damage', description: 'Ultimate dark attack', power: 2.5, cost: 100 },
     spriteUrl: `${BASE_URL}/abbys_sprite_006.png`
+  },
+  // ============================================================================
+  // WOLF ENEMY FAMILY - Pack-based AI with unique mechanics
+  // ============================================================================
+  {
+    id: 'wolf_scout',
+    name: 'Wolf Scout',
+    element: 'Earth',
+    rarity: 2,
+    baseStats: { hp: 800, atk: 180, def: 60, rec: 30 },
+    growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
+    maxLevel: 1,
+    skill: { id: 'wolf_s1', name: 'Pack Bite', type: 'damage', description: 'Quick bite attack', power: 1.4, cost: 100 },
+    spriteUrl: `${BASE_URL}/abbys_sprite_100.png`
+  },
+  {
+    id: 'wolf_hunter',
+    name: 'Wolf Hunter',
+    element: 'Earth',
+    rarity: 3,
+    baseStats: { hp: 1200, atk: 250, def: 90, rec: 40 },
+    growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
+    maxLevel: 1,
+    skill: { id: 'wolf_s2', name: 'Savage Snap', type: 'damage', description: 'Powerful bite attack', power: 1.6, cost: 100 },
+    spriteUrl: `${BASE_URL}/abbys_sprite_101.png`
+  },
+  {
+    id: 'wolf_alpha',
+    name: 'Alpha Wolf',
+    element: 'Earth',
+    rarity: 4,
+    baseStats: { hp: 2500, atk: 400, def: 150, rec: 80 },
+    growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
+    maxLevel: 1,
+    skill: { id: 'wolf_s3', name: 'Howl of Command', type: 'buff', description: 'Buffs all pack ATK by 15%', power: 1.15, cost: 30 },
+    spriteUrl: `${BASE_URL}/abbys_sprite_102.png`,
+    isAlpha: true
+  },
+  {
+    id: 'wolf_shadow',
+    name: 'Shadow Wolf',
+    element: 'Dark',
+    rarity: 3,
+    baseStats: { hp: 1000, atk: 300, def: 50, rec: 20 },
+    growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
+    maxLevel: 1,
+    skill: { id: 'wolf_s4', name: 'Shadow Strike', type: 'damage', description: 'Hidden attack', power: 1.8, cost: 100 },
+    spriteUrl: `${BASE_URL}/abbys_sprite_103.png`
+  },
+  {
+    id: 'wolf_blood_moon',
+    name: 'Blood Moon Wolf',
+    element: 'Dark',
+    rarity: 5,
+    baseStats: { hp: 3500, atk: 550, def: 180, rec: 100 },
+    growthRate: { hp: 0, atk: 0, def: 0, rec: 0 },
+    maxLevel: 1,
+    skill: { id: 'wolf_s5', name: 'Bloody Moon', type: 'damage', description: 'Powerful dark attack', power: 2.2, cost: 100 },
+    spriteUrl: `${BASE_URL}/abbys_sprite_104.png`,
+    isBloodMoon: true
   }
 ];
+
+// Wolf Material Drops Configuration
+export const WOLF_MATERIAL_DROPS: Record<string, { material: string; minQty: number; maxQty: number; chance: number }> = {
+  wolf_scout: { material: 'wolfFang', minQty: 1, maxQty: 2, chance: 0.8 },
+  wolf_hunter: { material: 'wolfFang', minQty: 2, maxQty: 3, chance: 0.9 },
+  wolf_alpha: { material: 'wolfPelt', minQty: 1, maxQty: 2, chance: 1.0 },
+  wolf_shadow: { material: 'wolfFang', minQty: 1, maxQty: 3, chance: 0.85 },
+  wolf_blood_moon: { material: 'moonstone', minQty: 1, maxQty: 1, chance: 0.3 }, // Rare drop
+};
+
+// Blood Moon spawn configuration
+export const BLOOD_MOON_CONFIG = {
+  spawnChance: 0.05,      // 5% chance on night stages
+  bonusDropChance: 0.15,    // Extra material drop chance
+  rareDropTable: [            // Extra rare drops
+    { material: 'ancientRelic', chance: 0.1 },
+    { material: 'moonstone', chance: 0.3 },
+    { material: 'wolfPelt', chance: 0.6 }
+  ]
+};
 
 export const STAGES: StageTemplate[] = [
   // Region 1: Izlude & Prontera (basic areas) - Smooth early scaling
@@ -571,6 +651,13 @@ export const STAGES: StageTemplate[] = [
   { id: 9, name: "Tower", area: "Endless Tower - Floor 20", energy: 12, description: "The darkness grows stronger.", enemies: ['e8', 'e8', 'e9', 'e7'], expReward: 1000, zelReward: 5000, equipmentDrops: [], equipmentDropChance: 0.7 },
   { id: 10, name: "Tower", area: "Endless Tower - Floor 30", energy: 15, description: "Only legends reach this high.", enemies: ['e9', 'e9', 'e8', 'e9', 'e8'], expReward: 1500, zelReward: 8000, equipmentDrops: [], equipmentDropChance: 0.8 },
  
+  // ============================================================================
+  // WOLF REGION - Wolf Pack hunting grounds
+  // ============================================================================
+  { id: 16, name: "Wolf Pack", area: "Northern Wilds", energy: 7, description: "Territory of the fierce wolf packs.", enemies: ['wolf_scout', 'wolf_scout', 'wolf_hunter'], expReward: 600, zelReward: 2500, equipmentDrops: [], equipmentDropChance: 0.4, isWolfStage: true },
+  { id: 17, name: "Wolf Pack", area: "Wolf Den", energy: 9, description: "The Alpha's domain.", enemies: ['wolf_hunter', 'wolf_alpha', 'wolf_scout'], expReward: 1000, zelReward: 4500, equipmentDrops: [], equipmentDropChance: 0.5, isWolfStage: true },
+  { id: 18, name: "Wolf Pack", area: "Blood Moon Peak", energy: 12, description: "Where the Blood Moon wolves hunt.", enemies: ['wolf_shadow', 'wolf_blood_moon', 'wolf_hunter'], expReward: 2000, zelReward: 8000, equipmentDrops: [], equipmentDropChance: 0.7, isWolfStage: true, isNightStage: true },
+
   // Region 5: Niflheim (dungeon gates) - Back to easier stages for variety
   { id: 11, name: "Niflheim", area: "Nifflheim Gate", energy: 5, description: "The realm of the dead beckons.", enemies: ['e5', 'e6', 'e7'], expReward: 800, zelReward: 3000, equipmentDrops: ['eq_w2'], equipmentDropChance: 0.5 },
   { id: 12, name: "Niflheim", area: "Bio Labyrinth", energy: 5, description: "Where science and horror meet.", enemies: ['e6', 'e7', 'e8'], expReward: 800, zelReward: 3000, equipmentDrops: ['eq_a2'], equipmentDropChance: 0.5 },
@@ -967,3 +1054,123 @@ export function getStage(id: number): StageTemplate | undefined {
 export function getGachaRates(): GachaRate[] {
   return GameData.getGachaPool();
 }
+
+// ============================================================================
+// QR REWARD TABLE - Material rewards from scanning QR codes
+// ============================================================================
+
+export interface QRReward {
+  type: 'zel' | 'gems' | 'energy' | 'material' | 'unit_frag';
+  min?: number;
+  max?: number;
+  chance: number;
+  materialType?: MaterialType;
+  unitFrag?: string;
+}
+
+export const QR_REWARD_TABLE: QRReward[] = [
+  // Common rewards (high chance)
+  { type: 'material', materialType: 'qrEssence', min: 1, max: 3, chance: 25 },
+  { type: 'material', materialType: 'ironOre', min: 3, max: 8, chance: 20 },
+  { type: 'zel', min: 300, max: 800, chance: 15 },
+  { type: 'energy', min: 3, max: 7, chance: 10 },
+  
+  // Uncommon rewards
+  { type: 'material', materialType: 'steelIngot', min: 1, max: 3, chance: 10 },
+  { type: 'gems', min: 1, max: 3, chance: 8 },
+  
+  // Rare rewards
+  { type: 'material', materialType: 'qrCrystal', min: 1, max: 1, chance: 5 },
+  { type: 'material', materialType: 'mythril', min: 1, max: 1, chance: 4 },
+  
+  // Very rare
+  { type: 'material', materialType: 'wolfFang', min: 1, max: 2, chance: 2 },
+  { type: 'material', materialType: 'qrFragment', min: 1, max: 1, chance: 1 },
+];
+
+// QR Code type-based reward multipliers
+export const QR_TYPE_BONUS: Record<string, number> = {
+  'BF-MAT': 1.0,
+  'BF-RARE': 2.5,
+  'BF-EVENT': 3.0,
+  'BF-GOLD': 1.5,
+};
+
+// ============================================================================
+// TIER 4 EQUIPMENT - Wolf & QR materials crafting
+// ============================================================================
+
+export const TIER4_EQUIPMENT: Record<string, EquipmentTemplate> = {
+  'eq_wolf_fang_edge': {
+    id: 'eq_wolf_fang_edge',
+    name: 'Wolf Fang Edge',
+    description: 'A blade forged from Alpha Wolf fangs. Critical strikes deal 20% bonus damage.',
+    type: 'weapon',
+    slot: 'weapon',
+    rarity: 5,
+    stats: { atk: 450, def: 80, rec: 40 },
+    effects: [{ type: 'critDamage', value: 20 }],
+    elements: ['Earth'],
+    setId: 'wolf',
+    cost: 25000,
+  },
+  'eq_lunar_shroud': {
+    id: 'eq_lunar_shroud',
+    name: 'Lunar Shroud',
+    description: 'Armor woven from Wolf Pelt under moonlight. +30% stats at night.',
+    type: 'armor',
+    slot: 'armor',
+    rarity: 5,
+    stats: { hp: 1200, atk: 100, def: 280, rec: 60 },
+    effects: [{ type: 'statBoost', value: 30, condition: 'nightStage' }],
+    elements: ['Dark'],
+    setId: 'wolf',
+    cost: 25000,
+  },
+  'eq_ancient_crown': {
+    id: 'eq_ancient_crown',
+    name: 'Ancient Crown',
+    description: 'A relic of an ancient civilization. All stats +10%.',
+    type: 'accessory',
+    slot: 'accessory',
+    rarity: 5,
+    stats: { hp: 600, atk: 150, def: 150, rec: 150 },
+    effects: [{ type: 'allStats', value: 10 }],
+    elements: [],
+    setId: 'ancient',
+    cost: 30000,
+  },
+  'eq_qr_spirit_blade': {
+    id: 'eq_qr_spirit_blade',
+    name: 'QR Spirit Blade',
+    description: 'A blade infused with QR energy. Chance to reflect damage.',
+    type: 'weapon',
+    slot: 'weapon',
+    rarity: 5,
+    stats: { atk: 380, def: 120, rec: 80 },
+    effects: [{ type: 'damageReflect', value: 15 }],
+    elements: ['Light'],
+    setId: 'qr',
+    cost: 20000,
+  },
+  'eq_qr_aegis_amulet': {
+    id: 'eq_qr_aegis_amulet',
+    name: 'QR Aegis Amulet',
+    description: 'Amulet containing digital blessings. +25% defense.',
+    type: 'accessory',
+    slot: 'accessory',
+    rarity: 5,
+    stats: { hp: 800, atk: 50, def: 200, rec: 100 },
+    effects: [{ type: 'defBoost', value: 25 }],
+    elements: [],
+    setId: 'qr',
+    cost: 18000,
+  },
+};
+
+// Equipment set bonuses
+export const EQUIPMENT_SETS: Record<string, { name: string; pieces: number; bonus: string; effect: { type: string; value: number } }> = {
+  'wolf': { name: 'Wolf Pack', pieces: 2, bonus: '+15% ATK to pack', effect: { type: 'wolfPackAtk', value: 15 } },
+  'ancient': { name: 'Ancient Relic', pieces: 2, bonus: '+10% All Stats', effect: { type: 'allStats', value: 10 } },
+  'qr': { name: 'QR Fusion', pieces: 2, bonus: '+20% Critical', effect: { type: 'critRate', value: 20 } },
+};

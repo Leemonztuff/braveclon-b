@@ -33,7 +33,11 @@ export const CURRENCY_CONFIG: Record<CurrencyType, {
 
 export type MaterialType = 
   | 'ironOre' | 'steelIngot' | 'mythril' | 'orichalcum' | 'dragonScale'
-  | 'prism5' | 'prism4' | 'prism3';
+  | 'prism5' | 'prism4' | 'prism3'
+  // Wolf Materials
+  | 'wolfFang' | 'wolfPelt' | 'moonstone' | 'ancientRelic'
+  // QR Scanner Materials
+  | 'qrEssence' | 'qrCrystal' | 'qrFragment';
 
 export interface MaterialInstance {
   id: string;
@@ -59,6 +63,15 @@ export const MATERIAL_CONFIG: Record<MaterialType, MaterialConfig> = {
   prism5: { name: '5★ Prism', rarity: 'legendary', icon: '💠', color: 'text-cyan-300', enhanceValue: 0, sources: ['duplicate_5star'] },
   prism4: { name: '4★ Prism', rarity: 'epic', icon: '💎', color: 'text-blue-300', enhanceValue: 0, sources: ['duplicate_4star'] },
   prism3: { name: '3★ Prism', rarity: 'rare', icon: '💧', color: 'text-blue-200', enhanceValue: 0, sources: ['duplicate_3star'] },
+  // Wolf Materials
+  wolfFang: { name: 'Wolf Fang', rarity: 'common', icon: '🦷', color: 'text-amber-600', enhanceValue: 2, sources: ['wolf_drop'] },
+  wolfPelt: { name: 'Wolf Pelt', rarity: 'uncommon', icon: '🧥', color: 'text-amber-800', enhanceValue: 8, sources: ['wolf_alpha_drop'] },
+  moonstone: { name: 'Moonstone', rarity: 'rare', icon: '🌙', color: 'text-indigo-400', enhanceValue: 20, sources: ['blood_moon_drop', 'qr_scan'] },
+  ancientRelic: { name: 'Ancient Relic', rarity: 'epic', icon: '🏺', color: 'text-yellow-600', enhanceValue: 40, sources: ['rare_blood_moon_drop'] },
+  // QR Scanner Materials
+  qrEssence: { name: 'QR Essence', rarity: 'common', icon: '✨', color: 'text-green-400', enhanceValue: 3, sources: ['qr_scan'] },
+  qrCrystal: { name: 'QR Crystal', rarity: 'rare', icon: '💚', color: 'text-emerald-400', enhanceValue: 15, sources: ['qr_scan'] },
+  qrFragment: { name: 'QR Fragment', rarity: 'epic', icon: '🔷', color: 'text-teal-500', enhanceValue: 25, sources: ['rare_qr_scan'] },
 };
 
 // ============================================================================
@@ -251,6 +264,31 @@ export interface QRState {
   tempBonusScans: number;
   tempBonusExpiresAt: number | null;
 }
+
+export interface ScannedQRCode {
+  code: string;
+  type: 'material' | 'rare' | 'event' | 'gold';
+  scannedAt: number;
+  material: MaterialType;
+  quantity: number;
+}
+
+// QR Code validation and rewards
+export interface QRCodeData {
+  code: string;
+  type: 'material' | 'rare' | 'event' | 'gold';
+  material: MaterialType;
+  quantity: number;
+  dailyLimit: number;
+  lifetimeLimit: number;
+}
+
+export const QR_CODE_PATTERNS: Record<string, QRCodeData> = {
+  'BF-MAT': { code: 'BF-MAT', type: 'material', material: 'qrEssence', quantity: 1, dailyLimit: 1, lifetimeLimit: 999 },
+  'BF-RARE': { code: 'BF-RARE', type: 'rare', material: 'qrCrystal', quantity: 1, dailyLimit: 1, lifetimeLimit: 5 },
+  'BF-EVENT': { code: 'BF-EVENT', type: 'event', material: 'qrFragment', quantity: 1, dailyLimit: 1, lifetimeLimit: 3 },
+  'BF-GOLD': { code: 'BF-GOLD', type: 'gold', material: 'zel', quantity: 500, dailyLimit: 1, lifetimeLimit: 999 },
+};
 
 // ============================================================================
 // CRAFTING SYSTEM

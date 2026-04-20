@@ -664,6 +664,146 @@ export const CRAFT_RECIPES: CraftRecipe[] = [
 ];
 
 // ============================================================================
+// TIER 4 CRAFTING RECIPES - Wolf & QR Materials
+// ============================================================================
+
+export const TIER4_CRAFT_RECIPES: CraftRecipe[] = [
+  // Tier 4 Weapons
+  {
+    id: 'craft_wolf_fang_edge',
+    name: 'Wolf Fang Edge',
+    description: 'Blade forged from Alpha Wolf fangs. +20% Crit Damage.',
+    outputType: 'equipment',
+    outputId: 'eq_wolf_fang_edge',
+    outputQuantity: 1,
+    materials: { ironOre: 0, steelIngot: 15, mythril: 5, orichalcum: 0, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0, wolfFang: 30, wolfPelt: 5, moonstone: 0, ancientRelic: 0, qrEssence: 0, qrCrystal: 0, qrFragment: 0 },
+    zelCost: 50000,
+    requiredLevel: 30,
+    category: 'weapon',
+  },
+  {
+    id: 'craft_qr_spirit_blade',
+    name: 'QR Spirit Blade',
+    description: 'Blade infused with QR energy. Reflects 15% damage.',
+    outputType: 'equipment',
+    outputId: 'eq_qr_spirit_blade',
+    outputQuantity: 1,
+    materials: { ironOre: 0, steelIngot: 10, mythril: 3, orichalcum: 0, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0, wolfFang: 0, wolfPelt: 0, moonstone: 0, ancientRelic: 0, qrEssence: 20, qrCrystal: 3, qrFragment: 1 },
+    zelCost: 35000,
+    requiredLevel: 25,
+    category: 'weapon',
+  },
+  // Tier 4 Armor
+  {
+    id: 'craft_lunar_shroud',
+    name: 'Lunar Shroud',
+    description: 'Armor from Wolf Pelt. +30% stats at night.',
+    outputType: 'equipment',
+    outputId: 'eq_lunar_shroud',
+    outputQuantity: 1,
+    materials: { ironOre: 0, steelIngot: 12, mythril: 5, orichalcum: 0, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0, wolfFang: 10, wolfPelt: 20, moonstone: 3, ancientRelic: 0, qrEssence: 0, qrCrystal: 0, qrFragment: 0 },
+    zelCost: 45000,
+    requiredLevel: 30,
+    category: 'armor',
+  },
+  // Tier 4 Accessories
+  {
+    id: 'craft_ancient_crown',
+    name: 'Ancient Crown',
+    description: 'Relic from ancient civilization. All stats +10%.',
+    outputType: 'equipment',
+    outputId: 'eq_ancient_crown',
+    outputQuantity: 1,
+    materials: { ironOre: 0, steelIngot: 8, mythril: 10, orichalcum: 3, dragonScale: 1, prism5: 0, prism4: 0, prism3: 0, wolfFang: 0, wolfPelt: 0, moonstone: 5, ancientRelic: 5, qrEssence: 0, qrCrystal: 5, qrFragment: 2 },
+    zelCost: 75000,
+    requiredLevel: 40,
+    category: 'accessory',
+  },
+  {
+    id: 'craft_qr_aegis_amulet',
+    name: 'QR Aegis Amulet',
+    description: 'Digital blessing amulet. +25% Defense.',
+    outputType: 'equipment',
+    outputId: 'eq_qr_aegis_amulet',
+    outputQuantity: 1,
+    materials: { ironOre: 0, steelIngot: 5, mythril: 5, orichalcum: 0, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0, wolfFang: 0, wolfPelt: 0, moonstone: 0, ancientRelic: 0, qrEssence: 15, qrCrystal: 5, qrFragment: 2 },
+    zelCost: 30000,
+    requiredLevel: 25,
+    category: 'accessory',
+  },
+  // Material Synthesis
+  {
+    id: 'craft_moonstone',
+    name: 'Moonstone Synthesis',
+    description: 'Combine QR Essence to create Moonstone.',
+    outputType: 'material',
+    outputId: 'moonstone',
+    outputQuantity: 1,
+    materials: { ironOre: 0, steelIngot: 0, mythril: 0, orichalcum: 0, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0, wolfFang: 0, wolfPelt: 0, moonstone: 0, ancientRelic: 0, qrEssence: 50, qrCrystal: 0, qrFragment: 0 },
+    zelCost: 15000,
+    requiredLevel: 20,
+    category: 'enhancement',
+  },
+  {
+    id: 'craft_ancient_relic',
+    name: 'Ancient Relic Synthesis',
+    description: 'Create Ancient Relic from rare materials.',
+    outputType: 'material',
+    outputId: 'ancientRelic',
+    outputQuantity: 1,
+    materials: { ironOre: 0, steelIngot: 0, mythril: 0, orichalcum: 3, dragonScale: 0, prism5: 0, prism4: 0, prism3: 0, wolfFang: 0, wolfPelt: 0, moonstone: 10, ancientRelic: 0, qrEssence: 0, qrCrystal: 10, qrFragment: 3 },
+    zelCost: 30000,
+    requiredLevel: 35,
+    category: 'enhancement',
+  },
+];
+
+// ============================================================================
+// DAILY DEALS CONFIGURATION
+// ============================================================================
+
+export interface DailyDeal {
+  id: string;
+  type: 'unit' | 'equipment' | 'material' | 'consumable';
+  itemId: string;
+  originalPrice: number;
+  discountPercent: number;
+  stock: number;
+  maxStock: number;
+  expiresAt: number;
+}
+
+export const DAILY_DEALS_CONFIG = {
+  refreshInterval: 24 * 60 * 60 * 1000, // 24 hours
+  dealsPerDay: 5,
+};
+
+let _dailyDealsRefreshTime = Date.now();
+
+export function getDailyDeals(): DailyDeal[] {
+  const now = Date.now();
+  if (now - _dailyDealsRefreshTime > DAILY_DEALS_CONFIG.refreshInterval) {
+    _dailyDealsRefreshTime = now;
+  }
+  
+  return [
+    // Rotate different items each day based on day of year
+    { id: 'dd1', type: 'unit', itemId: 'u7', originalPrice: 50000, discountPercent: 20, stock: 1, maxStock: 1, expiresAt: _dailyDealsRefreshTime + DAILY_DEALS_CONFIG.refreshInterval },
+    { id: 'dd2', type: 'equipment', itemId: 'eq_w2', originalPrice: 40000, discountPercent: 25, stock: 3, maxStock: 3, expiresAt: _dailyDealsRefreshTime + DAILY_DEALS_CONFIG.refreshInterval },
+    { id: 'dd3', type: 'material', itemId: 'mythril', originalPrice: 10000, discountPercent: 30, stock: 2, maxStock: 2, expiresAt: _dailyDealsRefreshTime + DAILY_DEALS_CONFIG.refreshInterval },
+    { id: 'dd4', type: 'consumable', itemId: 'qr_scan_medium', originalPrice: 40, discountPercent: 50, stock: 5, maxStock: 5, expiresAt: _dailyDealsRefreshTime + DAILY_DEALS_CONFIG.refreshInterval },
+    { id: 'dd5', type: 'material', itemId: 'wolfFang', originalPrice: 5000, discountPercent: 15, stock: 10, maxStock: 10, expiresAt: _dailyDealsRefreshTime + DAILY_DEALS_CONFIG.refreshInterval },
+  ];
+}
+
+// QR Shop exclusive items
+export const QR_SHOP_LISTINGS = [
+  { id: 'qr_shop_moonstone', materialType: 'moonstone', quantity: 1, price: 100, currency: 'qrEssence', stock: 5, maxStock: 5 },
+  { id: 'qr_shop_qr_crystal', materialType: 'qrCrystal', quantity: 1, price: 30, currency: 'qrEssence', stock: 10, maxStock: 10 },
+  { id: 'qr_shop_ancient_relic', materialType: 'ancientRelic', quantity: 1, price: 200, currency: 'qrCrystal', stock: 3, maxStock: 3 },
+];
+
+// ============================================================================
 // SHOP UNIT LISTINGS (Zel Shop)
 // ============================================================================
 
