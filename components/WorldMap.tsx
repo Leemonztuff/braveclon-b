@@ -21,14 +21,15 @@ interface WorldMapProps {
   onSelectStage: (stageId: number) => void;
 }
 
-// Layout coordinates for 16 stages (zigzagging upwards)
+// Layout coordinates for 19 stages (zigzagging upwards)
 const LAYOUT = [
-  { x: 15, y: 85 }, { x: 35, y: 80 }, // Prontera
-  { x: 55, y: 75 }, // Geffen
-  { x: 75, y: 65 }, // Payon
-  { x: 80, y: 50 }, { x: 60, y: 45 }, // Glast Heim
-  { x: 40, y: 50 }, { x: 25, y: 40 }, { x: 15, y: 25 }, { x: 30, y: 15 }, // Tower
-  { x: 50, y: 20 }, { x: 70, y: 25 }, { x: 85, y: 15 }, { x: 80, y: 5 }, { x: 60, y: 8 }, { x: 40, y: 5 } // Niflheim
+  { x: 15, y: 90 }, { x: 35, y: 85 }, // Prontera
+  { x: 55, y: 80 }, // Geffen
+  { x: 75, y: 70 }, // Payon
+  { x: 80, y: 55 }, { x: 60, y: 50 }, // Glast Heim
+  { x: 40, y: 55 }, { x: 25, y: 45 }, { x: 15, y: 30 }, { x: 30, y: 20 }, // Tower
+  { x: 50, y: 25 }, { x: 70, y: 30 }, { x: 85, y: 20 }, { x: 80, y: 10 }, { x: 60, y: 13 }, { x: 40, y: 10 }, // Niflheim
+  { x: 20, y: 15 }, { x: 35, y: 8 }, { x: 55, y: 5 } // Wolf Pack (stages 16-18)
 ];
 
 const COLORS: Record<string, string> = {
@@ -38,6 +39,7 @@ const COLORS: Record<string, string> = {
   'Glast Heim': 'from-slate-500 to-purple-800',
   'Tower': 'from-amber-500 to-yellow-600',
   'Niflheim': 'from-red-700 to-rose-900',
+  'Wolf Pack': 'from-amber-700 to-orange-800',
 };
 
 const MAP_NODES: MapNode[] = STAGES.filter(s => s.id <= 16).map((stage, idx) => ({
@@ -63,6 +65,7 @@ const REGIONS = {
   'Glast Heim': { name: 'Glast Heim Region', gradient: 'from-slate-900/30 to-purple-900/10' },
   'Tower': { name: 'Tower Region', gradient: 'from-amber-900/30 to-yellow-900/10' },
   'Niflheim': { name: 'Niflheim Region', gradient: 'from-red-900/30 to-rose-900/10' },
+  'Wolf Pack': { name: 'Wolf Territory', gradient: 'from-amber-900/40 to-orange-900/20' },
 };
 
 export default function WorldMap({ completedStages, onSelectStage }: WorldMapProps) {
