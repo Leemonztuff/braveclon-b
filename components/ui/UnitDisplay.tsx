@@ -44,6 +44,7 @@ const SIZE_MAP = {
   xl: { container: 'w-24 h-24', sprite: '[&]:scale-[3.5]' },
   '2xl': { container: 'w-32 h-32', sprite: '[&]:scale-[4.0]' },
   '3xl': { container: 'w-40 h-40', sprite: '[&]:scale-[4.5]' },
+  full: { container: 'w-full h-full', sprite: '[&]:scale-[1]' },
 };
 
 const RARITY_COLORS = {

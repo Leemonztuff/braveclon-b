@@ -136,128 +136,43 @@ export function UnitDetailModal({
       </div>
 
       {/* ════════════════════════════════════════════
-          MAIN CONTENT - Mobile optimized layout
+          MAIN CONTENT - Two column: left info, right character
       ════════════════════════════════════════════ */}
       <div className="flex-1 overflow-y-auto">
-        {/* ═══ Character Visual Hero Section ═══ */}
-        <div className="relative p-4 pb-2">
-          {/* Main card container */}
-          <div 
-            className="relative rounded-xl overflow-hidden"
-            style={{ 
-              background: `linear-gradient(180deg, ${COLORS.woodPanel} 0%, ${COLORS.woodDark} 100%)`,
-              border: `2px solid ${COLORS.goldDark}`,
-              boxShadow: `0 8px 24px rgba(0,0,0,0.6), inset 0 1px 0 ${COLORS.gold}30`
-            }}
-          >
-            {/* Character portrait area */}
-            <div className="relative aspect-[4/3] overflow-hidden">
-              {/* Background pattern */}
-              <div 
-                className="absolute inset-0 opacity-30"
-                style={{
-                  backgroundImage: `radial-gradient(circle at 50% 80%, ${COLORS.gold}40 0%, transparent 50%)`,
-                }}
-              />
-              
-              {/* Character sprite */}
-              <div className="absolute inset-0 flex items-center justify-center p-4">
-                <UnitDisplay
-                  spriteUrl={template.spriteUrl}
-                  name={template.name}
-                  rarity={template.rarity}
-                  element={template.element}
-                  level={unit.level}
-                  variant="portrait"
-                  size="3xl"
-                  showElement
-                  className="w-full h-full drop-shadow-2xl"
-                />
+        <div className="flex p-3 gap-3">
+          {/* LEFT: Info Column */}
+          <div className="flex-1 flex flex-col gap-2">
+            {/* Unit Name & Stars */}
+            <div 
+              className="p-3 rounded-lg"
+              style={{ 
+                background: `linear-gradient(180deg, ${COLORS.woodPanel} 0%, ${COLORS.woodDark} 100%)`,
+                border: `2px solid ${COLORS.goldDark}`
+              }}
+            >
+              <h2 className="text-lg font-bold text-amber-100">{template.name}</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="flex gap-0.5">
+                  {Array.from({ length: template.rarity }).map((_, i) => (
+                    <span key={i} className="text-yellow-400 text-sm">★</span>
+                  ))}
+                  {template.rarity < 5 && Array.from({ length: 5 - template.rarity }).map((_, i) => (
+                    <span key={i} className="text-amber-700/50 text-sm">★</span>
+                  ))}
+                </div>
+                <span className="text-xs text-amber-400/70">{template.element}</span>
               </div>
               
-              {/* Element badge - large and visible */}
-              <div 
-                className="absolute top-3 left-3 px-3 py-1.5 rounded-full flex items-center gap-1.5"
-                style={{ 
-                  backgroundColor: elementColor.bg,
-                  border: `2px solid ${elementColor.light}`,
-                  boxShadow: `0 2px 8px ${elementColor.bg}80`
-                }}
-              >
-                <span className="text-white text-sm">{ELEMENT_ICONS[template.element as keyof typeof ELEMENT_ICONS]}</span>
-                <span className="text-white text-xs font-bold uppercase">{template.element}</span>
-              </div>
-              
-              {/* Leader indicator */}
-              {isLeader && (
-                <div 
-                  className="absolute top-3 right-3 px-2 py-1 rounded-md flex items-center gap-1"
-                  style={{ 
-                    backgroundColor: COLORS.gold,
-                    border: `2px solid ${COLORS.goldLight}`,
-                    boxShadow: `0 0 12px ${COLORS.goldGlow}80`
-                  }}
-                >
-                  <Crown size={12} className="text-amber-900" />
-                  <span className="text-[10px] font-bold text-amber-900 uppercase">Leader</span>
-                </div>
-              )}
-              
-              {/* Pedestal glow */}
-              <div 
-                className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-12 rounded-full"
-                style={{ 
-                  background: `radial-gradient(ellipse at center, ${COLORS.gold}60, transparent 70%)`,
-                  filter: 'blur(6px)'
-                }}
-              />
-            </div>
-            
-            {/* Unit info bar */}
-            <div className="p-3" style={{ backgroundColor: '#00000030' }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-bold text-amber-100" style={{ textShadow: '1px 1px 2px #000' }}>
-                    {template.name}
-                  </h2>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <div className="flex gap-0.5">
-                      {Array.from({ length: template.rarity }).map((_, i) => (
-                        <span key={i} className="text-yellow-400 text-sm" style={{ textShadow: '0 0 4px #fbbf24' }}>★</span>
-                      ))}
-                      {template.rarity < 5 && Array.from({ length: 5 - template.rarity }).map((_, i) => (
-                        <span key={i} className="text-amber-700/50 text-sm">★</span>
-                      ))}
-                    </div>
-                    <span className="text-xs text-amber-400/70 uppercase">{template.element}</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-amber-400/70">Nivel</div>
-                  <div className="text-xl font-black text-amber-100">{unit.level}<span className="text-sm text-amber-500/50">/{template.maxLevel}</span></div>
-                </div>
-              </div>
-              
-              {/* EXP Bar */}
+              {/* Level & EXP */}
               <div className="mt-2">
-                <div className="flex justify-between text-[10px] text-amber-400/60 mb-1">
-                  <span>EXP</span>
-                  <span>{unit.exp} / {maxExp}</span>
+                <div className="flex justify-between text-[10px] text-amber-400/70">
+                  <span>Nivel: {unit.level}/{template.maxLevel}</span>
+                  <span>{unit.exp}/{maxExp} EXP</span>
                 </div>
-                <div 
-                  className="h-2.5 rounded-full overflow-hidden"
-                  style={{ 
-                    background: '#1a1208',
-                    border: `1px solid ${COLORS.goldDark}`
-                  }}
-                >
+                <div className="h-2 rounded-full bg-black/50 overflow-hidden mt-1">
                   <div 
-                    className="h-full rounded-full"
-                    style={{ 
-                      width: unit.level >= template.maxLevel ? '100%' : `${(unit.exp / maxExp) * 100}%`,
-                      background: `linear-gradient(90deg, #1d4ed8, #3b82f6, #60a5fa)`,
-                      boxShadow: '0 0 8px #3b82f680'
-                    }}
+                    className="h-full bg-gradient-to-r from-blue-600 to-cyan-500"
+                    style={{ width: `${(unit.exp / maxExp) * 100}%` }}
                   />
                 </div>
               </div>
@@ -435,6 +350,63 @@ export function UnitDetailModal({
                 if (onUnequipItem) onUnequipItem(unitId, slot);
               }}
             />
+          </div>
+
+          {/* RIGHT: Character Visual */}
+          <div className="w-36 flex flex-col">
+            <div 
+              className="relative flex-1 rounded-lg overflow-hidden"
+              style={{ 
+                background: `linear-gradient(180deg, ${COLORS.woodPanel} 0%, ${COLORS.woodDark} 100%)`,
+                border: `2px solid ${COLORS.gold}`
+              }}
+            >
+              {/* Full character sprite - no frame */}
+              <div className="absolute inset-0 flex items-end justify-center pb-2">
+                <UnitDisplay
+                  spriteUrl={template.spriteUrl}
+                  name={template.name}
+                  rarity={template.rarity}
+                  element={template.element}
+                  level={unit.level}
+                  variant="portrait"
+                  size="3xl"
+                  showElement={false}
+                  className="w-full h-full"
+                />
+              </div>
+              
+              {/* Element badge */}
+              <div 
+                className="absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center border-2"
+                style={{ 
+                  backgroundColor: elementColor.bg,
+                  borderColor: elementColor.light
+                }}
+              >
+                <span className="text-white">{ELEMENT_ICONS[template.element as keyof typeof ELEMENT_ICONS]}</span>
+              </div>
+              
+              {/* Leader badge */}
+              {isLeader && (
+                <div 
+                  className="absolute top-2 left-2 px-2 py-1 rounded flex items-center gap-1"
+                  style={{ backgroundColor: COLORS.gold }}
+                >
+                  <Crown size={10} className="text-amber-900" />
+                  <span className="text-[8px] font-bold text-amber-900">Leader</span>
+                </div>
+              )}
+              
+              {/* Pedestal glow */}
+              <div 
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-8 rounded-full"
+                style={{ 
+                  background: `radial-gradient(ellipse at center, ${COLORS.gold}60, transparent 70%)`,
+                  filter: 'blur(4px)'
+                }}
+              />
+            </div>
           </div>
         </div>
 
