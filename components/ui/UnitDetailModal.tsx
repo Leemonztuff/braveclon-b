@@ -138,7 +138,7 @@ export function UnitDetailModal({
                     element={template.element}
                     level={unit.level}
                     variant="portrait"
-                    size="full"
+                    size="3xl"
                     showElement
                     className="w-full h-full"
                   />
