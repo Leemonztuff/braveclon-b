@@ -2,19 +2,24 @@
 import { useState } from 'react';
 import { PlayerState } from '@/lib/gameState';
 import { UNIT_DATABASE, EQUIPMENT_DATABASE } from '@/lib/gameData';
-import { CONSUMABLE_ITEMS, SHOP_UNITS, SHOP_EQUIPMENT, SHOP_CONSUMABLES, SHOP_MATERIALS } from '@/lib/economyData';
+import { CONSUMABLE_ITEMS, SHOP_UNITS, SHOP_EQUIPMENT, SHOP_CONSUMABLES, SHOP_MATERIALS, getDailyDeals, QR_SHOP_LISTINGS } from '@/lib/economyData';
 import { Header, Tabs, CurrencyDisplay, Card, EmptyState } from './ui/DesignSystem';
+import { MaterialType } from '@/lib/economyTypes';
 import { RARITY } from './ui/DesignSystem';
 import { motion, AnimatePresence } from 'motion/react';
 
-type ShopTab = 'units' | 'equipment' | 'items' | 'materials';
+type ShopTab = 'units' | 'equipment' | 'items' | 'materials' | 'daily' | 'qr';
 
 const TABS = [
   { id: 'units', label: 'Units', icon: '⚔️' },
   { id: 'equipment', label: 'Gear', icon: '🛡️' },
   { id: 'items', label: 'Items', icon: '📦' },
   { id: 'materials', label: 'Materials', icon: '🧱' },
+  { id: 'daily', label: 'Daily', icon: '⏰' },
+  { id: 'qr', label: 'QR', icon: '📱' },
 ];
+
+const dailyDeals = getDailyDeals();
 
 interface ShopScreenProps {
   state: PlayerState;
@@ -257,6 +262,91 @@ export default function ShopScreen({ state, onBack, onPurchaseUnit, onPurchaseEq
                         <div className={`font-bold ${affordable ? 'text-amber-400' : 'text-red-400'}`}>
                           💰 {listing.price.toLocaleString()}
                         </div>
+                        <div className="text-xs text-zinc-500">+{listing.quantity}</div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </motion.div>
+          )}
+
+          {activeTab === 'daily' && (
+            <motion.div
+              key="daily"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-3"
+            >
+              <div className="text-xs text-zinc-400 mb-2">⏰ Daily deals refresh every 24 hours</div>
+              {dailyDeals.map(deal => {
+                const affordable = state.zel >= deal.originalPrice;
+                const isPurchasing = purchasing === deal.id;
+                const discount = deal.originalPrice * (1 - deal.discountPercent / 100);
+                
+                return (
+                  <Card 
+                    key={deal.id}
+                    onClick={() => affordable && deal.stock > 0 && !isPurchasing && handlePurchase('consumable', deal.id)}
+                    className={`${!affordable ? 'opacity-60' : ''} ${deal.stock === 0 ? 'opacity-50' : ''}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl bg-amber-500/20 border border-amber-500/30">
+                        🔥
+                      </div>
+                      
+                      <div className="flex-1">
+                        <div className="font-bold text-white capitalize">Daily Deal: {deal.itemId}</div>
+                        <div className="text-xs text-zinc-400">
+                          {deal.stock} / {deal.maxStock} left
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className="text-xs text-zinc-500 line-through">💰 {deal.originalPrice}</div>
+                        <div className="font-bold text-amber-400">💰 {Math.floor(discount)}</div>
+                        <div className="text-xs text-green-400">-{deal.discountPercent}%</div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </motion.div>
+          )}
+
+          {activeTab === 'qr' && (
+            <motion.div
+              key="qr"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-3"
+            >
+              <div className="text-xs text-zinc-400 mb-2">📱 QR Scanner Exclusive Shop</div>
+              {QR_SHOP_LISTINGS.map(listing => {
+                const affordable = state.materials[listing.materialType as MaterialType] >= listing.price;
+                
+                return (
+                  <Card 
+                    key={listing.id}
+                    onClick={() => affordable && listing.stock > 0 && handlePurchase('consumable', listing.id)}
+                    className={`${!affordable ? 'opacity-60' : ''}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl bg-green-500/20 border border-green-500/30">
+                        💚
+                      </div>
+                      
+                      <div className="flex-1">
+                        <div className="font-bold text-white capitalize">{listing.materialType}</div>
+                        <div className="text-xs text-zinc-400">
+                          {listing.stock} / {listing.maxStock} left
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className="font-bold text-green-400">✨ {listing.price}</div>
                         <div className="text-xs text-zinc-500">+{listing.quantity}</div>
                       </div>
                     </div>

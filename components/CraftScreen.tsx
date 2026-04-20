@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { PlayerState } from '@/lib/gameState';
 import { UNIT_DATABASE, EQUIPMENT_DATABASE } from '@/lib/gameData';
-import { CRAFT_RECIPES } from '@/lib/economyData';
+import { CRAFT_RECIPES, TIER4_CRAFT_RECIPES } from '@/lib/economyData';
 import { MaterialType, CraftRecipe, MATERIAL_CONFIG } from '@/lib/economyTypes';
 import { motion, AnimatePresence } from 'motion/react';
 import { Header, Card, Tabs, CurrencyDisplay } from './ui/DesignSystem';
@@ -29,9 +29,10 @@ export default function CraftScreen({ state, onCraft, onBack, onAlert }: Props) 
     { id: 'enhancement', label: 'Materials', icon: '🧱' },
   ];
 
+  const allRecipes = [...CRAFT_RECIPES, ...TIER4_CRAFT_RECIPES];
   const filteredRecipes = activeCategory === 'all' 
-    ? CRAFT_RECIPES 
-    : CRAFT_RECIPES.filter(r => r.category === activeCategory);
+    ? allRecipes 
+    : allRecipes.filter(r => r.category === activeCategory);
 
   const canCraft = (recipe: CraftRecipe) => {
     if (state.playerLevel < recipe.requiredLevel) return false;
