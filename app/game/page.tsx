@@ -155,7 +155,17 @@ export default function GameApp() {
   }
 
   const renderScreen = () => {
-    if (!state) return null;
+    // DEBUG: show current screen
+    console.log('[renderScreen] currentScreen:', currentScreen, 'battleStage:', battleStage, 'state exists:', !!state);
+    
+    if (!state) {
+      console.log('[renderScreen] state is null! currentScreen:', currentScreen, 'isGameLoaded:', isGameLoaded);
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-red-500">Cargando estado... {currentScreen}</div>
+        </div>
+      );
+    }
 
     switch (currentScreen) {
       case 'home':
@@ -272,14 +282,19 @@ export default function GameApp() {
           />
         );
       case 'battle':
-        return battleStage !== null ? (
+        console.log('[battle] battleStage:', battleStage);
+        if (battleStage === null) {
+          console.log('[battle] ERROR: battleStage is null! Going to home');
+          return <div className="text-red-500 p-4">Batalla no encontrada</div>;
+        }
+        return (
           <BattleScreen
             state={state}
             stageId={battleStage}
             onEnd={endBattle}
             onBack={goBack}
           />
-        ) : null;
+        );
       case 'arena':
         return (
           <ArenaScreen
